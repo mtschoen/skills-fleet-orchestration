@@ -139,12 +139,34 @@ The parent skill's prompt structure applies. On top of it, every fleet brief mus
 
 A great fleet brief includes the answer to the ambiguity you'd otherwise have had to chase down later.
 
+## Pre-flight: check target repos for parallel sessions
+
+Before dispatching into any target repo, run these three commands and read the output:
+
+```
+git -C <repo> status
+git -C <repo> worktree list
+git -C <repo> stash list
+```
+
+Signs an active parallel session is using this repo: uncommitted changes you didn't make, worktrees under `.claude/worktrees/agent-*` (or any other non-main worktree), or named stashes from another session. If detected, **pre-bake an isolated worktree from HEAD** for your agent before dispatching:
+
+```
+git -C <repo> worktree add <repo>/.claude/worktrees/orchestrator-<task> -b claude/<task> HEAD
+```
+
+Then pass that worktree path to the agent in the brief — and tell the agent to `cd` into it. Do NOT dispatch into the main worktree of a repo where another session is active. Even if your agent works on a different branch, the working tree itself is shared on disk; their uncommitted changes and yours collide on the same files.
+
+Pre-baking is cheap (~100ms per repo). When in doubt, do it. Cleanup after merging: `git -C <repo> worktree remove <path>` and `git -C <repo> branch -d claude/<task>` (or `-D` if discarded).
+
+**Symptom you missed this check**: your agent reports an Edit denial on a file that was modified by another agent in a different worktree, OR your post-dispatch `git status` in the target repo shows a mix of files you don't recognize alongside your agent's edits.
+
 ## Cross-repo dispatch mechanics
 
-The parent skill covers parallel dispatch. Two cross-repo specifics:
+The parent skill covers parallel dispatch. Three cross-repo specifics:
 
-- **One repo per agent.** Two agents in the same repo collide unless you use `isolation: "worktree"`. Across different repos, isolation is automatic — they're separate filesystems.
-- **`isolation: "worktree"` is intra-repo only.** It cannot put agent A in repo X and agent B in repo Y. If you need both, dispatch them to separate repos directly; the filesystem provides the isolation.
+- **One repo per agent — and one *session* per repo.** Two agents in the same repo (or one agent + an active parallel session) collide unless you pre-bake separate worktrees per session — see Pre-flight check above. Across different repos with no parallel sessions, isolation is automatic.
+- **`isolation: "worktree"` is intra-repo only — it cannot help here.** It worktrees the *orchestrator's* repo, not the target. For cross-repo dispatch, pre-bake a worktree in the target via `git -C <target> worktree add ...` and pass the path to the agent in the brief.
 - **Verify worktree isolation actually took.** If you requested `isolation: "worktree"` and the agent's result doesn't include a `worktreePath`, isolation silently failed and the agent worked on the parent tree. Assume cross-contamination and investigate before dispatching more parallel work.
 
 ## Result triage (the part the parent skill doesn't cover)
@@ -256,6 +278,7 @@ Re-running 5 minutes later returns only `["site"]`. Cheap.
 - Forwarding agent open questions to the user verbatim instead of investigating them yourself.
 - Mixing maintenance and feature tasks in one pass.
 - Using `isolation: "worktree"` for cross-repo parallelism (it doesn't work that way — different repos are already isolated).
+- Dispatching into a target repo without checking `git worktree list` and `git status` first. Other Claude sessions may already be working there; the worktree-list output will show it.
 - Letting an agent commit/push without orchestrator review.
 - Trusting "all tests pass" as proof of correctness for semantic changes.
 - Re-running maintenance tasks on projects that haven't changed since their last clean run.
