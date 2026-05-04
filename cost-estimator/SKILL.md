@@ -1,6 +1,6 @@
 ---
 name: cost-estimator
-description: Use when the user asks for a retrospective Claude Code spend analysis over a date range — what they spent, top sessions, cache discipline, waste patterns, subscription leverage. Triggers include "/cost estimate", "what did I spend", "how much did last month cost", "cost breakdown", "where did my Claude budget go", "analyze my Claude spending", "audit my Claude usage". Walks local session JSONLs (parents and subagents), prices each turn per the canonical Anthropic rate table (Opus / Sonnet / Haiku with 1M-tier doubling, cache read 0.1x, cache write 1.25x), and produces per-session, daily, and waste-pattern reports. Predictive cost estimation ("how much will this plan cost") is not yet built — see ../README.md for the planned design.
+description: Use when the user asks for a retrospective Claude Code spend analysis over a date range — what they spent, top sessions, cache discipline, waste patterns, subscription leverage. Triggers include "/cost estimate", "what did I spend", "how much did last month cost", "cost breakdown", "where did my Claude budget go", "analyze my Claude spending", "audit my Claude usage". Walks local session JSONLs (parents and subagents), prices each turn per the canonical Anthropic rate table (Opus / Sonnet / Haiku with 1M-tier doubling, cache read 0.1x, cache write 1.25x), and produces per-session, daily, and waste-pattern reports. Predictive cost estimation ("how much will this plan cost") is not yet built — see github.com/mtschoen/skills-cost-estimator for the planned design.
 ---
 
 # cost-estimator (retrospective)
@@ -17,7 +17,9 @@ like "what did I spend last month", "/cost estimate April", "audit my
 Claude usage", "where did my budget go", "show me my top sessions",
 "break down my spending". If they instead ask "how much will THIS cost"
 about something they have not yet run, that is the predictive case which
-is not yet built — point at `../README.md` and say so.
+is not yet built — point the user at
+<https://github.com/mtschoen/skills-cost-estimator> for design notes
+and say so.
 
 ## Inputs to gather from the user
 
@@ -60,7 +62,7 @@ Most invocations need three things; ask only when not obvious:
    first-turn input bloat, top-N sessions, daily totals, and (when
    `--paid` is set) leverage and prorated columns.
 4. **Synthesize a markdown report** for the user. Follow
-   `../REPORT_TEMPLATE.md` — it specifies every section to include
+   `REPORT_TEMPLATE.md` — it specifies every section to include
    (headline, leverage, top sessions, top tool calls, first-turn bloat,
    daily totals, things-to-avoid walkthrough, methodology). Don't drop
    sections to save space; the value of the report is precisely that it
@@ -128,9 +130,10 @@ output rates. Cache multipliers stay relative to the doubled base.
 
 ## What this skill does not do (yet)
 
-- Predict cost for a future task. A predictive companion is in design
-  at `../README.md` (uses `count_tokens` API + heuristics + the
-  historical `sessions.csv` as a reference dataset).
+- Predict cost for a future task. A predictive companion is in design;
+  see <https://github.com/mtschoen/skills-cost-estimator> for the
+  build path (uses `count_tokens` API + heuristics + the historical
+  `sessions.csv` as a reference dataset).
 - Per-project breakdown. The analyzer groups by machine label, not by
   project slug. Easy extension: bucket `parent_path` by its containing
   directory in a follow-up summary.
@@ -138,13 +141,12 @@ output rates. Cache multipliers stay relative to the doubled base.
 
 ## Files in this skill
 
-- `skill-draft/SKILL.md` — this file.
-- `../README.md` — top-level overview + predictive-half design.
-- `../REPORT_TEMPLATE.md` — section-by-section template for the
-  markdown report this skill produces. Follow it.
-- `../scripts/analyze-month.py` — JSONL walker and per-turn pricer.
-  Default `--out` is `../reports/`.
-- `../scripts/summarize.py` — CSV reader and waste-pattern report.
-  Default `--csv` is `../reports/sessions.csv`.
-- `../reports/` — gitignored. All analyzer outputs (`sessions.csv`,
-  `daily.csv`, `summary.txt`) and synthesized reports go here.
+- `SKILL.md` — this file.
+- `REPORT_TEMPLATE.md` — section-by-section template for the markdown
+  report this skill produces. Follow it.
+- `scripts/analyze-month.py` — JSONL walker and per-turn pricer.
+  Default `--out` is `<skill-root>/reports/`.
+- `scripts/summarize.py` — CSV reader and waste-pattern report.
+  Default `--csv` is `<skill-root>/reports/sessions.csv`.
+- `reports/` — created on demand by the scripts; holds CSVs and
+  synthesized reports. Gitignored in the source repo.
