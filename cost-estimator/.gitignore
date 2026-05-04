@@ -1,0 +1,11 @@
+# Generated reports and analyzer outputs — session-specific, not for the published skill
+reports/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# OS
+.DS_Store
+Thumbs.db
