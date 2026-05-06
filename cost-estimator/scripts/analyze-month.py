@@ -34,21 +34,11 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-try:
-    import orjson as _json
-    def loads(payload):
-        return _json.loads(payload)
-except ImportError:
-    import json as _json
-    def loads(payload):
-        return _json.loads(payload)
-
 sys.path.insert(0, str(Path(__file__).parent))
 from pricing import (  # noqa: E402  -- after sys.path manipulation
     cost_for_turn,
-    is_one_million_tier,
-    model_family,
     parse_timestamp,
+    _loads,
 )
 
 
@@ -86,7 +76,7 @@ def process_file(path, parent_session, is_subagent):
                 if not line:
                     continue
                 try:
-                    entry = loads(line)
+                    entry = _loads(line)
                 except Exception:
                     continue
                 saw_any = True

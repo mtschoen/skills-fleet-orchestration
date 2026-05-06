@@ -67,13 +67,9 @@ def cost_for_turn(model_identifier, input_tokens, output_tokens,
 
 
 try:
-    import orjson as _json
-    def _loads(payload):
-        return _json.loads(payload)
+    from orjson import loads as _loads
 except ImportError:
-    import json as _json
-    def _loads(payload):
-        return _json.loads(payload)
+    from json import loads as _loads
 
 
 def iter_assistant_turns(jsonl_path):
@@ -81,6 +77,7 @@ def iter_assistant_turns(jsonl_path):
 
     Dedupes on `message.id` (turns recur in JSONL snapshots; naive
     iteration double-counts). Turns without a `message.id` are kept.
+    Lines that fail JSON parsing are silently skipped.
 
     Yielded record shape:
         {
