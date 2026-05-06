@@ -78,9 +78,11 @@ Most invocations need three things; ask only when not obvious:
    This produces an HTML chart (per-turn bars + cumulative line +
    hover tooltips) at `<skill-root>/reports/session-<prefix>.html`,
    helping the user see *where* in the session the spike happened.
-   Pass `--inline-js` for an offline-viewable file. Currently parent-
-   only — subagent cost is summarized in the page caption but not
-   plotted.
+   Pass `--inline-js` for an offline-viewable file. Pass `--x time`
+   to render the x-axis as wall-clock time instead of turn number —
+   useful for sessions with long idle gaps. Currently plots the
+   parent JSONL only — subagent cost appears in the page caption but
+   not as overlay curves.
 6. **Offer to save.** If the analysis was substantive, save the report
    to `<skill-root>/reports/<range>.md`. That folder (and everything in
    it) is gitignored. Capture the summary.txt alongside via shell
@@ -160,9 +162,10 @@ output rates. Cache multipliers stay relative to the doubled base.
 - `SKILL.md` — this file.
 - `REPORT_TEMPLATE.md` — section-by-section template for the markdown
   report this skill produces. Follow it.
-- `scripts/pricing.py` — canonical pricing helpers (rates, multipliers,
-  `cost_for_turn`, `iter_assistant_turns`). Both retrospective and
-  per-session scripts import from here.
+- `scripts/pricing.py` — canonical pricing formula (rates, cache
+  multipliers, 1M-tier doubling) plus the JSONL turn-iterator helper.
+  Both retrospective and per-session scripts import from here so the
+  formula does not drift.
 - `scripts/analyze-month.py` — JSONL walker and per-turn pricer
   (uses `pricing.py`). Default `--out` is `<skill-root>/reports/`.
 - `scripts/summarize.py` — CSV reader and waste-pattern report.
