@@ -45,13 +45,15 @@ HTML_TEMPLATE = """<!doctype html>
 {chartjs_script_tag}
 {time_adapter_script_tag}
 <style>
+  html, body {{ height: 100%; }}
   body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-         margin: 24px; color: #222; }}
+         margin: 12px; color: #222; }}
   h1 {{ margin: 0 0 8px 0; font-size: 18px; }}
   .meta {{ font-family: ui-monospace, "Cascadia Mono", Menlo, monospace;
           font-size: 12px; color: #555; margin-bottom: 16px; }}
   .meta span {{ display: inline-block; margin-right: 18px; }}
-  canvas {{ max-width: 1400px; }}
+  .chart-wrap {{ position: relative; width: 100%; height: 70vh; min-height: 420px; }}
+  canvas {{ width: 100% !important; height: 100% !important; }}
   .footnote {{ font-size: 11px; color: #888; margin-top: 12px; }}
 </style>
 </head>
@@ -64,7 +66,7 @@ HTML_TEMPLATE = """<!doctype html>
   <span>Models: {models_label}</span>
   <span>Subagents: {subagent_count} dispatches, ${subagent_cost:.4f} aggregate</span>
 </div>
-<canvas id="chart" width="1400" height="520"></canvas>
+<div class="chart-wrap"><canvas id="chart"></canvas></div>
 <div class="footnote">
   Subagent costs are summarized above but not plotted on the timeline.
   Per-subagent overlay curves are a planned Phase 2 enhancement.
@@ -91,7 +93,11 @@ new Chart(document.getElementById("chart"), {{
         type: "bar",
         label: "Per-turn cost (USD)",
         data: perTurn,
-        backgroundColor: "rgba(54, 162, 235, 0.7)",
+        backgroundColor: "rgba(54, 162, 235, 1)",
+        borderColor: "rgba(20, 95, 145, 1)",
+        borderWidth: 1,
+        categoryPercentage: 1.0,
+        barPercentage: 1.0,
         yAxisID: "yLeft",
       }},
       {{
@@ -107,6 +113,7 @@ new Chart(document.getElementById("chart"), {{
   }},
   options: {{
     responsive: true,
+    maintainAspectRatio: false,
     interaction: {{ mode: "index", intersect: false }},
     scales: {{
       x: useTimeScale
