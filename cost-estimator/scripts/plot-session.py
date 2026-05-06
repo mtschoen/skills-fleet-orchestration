@@ -144,7 +144,7 @@ new Chart(document.getElementById("chart"), {{
 
 CHARTJS_CDN_URL = "https://cdn.jsdelivr.net/npm/chart.js@4"
 TIME_ADAPTER_CDN_URL = (
-    "https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/"
+    "https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/"
     "chartjs-adapter-date-fns.bundle.min.js"
 )
 
