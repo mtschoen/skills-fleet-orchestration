@@ -18,6 +18,10 @@ Two halves planned:
 - `skill-draft/SKILL.md` — the retrospective skill (the working part).
 - `scripts/analyze-month.py` — JSONL walker + per-turn pricer.
 - `scripts/summarize.py` — CSV reader + waste-pattern report.
+- `scripts/plot-session.py` — render a single session's per-turn
+  cost trajectory as an interactive HTML chart (Chart.js). Useful for
+  investigating a session that `summarize.py` flagged as a top
+  spender; shows where in the session the cost actually accrued.
 - `reports/` — gitignored save location for synthesized reports.
 - `.gitignore` — keeps reports and CSV outputs out of git.
 
