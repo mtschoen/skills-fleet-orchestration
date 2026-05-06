@@ -602,7 +602,7 @@ git commit -m "plot-session: support --x time wall-clock axis"
 **Files:**
 - Modify: `scripts/plot-session.py` (download + cache Chart.js, embed bytes when flag set)
 
-- [ ] **Step 1: Add the cache + download helper, wire it into `main()`**
+- [x] **Step 1: Add the cache + download helper, wire it into `main()`**
 
 Near the other constants in `plot-session.py`, add:
 ```python
@@ -681,7 +681,7 @@ Then update the `render_html` call:
     )
 ```
 
-- [ ] **Step 2: Smoke-test inline mode, online and offline**
+- [x] **Step 2: Smoke-test inline mode, online and offline**
 
 Online:
 ```
@@ -701,7 +701,7 @@ ls ~/.cache/cost-estimator/
 ```
 Expected: `chart.js-4.4.7.umd.min.js` (and `chartjs-adapter-date-fns-3.0.0.bundle.min.js` if time mode was used).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```
 git add scripts/plot-session.py
