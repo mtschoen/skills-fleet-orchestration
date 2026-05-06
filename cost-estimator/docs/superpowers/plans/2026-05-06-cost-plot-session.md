@@ -19,7 +19,7 @@ The existing `analyze-month.py` is the only place the canonical pricing formula 
 **Files:**
 - Create: `scripts/pricing.py`
 
-- [ ] **Step 1: Write `scripts/pricing.py`**
+- [x] **Step 1: Write `scripts/pricing.py`**
 
 ```python
 """Canonical pricing helpers shared across cost-estimator scripts.
@@ -90,7 +90,7 @@ def cost_for_turn(model_identifier, input_tokens, output_tokens,
             + cache_write_tokens * input_rate * CACHE_WRITE_MULTIPLIER) / 1_000_000
 ```
 
-- [ ] **Step 2: Smoke-test the import and a known-shape call**
+- [x] **Step 2: Smoke-test the import and a known-shape call**
 
 Run from the repo root:
 ```
@@ -100,7 +100,7 @@ Expected output: `opus True 0.0175` (or very close — input 1000 × 5/M = 0.005
 
 If the printed cost is not `0.04375`, the formula is wrong — debug before proceeding.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```
 git add scripts/pricing.py
