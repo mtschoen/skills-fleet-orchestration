@@ -23,13 +23,11 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
-import webbrowser
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from pricing import cost_for_turn, iter_assistant_turns  # noqa: E402
+from pricing import iter_assistant_turns  # noqa: E402
 
 
 DEFAULT_PROJECTS_ROOT = Path.home() / ".claude" / "projects"
