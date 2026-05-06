@@ -69,7 +69,21 @@ Most invocations need three things; ask only when not obvious:
    surfaces patterns the user wouldn't see in a one-line summary. Pull
    each section from the corresponding part of summarize.py's stdout.
    Always label raw vs prorated explicitly — never leave it ambiguous.
-5. **Offer to save.** If the analysis was substantive, save the report
+5. **Plot top spike sessions on demand.** When the report flags a
+   top-N session that the user wants to investigate, render its
+   per-turn trajectory:
+   ```bash
+   python <skill-root>/scripts/plot-session.py <session-id-prefix> --open
+   ```
+   This produces an HTML chart (per-turn bars + cumulative line +
+   hover tooltips) at `<skill-root>/reports/session-<prefix>.html`,
+   helping the user see *where* in the session the spike happened.
+   Pass `--inline-js` for an offline-viewable file. Pass `--x time`
+   to render the x-axis as wall-clock time instead of turn number —
+   useful for sessions with long idle gaps. Currently plots the
+   parent JSONL only — subagent cost appears in the page caption but
+   not as overlay curves.
+6. **Offer to save.** If the analysis was substantive, save the report
    to `<skill-root>/reports/<range>.md`. That folder (and everything in
    it) is gitignored. Capture the summary.txt alongside via shell
    redirect:
@@ -134,6 +148,10 @@ output rates. Cache multipliers stay relative to the doubled base.
   see <https://github.com/mtschoen/skills-cost-estimator> for the
   build path (uses `count_tokens` API + heuristics + the historical
   `sessions.csv` as a reference dataset).
+- Subagent timeline overlays. `plot-session.py` plots the parent
+  JSONL only; subagent costs are summarized in the chart caption but
+  not plotted as their own anchored sub-trajectories. Adding overlay
+  curves anchored to spawn/finish timestamps is a planned Phase 2.
 - Per-project breakdown. The analyzer groups by machine label, not by
   project slug. Easy extension: bucket `parent_path` by its containing
   directory in a follow-up summary.
@@ -144,9 +162,15 @@ output rates. Cache multipliers stay relative to the doubled base.
 - `SKILL.md` — this file.
 - `REPORT_TEMPLATE.md` — section-by-section template for the markdown
   report this skill produces. Follow it.
-- `scripts/analyze-month.py` — JSONL walker and per-turn pricer.
-  Default `--out` is `<skill-root>/reports/`.
+- `scripts/pricing.py` — canonical pricing formula (rates, cache
+  multipliers, 1M-tier doubling) plus the JSONL turn-iterator helper.
+  Both retrospective and per-session scripts import from here so the
+  formula does not drift.
+- `scripts/analyze-month.py` — JSONL walker and per-turn pricer
+  (uses `pricing.py`). Default `--out` is `<skill-root>/reports/`.
 - `scripts/summarize.py` — CSV reader and waste-pattern report.
   Default `--csv` is `<skill-root>/reports/sessions.csv`.
+- `scripts/plot-session.py` — per-session HTML cost trajectory chart
+  (uses `pricing.py`).
 - `reports/` — created on demand by the scripts; holds CSVs and
   synthesized reports. Gitignored in the source repo.
