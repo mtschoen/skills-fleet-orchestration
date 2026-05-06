@@ -150,8 +150,9 @@ TIME_ADAPTER_CDN_URL = (
 
 CHARTJS_INLINE_VERSION = "4.4.7"
 CHARTJS_INLINE_URL = f"https://cdn.jsdelivr.net/npm/chart.js@{CHARTJS_INLINE_VERSION}/dist/chart.umd.min.js"
+TIME_ADAPTER_INLINE_VERSION = "3.0.0"
 TIME_ADAPTER_INLINE_URL = (
-    "https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/"
+    f"https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@{TIME_ADAPTER_INLINE_VERSION}/"
     "dist/chartjs-adapter-date-fns.bundle.min.js"
 )
 
@@ -319,7 +320,7 @@ def main():
         if arguments.x == "time":
             time_adapter_bytes = _cached_download(
                 TIME_ADAPTER_INLINE_URL,
-                "chartjs-adapter-date-fns-3.0.0.bundle.min.js",
+                f"chartjs-adapter-date-fns-{TIME_ADAPTER_INLINE_VERSION}.bundle.min.js",
             )
 
     html_text = render_html(
