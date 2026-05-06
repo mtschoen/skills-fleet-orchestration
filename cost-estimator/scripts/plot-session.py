@@ -43,6 +43,7 @@ HTML_TEMPLATE = """<!doctype html>
 <meta charset="utf-8">
 <title>Session {session_id_prefix} — cost trajectory</title>
 {chartjs_script_tag}
+{time_adapter_script_tag}
 <style>
   body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
          margin: 24px; color: #222; }}
@@ -72,9 +73,14 @@ HTML_TEMPLATE = """<!doctype html>
 const TURNS = {turns_json};
 const X_MODE = "{x_axis_mode}";
 
-const labels = TURNS.map(t => X_MODE === "time" ? t.timestamp : `Turn ${{t.index}}`);
-const perTurn = TURNS.map(t => t.cost_usd);
-const cumulative = TURNS.map(t => t.cumulative_cost);
+const useTimeScale = X_MODE === "time";
+const labels = useTimeScale ? TURNS.map(t => t.timestamp) : TURNS.map(t => `Turn ${{t.index}}`);
+const perTurn = useTimeScale
+  ? TURNS.map(t => ({{ x: t.timestamp, y: t.cost_usd }}))
+  : TURNS.map(t => t.cost_usd);
+const cumulative = useTimeScale
+  ? TURNS.map(t => ({{ x: t.timestamp, y: t.cumulative_cost }}))
+  : TURNS.map(t => t.cumulative_cost);
 
 new Chart(document.getElementById("chart"), {{
   type: "bar",
@@ -103,6 +109,10 @@ new Chart(document.getElementById("chart"), {{
     responsive: true,
     interaction: {{ mode: "index", intersect: false }},
     scales: {{
+      x: useTimeScale
+        ? {{ type: "time", time: {{ tooltipFormat: "yyyy-MM-dd HH:mm:ss" }},
+             title: {{ display: true, text: "Wall-clock time" }} }}
+        : {{ title: {{ display: true, text: "Turn" }} }},
       yLeft:  {{ position: "left",
                 title: {{ display: true, text: "Turn cost (USD)" }} }},
       yRight: {{ position: "right",
@@ -133,6 +143,10 @@ new Chart(document.getElementById("chart"), {{
 """
 
 CHARTJS_CDN_URL = "https://cdn.jsdelivr.net/npm/chart.js@4"
+TIME_ADAPTER_CDN_URL = (
+    "https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/"
+    "chartjs-adapter-date-fns.bundle.min.js"
+)
 
 
 def _models_label(turns):
@@ -203,6 +217,11 @@ def render_html(turns, subagent_count, subagent_cost, session_id,
     else:
         chartjs_script_tag = f'<script src="{CHARTJS_CDN_URL}"></script>'
 
+    if x_axis_mode == "time":
+        time_adapter_script_tag = f'<script src="{TIME_ADAPTER_CDN_URL}"></script>'
+    else:
+        time_adapter_script_tag = ""
+
     first_date = turns[0]["timestamp"][:10] if turns and turns[0]["timestamp"] else "?"
     total_cost = turns[-1]["cumulative_cost"] if turns else 0.0
 
@@ -210,6 +229,7 @@ def render_html(turns, subagent_count, subagent_cost, session_id,
         session_id=session_id,
         session_id_prefix=session_id[:8],
         chartjs_script_tag=chartjs_script_tag,
+        time_adapter_script_tag=time_adapter_script_tag,
         first_date=first_date,
         total_cost=total_cost,
         turn_count=len(turns),
