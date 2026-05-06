@@ -10,177 +10,6 @@
 
 ---
 
-## Phase 1: Extract pricing helpers (refactor, no behavior change)
-
-The existing `analyze-month.py` is the only place the canonical pricing formula lives. Phase 1 hoists it into `scripts/pricing.py` and wires `analyze-month.py` to import from there. Goal: byte-identical `sessions.csv` and `daily.csv` for the same input before vs. after this phase, so we know the refactor is pure.
-
-### Task 1: Create `scripts/pricing.py` with extracted constants and helpers
-
-**Files:**
-- Create: `scripts/pricing.py`
-
-- [x] **Step 1: Write `scripts/pricing.py`**
-
-```python
-"""Canonical pricing helpers shared across cost-estimator scripts.
-
-Single source of truth for the per-MTok rates, cache multipliers, and
-1M-context-tier doubling. Both analyze-month.py (retrospective bulk
-analysis) and plot-session.py (single-session trajectory) import from
-here so the formula does not drift.
-
-Source of truth for the rate table is
-~/.claude/notes/reference_anthropic_pricing.md; the values below are
-duplicated for skill self-containment.
-"""
-
-from __future__ import annotations
-
-from datetime import datetime
-
-
-# Per-MTok rates (verified 2026-04 against Anthropic docs).
-PRICES = {
-    "opus":   (5.0, 25.0),
-    "sonnet": (3.0, 15.0),
-    "haiku":  (1.0, 5.0),
-}
-CACHE_WRITE_MULTIPLIER = 1.25
-CACHE_READ_MULTIPLIER = 0.10
-
-
-def model_family(model_identifier):
-    if not model_identifier:
-        return None
-    name = model_identifier.lower()
-    if "opus" in name:
-        return "opus"
-    if "sonnet" in name:
-        return "sonnet"
-    if "haiku" in name:
-        return "haiku"
-    return None
-
-
-def is_one_million_tier(model_identifier):
-    return bool(model_identifier and "[1m]" in model_identifier)
-
-
-def parse_timestamp(value):
-    if not value:
-        return None
-    try:
-        return datetime.fromisoformat(value.replace("Z", "+00:00"))
-    except (ValueError, TypeError):
-        return None
-
-
-def cost_for_turn(model_identifier, input_tokens, output_tokens,
-                  cache_read_tokens, cache_write_tokens):
-    family = model_family(model_identifier)
-    if family is None:
-        return 0.0
-    input_rate, output_rate = PRICES[family]
-    if is_one_million_tier(model_identifier):
-        input_rate *= 2
-        output_rate *= 2
-    return (input_tokens * input_rate
-            + output_tokens * output_rate
-            + cache_read_tokens * input_rate * CACHE_READ_MULTIPLIER
-            + cache_write_tokens * input_rate * CACHE_WRITE_MULTIPLIER) / 1_000_000
-```
-
-- [x] **Step 2: Smoke-test the import and a known-shape call**
-
-Run from the repo root:
-```
-python -c "import sys; sys.path.insert(0, 'scripts'); from pricing import cost_for_turn, model_family, is_one_million_tier; print(model_family('claude-opus-4-7'), is_one_million_tier('claude-opus-4-7[1m]'), round(cost_for_turn('claude-opus-4-7', 1000, 100, 10000, 5000), 6))"
-```
-Expected output: `opus True 0.0175` (or very close — input 1000 × 5/M = 0.005; output 100 × 25/M = 0.0025; cache_read 10000 × 0.5/M = 0.005; cache_write 5000 × 6.25/M = 0.03125; sum ≈ 0.04375. Recompute: 0.005 + 0.0025 + 0.005 + 0.03125 = 0.04375. So expected `opus False 0.04375` — note the model ID in the call is the non-1m one, so the second arg printed is `False`.)
-
-If the printed cost is not `0.04375`, the formula is wrong — debug before proceeding.
-
-- [x] **Step 3: Commit**
-
-```
-git add scripts/pricing.py
-git commit -m "pricing: extract canonical formula into shared module"
-```
-
----
-
-### Task 2: Refactor `analyze-month.py` to import from `pricing`
-
-**Files:**
-- Modify: `scripts/analyze-month.py` (delete extracted defs; add sys.path + import)
-
-- [ ] **Step 1: Capture pre-refactor baseline output**
-
-Pick a small recent date range (a single day works; any day in the last week is fine — pick one with at least a handful of sessions). Run:
-```
-python scripts/analyze-month.py ~/.claude/projects --start 2026-05-01 --end 2026-05-01 --label baseline --out /tmp/cost-est-baseline
-```
-This writes `/tmp/cost-est-baseline/sessions.csv` and `/tmp/cost-est-baseline/daily.csv`. Confirm both files have non-zero size.
-
-- [ ] **Step 2: Edit `scripts/analyze-month.py` — remove extracted code, add the import**
-
-Find and delete the constants block:
-```python
-# Per-MTok rates (verified 2026-04 against Anthropic docs;
-# see ~/.claude/notes/reference_anthropic_pricing.md).
-PRICES = {
-    "opus":   (5.0, 25.0),
-    "sonnet": (3.0, 15.0),
-    "haiku":  (1.0, 5.0),
-}
-CACHE_WRITE_MULTIPLIER = 1.25
-CACHE_READ_MULTIPLIER = 0.10
-```
-
-Find and delete the four function definitions: `model_family`, `is_one_million_tier`, `parse_timestamp`, `cost_for_turn`.
-
-Add this immediately after the existing `try: import orjson ...` block (so it sits with the other imports):
-```python
-import sys
-sys.path.insert(0, str(Path(__file__).parent))
-from pricing import (  # noqa: E402  -- after sys.path manipulation
-    cost_for_turn,
-    is_one_million_tier,
-    model_family,
-    parse_timestamp,
-    PRICES,
-    CACHE_READ_MULTIPLIER,
-    CACHE_WRITE_MULTIPLIER,
-)
-```
-
-(`PRICES`, `CACHE_READ_MULTIPLIER`, and `CACHE_WRITE_MULTIPLIER` are imported even though `analyze-month.py` itself doesn't reference them by name — only `cost_for_turn` does. Re-check before committing: if they aren't referenced anywhere in `analyze-month.py` after the edit, drop them from the import line. The reference function inside `pricing.py` uses them as module-level globals, not via the importer's namespace.)
-
-- [ ] **Step 3: Re-run analyzer on the same range, into a different output dir**
-
-```
-python scripts/analyze-month.py ~/.claude/projects --start 2026-05-01 --end 2026-05-01 --label baseline --out /tmp/cost-est-refactored
-```
-
-- [ ] **Step 4: Diff the two outputs — must be byte-identical**
-
-```
-diff /tmp/cost-est-baseline/sessions.csv /tmp/cost-est-refactored/sessions.csv
-diff /tmp/cost-est-baseline/daily.csv /tmp/cost-est-refactored/daily.csv
-```
-Expected: no output from either diff (files are identical).
-
-If they differ: the refactor changed behavior. Inspect the diff, find the source (likely a typo in one of the four extracted functions, or a missed constant), fix `pricing.py`, re-run from Step 3.
-
-- [ ] **Step 5: Commit**
-
-```
-git add scripts/analyze-month.py
-git commit -m "analyze-month: import pricing helpers from shared module"
-```
-
----
-
 ## Phase 2: Build plot-session.py
 
 ### Task 3: Add `iter_assistant_turns()` to `pricing.py`
@@ -188,7 +17,7 @@ git commit -m "analyze-month: import pricing helpers from shared module"
 **Files:**
 - Modify: `scripts/pricing.py` (append new helper)
 
-- [ ] **Step 1: Append the iterator to `scripts/pricing.py`**
+- [x] **Step 1: Append the iterator to `scripts/pricing.py`**
 
 Add at the bottom of `pricing.py`:
 ```python
@@ -276,7 +105,7 @@ def iter_assistant_turns(jsonl_path):
             }
 ```
 
-- [ ] **Step 2: Smoke-test against a real session**
+- [x] **Step 2: Smoke-test against a real session**
 
 Pick the highest-cost session from the `sessions.csv` you generated in Task 2 Step 3 (or re-run analyze-month.py on a wider range if that day was sparse). Note its `session_id` and the `cost_usd` value. Then run:
 ```
@@ -287,7 +116,7 @@ Expected: the printed total should match the parent-only portion of that session
 
 If it diverges by more than rounding: bug. Likely culprits — wrong field name, missed dedup, off-by-one. Debug before proceeding.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```
 git add scripts/pricing.py
