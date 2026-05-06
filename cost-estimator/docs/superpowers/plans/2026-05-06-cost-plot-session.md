@@ -509,7 +509,7 @@ The Task-5 template already passes `x_axis_mode` to the JS, but Chart.js's defau
 **Files:**
 - Modify: `scripts/plot-session.py` (add adapter script, swap labels for time data)
 
-- [ ] **Step 1: Adjust the template to register the time scale when `x_axis_mode == "time"`**
+- [x] **Step 1: Adjust the template to register the time scale when `x_axis_mode == "time"`**
 
 In `HTML_TEMPLATE`, insert (right after the `{chartjs_script_tag}` line):
 ```html
@@ -575,7 +575,7 @@ const cumulative = useTimeScale
 
 (Note: `{{` and `}}` are literal `{` and `}` in the JS, escaped because the surrounding Python string uses `.format()`.)
 
-- [ ] **Step 2: Smoke-test both axis modes**
+- [x] **Step 2: Smoke-test both axis modes**
 
 ```
 python scripts/plot-session.py <session-id-prefix> --x turn --open
@@ -588,7 +588,7 @@ Verify:
 
 If time mode renders blank or errors: check the browser console. Most common cause is the date-adapter not loading — verify the `<script src="...chartjs-adapter-date-fns...">` tag is present in the rendered HTML.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```
 git add scripts/plot-session.py
