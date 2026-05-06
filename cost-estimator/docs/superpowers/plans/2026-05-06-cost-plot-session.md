@@ -130,7 +130,7 @@ git commit -m "pricing: add iter_assistant_turns for per-turn extraction"
 **Files:**
 - Create: `scripts/plot-session.py`
 
-- [ ] **Step 1: Write `scripts/plot-session.py`**
+- [x] **Step 1: Write `scripts/plot-session.py`**
 
 ```python
 """Render one Claude Code session's cost trajectory as an HTML chart.
@@ -279,7 +279,7 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 2: Smoke-test the scaffold**
+- [x] **Step 2: Smoke-test the scaffold**
 
 Pick the same high-cost session from Task 3 Step 2. Run:
 ```
@@ -298,7 +298,7 @@ Test the error paths:
 - Pass a bogus prefix (e.g. `"deadbeef"`) — expect a clear "no session JSONL matched" error.
 - Pass a 1-char prefix that matches many — expect the "ambiguous" error listing the matches.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```
 git add scripts/plot-session.py
