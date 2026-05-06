@@ -148,6 +148,29 @@ TIME_ADAPTER_CDN_URL = (
     "chartjs-adapter-date-fns.bundle.min.js"
 )
 
+CHARTJS_INLINE_VERSION = "4.4.7"
+CHARTJS_INLINE_URL = f"https://cdn.jsdelivr.net/npm/chart.js@{CHARTJS_INLINE_VERSION}/dist/chart.umd.min.js"
+TIME_ADAPTER_INLINE_URL = (
+    "https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/"
+    "dist/chartjs-adapter-date-fns.bundle.min.js"
+)
+
+
+def _cached_download(url, cache_filename):
+    """Return bytes of `url`, caching to ~/.cache/cost-estimator/<cache_filename>."""
+    import urllib.request
+
+    cache_directory = Path.home() / ".cache" / "cost-estimator"
+    cache_directory.mkdir(parents=True, exist_ok=True)
+    cache_path = cache_directory / cache_filename
+    if cache_path.is_file():
+        return cache_path.read_bytes()
+    print(f"  fetching {url} -> {cache_path}", file=sys.stderr)
+    with urllib.request.urlopen(url) as response:
+        payload = response.read()
+    cache_path.write_bytes(payload)
+    return payload
+
 
 def _models_label(turns):
     """Build a 'family:tokens' summary like 'opus:1234567,sonnet:23456'."""
@@ -211,14 +234,20 @@ def collect_subagent_summary(parent_jsonl_path):
 
 
 def render_html(turns, subagent_count, subagent_cost, session_id,
-                x_axis_mode, chartjs_inline_bytes):
+                x_axis_mode, chartjs_inline_bytes,
+                time_adapter_inline_bytes):
     if chartjs_inline_bytes is not None:
         chartjs_script_tag = f"<script>{chartjs_inline_bytes.decode('utf-8')}</script>"
     else:
         chartjs_script_tag = f'<script src="{CHARTJS_CDN_URL}"></script>'
 
     if x_axis_mode == "time":
-        time_adapter_script_tag = f'<script src="{TIME_ADAPTER_CDN_URL}"></script>'
+        if time_adapter_inline_bytes is not None:
+            time_adapter_script_tag = (
+                f"<script>{time_adapter_inline_bytes.decode('utf-8')}</script>"
+            )
+        else:
+            time_adapter_script_tag = f'<script src="{TIME_ADAPTER_CDN_URL}"></script>'
     else:
         time_adapter_script_tag = ""
 
@@ -280,13 +309,27 @@ def main():
     print(f"  subagents: {subagent_count} files  ${subagent_cost:.4f}",
           file=sys.stderr)
 
+    chartjs_bytes = None
+    time_adapter_bytes = None
+    if arguments.inline_js:
+        chartjs_bytes = _cached_download(
+            CHARTJS_INLINE_URL,
+            f"chart.js-{CHARTJS_INLINE_VERSION}.umd.min.js",
+        )
+        if arguments.x == "time":
+            time_adapter_bytes = _cached_download(
+                TIME_ADAPTER_INLINE_URL,
+                "chartjs-adapter-date-fns-3.0.0.bundle.min.js",
+            )
+
     html_text = render_html(
         turns=turns,
         subagent_count=subagent_count,
         subagent_cost=subagent_cost,
         session_id=session_id,
         x_axis_mode=arguments.x,
-        chartjs_inline_bytes=None,  # CDN by default; --inline-js wires this in Task 7
+        chartjs_inline_bytes=chartjs_bytes,
+        time_adapter_inline_bytes=time_adapter_bytes,
     )
 
     if arguments.out:
