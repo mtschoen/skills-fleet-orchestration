@@ -25,14 +25,18 @@ import argparse
 import json
 import sys
 import webbrowser
+from collections import Counter
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from pricing import iter_assistant_turns  # noqa: E402
+from pricing import iter_assistant_turns, model_family  # noqa: E402
 
 
 DEFAULT_PROJECTS_ROOT = Path.home() / ".claude" / "projects"
 
+# Filled via str.format(). Literal `{` / `}` in the rendered HTML/CSS/JS
+# must be doubled (`{{` / `}}`); single-brace `{name}` is a format
+# placeholder.
 HTML_TEMPLATE = """<!doctype html>
 <html lang="en">
 <head>
@@ -133,8 +137,6 @@ CHARTJS_CDN_URL = "https://cdn.jsdelivr.net/npm/chart.js@4"
 
 def _models_label(turns):
     """Build a 'family:tokens' summary like 'opus:1234567,sonnet:23456'."""
-    from collections import Counter
-    from pricing import model_family
     totals = Counter()
     for record in turns:
         family = model_family(record["model"]) or record["model"] or "?"
@@ -214,7 +216,10 @@ def render_html(turns, subagent_count, subagent_cost, session_id,
         models_label=_models_label(turns),
         subagent_count=subagent_count,
         subagent_cost=subagent_cost,
-        turns_json=json.dumps(turns, default=str),
+        # Escape `</` as `<\/` so a `</script>` substring inside any string
+        # field (e.g. a model id like `<synthetic>`) cannot break out of the
+        # surrounding <script> block. `<\/` is valid JSON per RFC 8259.
+        turns_json=json.dumps(turns, default=str).replace("</", "<\\/"),
         x_axis_mode=x_axis_mode,
     )
 
@@ -268,10 +273,9 @@ def main():
         output_path = Path(arguments.out)
     else:
         skill_root = Path(__file__).resolve().parent.parent
-        reports_directory = skill_root / "reports"
-        reports_directory.mkdir(parents=True, exist_ok=True)
-        output_path = reports_directory / f"session-{session_id[:8]}.html"
+        output_path = skill_root / "reports" / f"session-{session_id[:8]}.html"
 
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(html_text, encoding="utf-8")
     print(f"Wrote {output_path}", file=sys.stderr)
 
