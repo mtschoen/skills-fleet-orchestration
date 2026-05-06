@@ -312,7 +312,7 @@ git commit -m "plot-session: add CLI scaffold and turn extraction"
 **Files:**
 - Modify: `scripts/plot-session.py` (replace `render_html` stub; wire the call in `main`)
 
-- [ ] **Step 1: Replace the `render_html` stub and the JSON preview block**
+- [x] **Step 1: Replace the `render_html` stub and the JSON preview block**
 
 Add this constant near the top of the module (after the imports):
 ```python
@@ -479,7 +479,7 @@ In `main()`, replace the JSON-preview block (the `preview = {...}` and `print(js
         webbrowser.open(output_path.resolve().as_uri())
 ```
 
-- [ ] **Step 2: Smoke-test the chart**
+- [x] **Step 2: Smoke-test the chart**
 
 ```
 python scripts/plot-session.py <session-id-prefix> --open
@@ -493,7 +493,7 @@ Expected: a browser window opens with the chart. Verify:
 
 If the chart doesn't render: open the browser console — most likely a JSON serialization issue (NaN, Infinity, datetime not serialized). The `default=str` arg to `json.dumps` should cover datetimes; `cost_for_turn` should never produce NaN unless the input data is malformed.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```
 git add scripts/plot-session.py
