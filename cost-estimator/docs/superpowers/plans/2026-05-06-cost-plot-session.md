@@ -116,7 +116,7 @@ git commit -m "readme: mention plot-session.py"
 **Files:**
 - (No file changes — verification only)
 
-- [ ] **Step 1: Run the full retrospective flow end-to-end**
+- [x] **Step 1: Run the full retrospective flow end-to-end**
 
 ```
 python scripts/analyze-month.py ~/.claude/projects --month 2026-04 --label chonkers --out reports
@@ -125,7 +125,7 @@ python scripts/summarize.py
 
 Sanity-check the printed totals are sensible.
 
-- [ ] **Step 2: Pick a top-3 session from `summarize.py` output and plot it**
+- [x] **Step 2: Pick a top-3 session from `summarize.py` output and plot it**
 
 From the "TOP 20 SESSIONS" stdout, pick a session with high cost AND non-trivial subagent count. Note its 8-char prefix and its `Raw $` value.
 
@@ -133,20 +133,20 @@ From the "TOP 20 SESSIONS" stdout, pick a session with high cost AND non-trivial
 python scripts/plot-session.py <prefix> --open
 ```
 
-- [ ] **Step 3: Verify cumulative line endpoint matches sessions.csv**
+- [x] **Step 3: Verify cumulative line endpoint matches sessions.csv**
 
 Open `reports/sessions.csv`, find the row for that session. Compute the parent-only portion: `cost_usd - subagent_cost`. The chart's cumulative-line endpoint (top-right) should match this value to within rounding (~$0.0005).
 
 If they match: the per-turn extraction and pricing path are correct end-to-end.
 If they diverge: something is wrong. Most likely culprit is a dedup discrepancy between `iter_assistant_turns` and `process_file` in analyze-month.py — re-check those two should produce equivalent dedup behavior.
 
-- [ ] **Step 4: Verify the page caption subagent stat matches sessions.csv**
+- [x] **Step 4: Verify the page caption subagent stat matches sessions.csv**
 
 The chart caption shows "Subagents: N dispatches, $X.XX aggregate". Compare to sessions.csv:
 - `N` should match `subagent_count`.
 - `$X.XX` should match `subagent_cost` to rounding.
 
-- [ ] **Step 5: Verify --x time and --inline-js still work on this real session**
+- [x] **Step 5: Verify --x time and --inline-js still work on this real session**
 
 ```
 python scripts/plot-session.py <prefix> --x time --inline-js
@@ -154,6 +154,6 @@ python scripts/plot-session.py <prefix> --x time --inline-js
 
 Open the resulting HTML offline (turn off network briefly). Chart should render correctly with a wall-clock x-axis.
 
-- [ ] **Step 6: No commit if everything passes**
+- [x] **Step 6: No commit if everything passes**
 
 If a divergence required a code fix, commit that fix with a clear message explaining what diverged and why. Otherwise nothing to commit at this step.
