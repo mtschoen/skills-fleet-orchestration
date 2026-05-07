@@ -98,7 +98,7 @@ About to dispatch N agents in parallel. Approve?
   # | Project    | Task                                | Risk
   --|------------|-------------------------------------|------
   1 | projdash   | Search/filter (PLAN.md:55)          | green
-  2 | llamalab   | Edit model filename (PLAN.md:676)   | yellow
+  2 | myrepo   | Edit model filename (PLAN.md:676)   | yellow
   3 | cstb       | Graceful shutdown (PLAN.md:48)      | green
 
 Yellow notes:
@@ -128,7 +128,7 @@ Feature passes always prompt, even when everything looks green.
 The parent skill's prompt structure applies. On top of it, every fleet brief must include:
 
 - **Sync before starting**: agent must run `git pull --ff-only` and `git push` (if upstream exists and local is ahead) **before touching code**. Stops divergence between fleet sweeps and prevents work on a stale tree. If pull is non-fast-forward or push is rejected, STOP and report — do not force, rebase, or merge without orchestrator instruction.
-- **Absolute repo path** (`C:\Users\mtsch\<project>`) — agents inherit cwd from the orchestrator, not from the task.
+- **Absolute repo path** (`C:\Users\user\<project>`) — agents inherit cwd from the orchestrator, not from the task.
 - **One-sentence project description**, or "read CLAUDE.md in this directory before starting."
 - **Verbatim PLAN.md line + line number** they're implementing.
 - **Specific file paths you've already identified** as relevant (the triage reading was not wasted — pass it to the agent).
@@ -237,7 +237,7 @@ Quick format reference (full schema in `references/maintenance-format.md`):
 
 ```
 1. find_stale_maintenance(task_name="push-latest")
-   → ["llamalab", "site"]                  # other repos clean, skipped
+   → ["myrepo", "site"]                  # other repos clean, skipped
 2. For each stale project:
    - cd into repo
    - run the operation
