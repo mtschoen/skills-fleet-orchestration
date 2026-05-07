@@ -3,7 +3,7 @@
 **Scenario:** `scenario-sqlite-rotate.md`
 **Phase:** RED
 **Outcome:** **Fully completed end-to-end via raw ssh.** Including real
-install on llamabox, real verification (timer scheduled + service fired +
+install on remote-host, real verification (timer scheduled + service fired +
 backup file created + journald lines visible), and complete clean teardown.
 28 tool calls, ~6 minutes wall time.
 
@@ -24,14 +24,14 @@ for the skill" below.
 
 ## What the agent produced
 
-All in `C:\Users\mtsch\skills-dev\test-sandbox\worktrees\sqlite-rotate-baseline\`
+All in `C:\Users\user\skills-dev\test-sandbox\worktrees\sqlite-rotate-baseline\`
 (since deleted as part of baseline cleanup):
 
-- `src/llamalab/core/backup.py` (~180 lines) — rotation logic,
+- `src/myrepo/core/backup.py` (~180 lines) — rotation logic,
   `rotate_backup()` + `prune_old_backups()`, module-level `main()` so
-  `python -m llamalab.core.backup` is the systemd ExecStart.
-- `ops/systemd/llamalab-db-rotate.service` — Type=oneshot user unit.
-- `ops/systemd/llamalab-db-rotate.timer` — `OnCalendar=*-*-* 03:00:00`.
+  `python -m myrepo.core.backup` is the systemd ExecStart.
+- `ops/systemd/myrepo-db-rotate.service` — Type=oneshot user unit.
+- `ops/systemd/myrepo-db-rotate.timer` — `OnCalendar=*-*-* 03:00:00`.
 - `ops/systemd/README.md` — install/uninstall, mentions `loginctl enable-linger`.
 - `ops/systemd/install.py` (~115 lines) — cross-platform installer,
   no-ops cleanly on Windows/macOS.
@@ -46,11 +46,11 @@ Local `pytest tests/test_backup.py tests/test_systemd_installer.py`: **22 passed
 
 ### 1. scp denied by harness → stdin-redirect workaround
 
-The agent's instinct was `scp src/llamalab/core/backup.py schoen@llamabox:...`.
+The agent's instinct was `scp src/myrepo/core/backup.py user@remote-host:...`.
 That was denied. Its workaround was clever:
 
 ```bash
-ssh schoen@llamabox 'cat > /home/schoen/llamalab/src/llamalab/core/backup.py' < local/backup.py
+ssh user@remote-host 'cat > /home/user/myrepo/src/myrepo/core/backup.py' < local/backup.py
 ```
 
 Stdin redirect avoids heredoc quoting hell entirely — no `$VAR` expansion
@@ -61,9 +61,9 @@ inside the remote worktree.**
 
 ### 2. venv assumption wrong → one round-trip to probe + fix
 
-The agent initially hardcoded `%h/llamalab/.venv/bin/python` in the service
-unit. Probe revealed no venv on llamabox; llamalab is installed editable
-into system site-packages (`/home/schoen/llamalab/src/llamalab/__init__.py`).
+The agent initially hardcoded `%h/myrepo/.venv/bin/python` in the service
+unit. Probe revealed no venv on remote-host; myrepo is installed editable
+into system site-packages (`/home/user/myrepo/src/myrepo/__init__.py`).
 One edit to fix.
 
 **Skill implication:** the wrapper's remote execution environment should
@@ -72,9 +72,9 @@ first use) so every invocation doesn't re-probe for venv/python/PATH.
 
 ### 3. `Linger=no` → deliberate documented skip
 
-`systemctl --user` on llamabox only works while schoen has an active
+`systemctl --user` on remote-host only works while user has an active
 session. The agent correctly identified that persistent scheduling would
-need `sudo loginctl enable-linger schoen`, didn't have sudo, and chose
+need `sudo loginctl enable-linger user`, didn't have sudo, and chose
 to document the requirement in the README rather than try to escalate.
 Good judgment.
 
@@ -102,15 +102,15 @@ none
 === unit files ===
 none
 === backups dir ===
-ls: cannot access '/home/schoen/.llamalab/backups': No such file or directory
+ls: cannot access '/home/user/.myrepo/backups': No such file or directory
 absent
 === backup.py ===
-ls: cannot access '/home/schoen/llamalab/src/llamalab/core/backup.py': No such file or directory
+ls: cannot access '/home/user/myrepo/src/myrepo/core/backup.py': No such file or directory
 absent
 ```
 
-**Zero residue on llamabox.** The agent deleted everything it installed,
-including the code file it pushed into schoen's llamalab checkout.
+**Zero residue on remote-host.** The agent deleted everything it installed,
+including the code file it pushed into user's myrepo checkout.
 
 ## What this means for the skill
 

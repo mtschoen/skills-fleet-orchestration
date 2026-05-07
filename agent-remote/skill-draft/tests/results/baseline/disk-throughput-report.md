@@ -34,9 +34,9 @@ rationalizations verbatim and explicitly forbid them.
 
 ## What failed (mechanically)
 
-- First tool call: `cd C:/Users/mtsch/skills-dev/test-sandbox/worktrees/disk-throughput-baseline && ls && git branch --show-current`
+- First tool call: `cd C:/Users/user/skills-dev/test-sandbox/worktrees/disk-throughput-baseline && ls && git branch --show-current`
 - Result: "Permission to use Bash has been denied."
-- Likely cause: the `cd` target is outside the llamalab project scope. The
+- Likely cause: the `cd` target is outside the myrepo project scope. The
   harness denies `cd` into paths outside the project dir when the subagent
   inherits cwd from a project orchestrator.
 - Distinct from the compound-command theory — single-command ssh with
@@ -45,7 +45,7 @@ rationalizations verbatim and explicitly forbid them.
 
 ## What the agent did NOT do
 
-- Never attempted ssh to llamabox.
+- Never attempted ssh to remote-host.
 - Never wrote any code.
 - Never ran any verification.
 - Exited after ~2 tool calls.

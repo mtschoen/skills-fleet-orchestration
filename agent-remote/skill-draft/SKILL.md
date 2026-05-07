@@ -151,8 +151,8 @@ The wrapper writes a narrow `.claude/settings.local.json` into each remote workt
 
 ```bash
 python remote-claude.py run \
-  --host schoen@llamabox \
-  --repo-path /home/schoen/llamalab \
+  --host user@remote-host \
+  --repo-path /home/user/myrepo \
   --branch remote-claude/nvbw-2026-04-07 \
   --prompt "Clone https://github.com/NVIDIA/nvbandwidth into ~/nvbw-build, build it with cmake, run \`./nvbandwidth\` against all available GPUs, parse the host-to-device and device-to-device matrices, and write the result to /tmp/nvbw-result.json. You MUST run this end-to-end on this machine and include the real numeric matrix in your final report. Do not paste hypothetical examples. If the matrix isn't in the report, the task isn't done."
 ```
@@ -162,11 +162,11 @@ Returns (abbreviated):
 {
   "success": true,
   "branch": "remote-claude/nvbw-2026-04-07",
-  "worktree_path": "/home/schoen/remote-claude-worktrees/remote-claude_nvbw-2026-04-07",
+  "worktree_path": "/home/user/remote-claude-worktrees/remote-claude_nvbw-2026-04-07",
   "files_changed": ["scripts/nvbw_runner.py", "tests/test_nvbw_runner.py"],
   "claude_exit_code": 0,
   "stdout_tail": "...real matrix output...",
-  "cleanup_command": "python remote-claude.py cleanup --host schoen@llamabox --branch remote-claude/nvbw-2026-04-07"
+  "cleanup_command": "python remote-claude.py cleanup --host user@remote-host --branch remote-claude/nvbw-2026-04-07"
 }
 ```
 

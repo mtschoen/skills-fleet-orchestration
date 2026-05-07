@@ -2,12 +2,12 @@
 
 **Scenario:** `scenario-gpu-bandwidth.md`
 **Phase:** GREEN
-**Outcome:** ✅ Real bandwidth matrix produced from llamabox's 4 GPUs. ❌ `new_commit`/`files_changed` reported as null/empty even though the remote committed (real bug). ❌ No way to pull remote-authored code back locally — agent re-implemented same file in parallel.
+**Outcome:** ✅ Real bandwidth matrix produced from remote-host's 4 GPUs. ❌ `new_commit`/`files_changed` reported as null/empty even though the remote committed (real bug). ❌ No way to pull remote-authored code back locally — agent re-implemented same file in parallel.
 
 ## Key data points
 
-- **Actually built nvbandwidth from source on llamabox** inside ONE `remote-claude run` call. cmake + boost + CUDA dep loop, build, run, parse, commit — all in a single session. Local agent never touched apt-get or build errors. **This is the iteration-scaling value prop concretely demonstrated.**
-- **Real bandwidth matrix from llamabox:**
+- **Actually built nvbandwidth from source on remote-host** inside ONE `remote-claude run` call. cmake + boost + CUDA dep loop, build, run, parse, commit — all in a single session. Local agent never touched apt-get or build errors. **This is the iteration-scaling value prop concretely demonstrated.**
+- **Real bandwidth matrix from remote-host:**
   ```
   RTX 4090 + 3x RTX 2080 Ti
   h2d: 6.03  6.12  6.12  6.10  GB/s
@@ -27,7 +27,7 @@
 
 ## What was implemented where
 
-- **Local (live llamalab tree):** `nvbandwidth.py` runner+parser, `db.py` table additions + 4 helpers, `hardware.py` route additions, `hardware.html` UI card. **Polluted the live tree** because the verification agent worked from `cwd=llamalab` not from a worktree.
-- **Remote (llamabox via wrapper):** Built nvbandwidth from source, ran all three benchmark passes against the 4 GPUs, wrote a server-side `nvbandwidth.py`, committed it as `7df5d26` on `remote-claude/gpu-bandwidth-verify`. Branch was cleaned up via the wrapper's cleanup subcommand.
+- **Local (live myrepo tree):** `nvbandwidth.py` runner+parser, `db.py` table additions + 4 helpers, `hardware.py` route additions, `hardware.html` UI card. **Polluted the live tree** because the verification agent worked from `cwd=myrepo` not from a worktree.
+- **Remote (remote-host via wrapper):** Built nvbandwidth from source, ran all three benchmark passes against the 4 GPUs, wrote a server-side `nvbandwidth.py`, committed it as `7df5d26` on `remote-claude/gpu-bandwidth-verify`. Branch was cleaned up via the wrapper's cleanup subcommand.
 
 **Two parallel implementations of `nvbandwidth.py` existed momentarily**, one local and one remote, both based on the same prompt spec, never merged. The remote one was thrown away with the worktree.

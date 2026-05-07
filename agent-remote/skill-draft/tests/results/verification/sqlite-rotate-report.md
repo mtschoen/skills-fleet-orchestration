@@ -8,11 +8,11 @@
 
 - **Direct comparison to baseline:** baseline run took **28 tool calls + ~6 minutes** to install, verify, tear down the systemd timer via raw ssh. Verification run took **3 tool calls** (1 `run` + 1 `cleanup` + 1 independent ssh probe). **~9× reduction** for the remote half.
 - **Wrapper mechanics worked first-try:** *"ssh, MSYS path handling, login-shell wrapping, and permission seeding all worked first-try. Rough edges above are about observability, not correctness."*
-- **Independent post-run verification confirmed clean teardown** on llamabox:
+- **Independent post-run verification confirmed clean teardown** on remote-host:
   ```
-  systemctl --user list-unit-files | grep llamalab    → empty
-  ls ~/.config/systemd/user/ | grep llamalab           → empty
-  ls ~/.llamalab/backups/                              → directory does not exist
+  systemctl --user list-unit-files | grep myrepo    → empty
+  ls ~/.config/systemd/user/ | grep myrepo           → empty
+  ls ~/.myrepo/backups/                              → directory does not exist
   ```
 
 ## Wrapper rough edges encountered
@@ -25,8 +25,8 @@
 
 ## What was implemented where
 
-- **Local (live llamalab tree):** `db_rotate.py` rotation logic + 8 unit tests at 100% coverage, `ops/systemd/llamalab-db-rotate.{service,timer}`, `ops/systemd/install.py` cross-platform installer, `ops/systemd/README.md`. All written into `C:\Users\mtsch\llamalab\` (live tree, not a worktree).
-- **Remote (llamabox via wrapper):** Per the wrapper's `files_changed` JSON, the same 5 files appeared on the remote branch — but the agent's report confused itself about how that happened. Most likely explanation: the remote `claude -p` session re-implemented them from scratch based on the prompt content, since the wrapper does not push local changes to the remote. Two parallel implementations existed momentarily.
+- **Local (live myrepo tree):** `db_rotate.py` rotation logic + 8 unit tests at 100% coverage, `ops/systemd/myrepo-db-rotate.{service,timer}`, `ops/systemd/install.py` cross-platform installer, `ops/systemd/README.md`. All written into `C:\Users\user\myrepo\` (live tree, not a worktree).
+- **Remote (remote-host via wrapper):** Per the wrapper's `files_changed` JSON, the same 5 files appeared on the remote branch — but the agent's report confused itself about how that happened. Most likely explanation: the remote `claude -p` session re-implemented them from scratch based on the prompt content, since the wrapper does not push local changes to the remote. Two parallel implementations existed momentarily.
 
 ## Workflow gotcha (also seen in disk-throughput and gpu-bandwidth verifications)
 

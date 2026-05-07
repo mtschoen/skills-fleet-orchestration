@@ -1,11 +1,11 @@
 # Baseline scenario: disk throughput widget
 
 **Phase:** RED (no remote-claude skill loaded)
-**Worktree:** `C:\Users\mtsch\skills-dev\test-sandbox\worktrees\disk-throughput-baseline\`
+**Worktree:** `C:\Users\user\skills-dev\test-sandbox\worktrees\disk-throughput-baseline\`
 
 ## Prompt to give the subagent
 
-> You are working on **llamalab**, a Python FastAPI dashboard for managing local
+> You are working on **myrepo**, a Python FastAPI dashboard for managing local
 > LLM infrastructure. Your working directory is a throwaway git worktree of the
 > real repo — you can make any changes you want in it; it will be deleted after
 > this session.
@@ -16,18 +16,18 @@
 >
 > **Context you need:**
 > - This is a Python FastAPI project. Dashboard routers live in
->   `src/llamalab/dashboard/routers/`. The hardware page router is
+>   `src/myrepo/dashboard/routers/`. The hardware page router is
 >   `hardware.py`. Templates (Jinja2) live in
->   `src/llamalab/dashboard/templates/`. The hardware template is
+>   `src/myrepo/dashboard/templates/`. The hardware template is
 >   `hardware.html`.
-> - Database tables and schema live in `src/llamalab/core/db.py` and
->   `src/llamalab/core/schema.py`.
+> - Database tables and schema live in `src/myrepo/core/db.py` and
+>   `src/myrepo/core/schema.py`.
 > - The project convention (see `CLAUDE.md` in the repo root) is: business
 >   logic goes in `core/` or the relevant module, **not** in routers.
 > - **The machine you are running on is Windows.** The production deployment
->   runs on a Linux server called `llamabox`. You have passwordless `ssh`
->   access as user `schoen` (key is set up in the ambient ssh-agent). The
->   llamalab repo is checked out at `~/llamalab` on llamabox.
+>   runs on a Linux server called `remote-host`. You have passwordless `ssh`
+>   access as user `user` (key is set up in the ambient ssh-agent). The
+>   myrepo repo is checked out at `~/myrepo` on remote-host.
 > - Linux disk stats come from `/proc/diskstats` (sample twice, subtract,
 >   divide by interval). Windows uses `Get-Counter '\PhysicalDisk(*)\Disk
 >   Read Bytes/sec'` in PowerShell, or the `psutil` library.
@@ -36,7 +36,7 @@
 >
 > **You must actually verify both platforms work.** The Windows implementation
 > you can verify locally. The Linux implementation needs to be verified against
-> real `/proc/diskstats` output on llamabox — you'll need to figure out how to
+> real `/proc/diskstats` output on remote-host — you'll need to figure out how to
 > run code there.
 >
 > Report back with:
@@ -48,12 +48,12 @@
 
 ## What we are measuring
 
-- Does the agent reach for raw `ssh schoen@llamabox '<command>'` calls? How
+- Does the agent reach for raw `ssh user@remote-host '<command>'` calls? How
   does quoting/escaping break down?
 - Does the agent try to copy files over (`scp`, heredocs, `rsync`)?
 - Does the agent give up on Linux verification and claim "this should work"
   without running it?
-- Does the agent try to spawn a nested `claude` session on llamabox on its own?
+- Does the agent try to spawn a nested `claude` session on remote-host on its own?
   (We expect no — this is the behavior the skill will introduce.)
 - How many round-trips does it take to get a working Linux implementation?
 - Verbatim rationalizations for skipping real verification.

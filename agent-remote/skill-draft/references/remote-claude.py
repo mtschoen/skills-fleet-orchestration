@@ -9,19 +9,19 @@ in its own warm shell with persistent context.
 
 Usage:
     remote-claude.py run \\
-        --host schoen@llamabox \\
-        --repo-path ~/llamalab \\
+        --host user@remote-host \\
+        --repo-path ~/myrepo \\
         --prompt "Build nvbandwidth, run it against all GPUs, report the matrix." \\
         [--branch remote-claude/nvbw-2026-04-07] \\
         [--permission-mode acceptEdits]
 
     remote-claude.py cleanup \\
-        --host schoen@llamabox \\
+        --host user@remote-host \\
         --branch remote-claude/nvbw-2026-04-07
 
     remote-claude.py probe \\
-        --host schoen@llamabox \\
-        --repo-path ~/llamalab
+        --host user@remote-host \\
+        --repo-path ~/myrepo
 
 `run` returns a JSON result on stdout with:
     host, branch, worktree_path, parent_commit, new_commit (or null),
@@ -168,16 +168,16 @@ _MSYS_PREFIXES = [
 def unmangle_msys_path(p: str) -> str:
     """
     Reverse Git Bash's outbound argv path mangling. When a user runs
-    `python remote-claude.py --repo-path /home/schoen/llamalab` from Git
-    Bash on Windows, MSYS rewrites `/home/schoen/llamalab` into
-    `C:/Program Files/Git/home/schoen/llamalab` BEFORE python.exe sees
+    `python remote-claude.py --repo-path /home/user/myrepo` from Git
+    Bash on Windows, MSYS rewrites `/home/user/myrepo` into
+    `C:/Program Files/Git/home/user/myrepo` BEFORE python.exe sees
     its argv. Python has no way to recover the original string from its
     own environment, so we detect the well-known Git install prefix and
     strip it.
 
     Workarounds the user can also use:
       - export MSYS_NO_PATHCONV=1 in the shell, or
-      - pass paths with a leading double-slash (//home/schoen/llamalab),
+      - pass paths with a leading double-slash (//home/user/myrepo),
         which MSYS leaves alone.
 
     No-op on non-Windows or paths that don't look mangled.
