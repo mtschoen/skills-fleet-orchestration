@@ -13,6 +13,26 @@ Two halves planned:
   task]?" Uses Anthropic's `count_tokens` API + heuristics + the
   retrospective dataset as a reference. Design notes below.
 
+## Per-session cost graph
+
+Once `analyze-month.py` flags a session as a top spender, drill in with
+`scripts/plot-session.py` to see *where* the cost accrued. It produces
+a self-contained HTML page with a Chart.js mixed bar + line plot:
+per-turn cost as bars (left axis), cumulative cost as a line (right
+axis). Hover any bar for model, top tools, tokens, and timestamp.
+
+![Per-turn and cumulative cost trajectory for a single session](screenshot.png)
+
+```bash
+python scripts/plot-session.py <session-id-prefix> --open
+# or pass a full JSONL path; --x time switches the x-axis to wall clock;
+# --inline-js embeds Chart.js so the page works offline.
+```
+
+Output lands in `reports/session-<id-prefix>.html` (gitignored).
+Subagent costs are summarized in the page header but not overlaid on
+the timeline — that's a planned Phase 2.
+
 ## Files
 
 - `skill-draft/SKILL.md` — the retrospective skill (the working part).
