@@ -13,7 +13,7 @@ crossing the gap that `/cost` (current session only) and `ccusage` (no
 Usage:
     python analyze-month.py <projects_root> [<projects_root> ...]
         (--month 2026-04 | --start 2026-04-01 --end 2026-04-30)
-        [--label chonkers --label llamabox]
+        [--label hostA --label hostB]
         [--out <directory>]
         [--workers N]
 

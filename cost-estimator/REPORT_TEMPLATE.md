@@ -86,7 +86,7 @@ Source: `daily.csv` (or "DAILY TOTALS" section of summarize.py output).
 
 | Date | Sessions | Raw $ | Prorated $ | Subagent $ | Subagents | Machines |
 |---|---|---|---|---|---|---|
-| YYYY-MM-DD | N | $X | $Y | $Z | M | chonkers+llamabox |
+| YYYY-MM-DD | N | $X | $Y | $Z | M | hostA+hostB |
 
 Drop the prorated column when --paid was not supplied.
 
