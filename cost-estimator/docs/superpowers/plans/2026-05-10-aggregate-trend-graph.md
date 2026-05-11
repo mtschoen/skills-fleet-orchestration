@@ -918,7 +918,7 @@ git commit -m "plot-trend: HTML template, Chart.js config, stable label colors"
 **Files:**
 - Modify: `scripts/plot-trend.py`
 
-- [ ] **Step 1: Append `main()` and the `if __name__` guard**
+- [x] **Step 1: Append `main()` and the `if __name__` guard**
 
 Append to `scripts/plot-trend.py`:
 
@@ -1052,7 +1052,7 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 2: End-to-end smoke for `--month`**
+- [x] **Step 2: End-to-end smoke for `--month`**
 
 ```bash
 python scripts/plot-trend.py --month 2026-04 --open
@@ -1065,7 +1065,7 @@ Expected:
 - Hover tooltip shows label + dollar amount + "N sessions"
 - Meta row's total matches `summarize.py`'s headline for the same range
 
-- [ ] **Step 3: Smoke `--bucket week` and `--bucket month`**
+- [x] **Step 3: Smoke `--bucket week` and `--bucket month`**
 
 ```bash
 python scripts/plot-trend.py --month 2026-04 --bucket week --out reports/trend-april-week.html
@@ -1074,7 +1074,7 @@ python scripts/plot-trend.py --month 2026-04 --bucket month --out reports/trend-
 
 Expected: both succeed; week-bucketed chart has ~5 bars, month-bucketed has 1.
 
-- [ ] **Step 4: Smoke `--start`/`--end`**
+- [x] **Step 4: Smoke `--start`/`--end`**
 
 ```bash
 python scripts/plot-trend.py --start 2026-04-15 --end 2026-04-21 --open
@@ -1082,7 +1082,7 @@ python scripts/plot-trend.py --start 2026-04-15 --end 2026-04-21 --open
 
 Expected: 7 daily bars (auto-picked), correct range_label in title.
 
-- [ ] **Step 5: Smoke `--inline-js`**
+- [x] **Step 5: Smoke `--inline-js`**
 
 ```bash
 python scripts/plot-trend.py --month 2026-04 --inline-js --out /tmp/trend-offline.html
@@ -1090,7 +1090,7 @@ python scripts/plot-trend.py --month 2026-04 --inline-js --out /tmp/trend-offlin
 
 Open `/tmp/trend-offline.html` in a browser with network disabled. Expected: chart renders identically.
 
-- [ ] **Step 6: Smoke missing CSV**
+- [x] **Step 6: Smoke missing CSV**
 
 ```bash
 python scripts/plot-trend.py --month 2026-04 --csv /nonexistent/sessions.csv
@@ -1098,7 +1098,7 @@ python scripts/plot-trend.py --month 2026-04 --csv /nonexistent/sessions.csv
 
 Expected: exit 1, error message `error: sessions.csv not found at ...`.
 
-- [ ] **Step 7: Smoke empty range**
+- [x] **Step 7: Smoke empty range**
 
 ```bash
 python scripts/plot-trend.py --start 2099-01-01 --end 2099-01-31
@@ -1106,7 +1106,7 @@ python scripts/plot-trend.py --start 2099-01-01 --end 2099-01-31
 
 Expected: exit 1, error message includes `csv has N rows total, span <real-min>...<real-max>`.
 
-- [ ] **Step 8: Cross-validate against `summarize.py`**
+- [x] **Step 8: Cross-validate against `summarize.py`**
 
 ```bash
 python scripts/analyze-month.py --month 2026-04   # if not already run
@@ -1117,7 +1117,7 @@ grep -o 'Total: \$[0-9.]*' /tmp/april.html
 
 Expected: dollar amounts match. If they diverge, math is wrong — diagnose before declaring done.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add scripts/plot-trend.py

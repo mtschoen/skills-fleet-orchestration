@@ -17,12 +17,14 @@ Usage:
 
 from __future__ import annotations
 
+import argparse
 import csv
 import hashlib
 import json
 import sys
+import webbrowser
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -287,3 +289,141 @@ def render_html(*, range_label: str, bucket_granularity: str,
         per_label_colors_json=json.dumps(per_label_colors).replace("</", "<\\/"),
         cumulative_json=json.dumps(cumulative).replace("</", "<\\/"),
     )
+
+
+DEFAULT_CSV_PATH = Path(__file__).resolve().parent.parent / "reports" / "sessions.csv"
+DEFAULT_OUT_DIR = Path(__file__).resolve().parent.parent / "reports"
+
+
+def _month_bounds(month_string: str) -> tuple[datetime, datetime]:
+    """Return (start, inclusive_end) for a YYYY-MM string.
+
+    Inclusive end is one second before the start of the next month so
+    that callers passing the pair into read_sessions_in_range() with an
+    inclusive comparison match every timestamp in the month.
+    """
+    year, month = (int(part) for part in month_string.split("-"))
+    start = datetime(year, month, 1)
+    if month == 12:
+        end_exclusive = datetime(year + 1, 1, 1)
+    else:
+        end_exclusive = datetime(year, month + 1, 1)
+    return start, end_exclusive - timedelta(seconds=1)
+
+
+def _date_bounds(start_string: str, end_string: str) -> tuple[datetime, datetime]:
+    """Return (start, inclusive_end) for YYYY-MM-DD start + end strings.
+
+    End is bumped to 23:59:59 of the end day so the inclusive comparison
+    in read_sessions_in_range() picks up sessions that started late on
+    that day.
+    """
+    start = datetime.fromisoformat(start_string)
+    end = datetime.fromisoformat(end_string).replace(hour=23, minute=59, second=59)
+    return start, end
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Render aggregate cost trend as an HTML chart."
+    )
+    range_group = parser.add_mutually_exclusive_group(required=True)
+    range_group.add_argument("--month", help="YYYY-MM")
+    range_group.add_argument("--start", help="YYYY-MM-DD start (requires --end)")
+    parser.add_argument("--end", help="YYYY-MM-DD end (inclusive)")
+    parser.add_argument("--bucket", choices=("day", "week", "month"),
+                        default=None,
+                        help="Bucket size (default: auto from range length)")
+    parser.add_argument("--csv", default=str(DEFAULT_CSV_PATH),
+                        help=f"sessions.csv path (default: {DEFAULT_CSV_PATH})")
+    parser.add_argument("--inline-js", action="store_true")
+    parser.add_argument("--out", default=None,
+                        help=f"Output HTML path (default: {DEFAULT_OUT_DIR}/trend-<range>.html)")
+    parser.add_argument("--open", dest="open_browser", action="store_true")
+    arguments = parser.parse_args()
+
+    if arguments.month:
+        range_start, range_end = _month_bounds(arguments.month)
+        range_label = arguments.month
+        range_filename = arguments.month
+        span_days = (range_end - range_start).days + 1
+    else:
+        if not arguments.end:
+            parser.error("--start requires --end")
+        range_start, range_end = _date_bounds(arguments.start, arguments.end)
+        range_label = f"{arguments.start} → {arguments.end}"
+        range_filename = f"{arguments.start}_{arguments.end}"
+        span_days = (range_end - range_start).days + 1
+
+    granularity = arguments.bucket or auto_bucket(span_days)
+    print(f"Range: {range_start.isoformat()} -> {range_end.isoformat()}",
+          file=sys.stderr)
+    print(f"Bucket: {granularity} (span={span_days} days)", file=sys.stderr)
+
+    csv_path = Path(arguments.csv)
+    if not csv_path.is_file():
+        sys.exit(f"error: sessions.csv not found at {csv_path}. "
+                 f"Run analyze-month.py first, or pass --csv <path>.")
+
+    rows, skipped = read_sessions_in_range(csv_path, range_start, range_end)
+    if not rows:
+        # Probe overall span for a helpful error message
+        with csv_path.open(newline="", encoding="utf-8") as handle:
+            reader = csv.DictReader(handle)
+            total_rows = 0
+            min_ts = None
+            max_ts = None
+            for row in reader:
+                total_rows += 1
+                ts_string = row.get("first_timestamp") or ""
+                if not ts_string:
+                    continue
+                try:
+                    ts = datetime.fromisoformat(ts_string)
+                    if ts.tzinfo is not None:
+                        ts = ts.replace(tzinfo=None)
+                except ValueError:
+                    continue
+                if min_ts is None or ts < min_ts:
+                    min_ts = ts
+                if max_ts is None or ts > max_ts:
+                    max_ts = ts
+        span_message = (f"{min_ts.isoformat()}...{max_ts.isoformat()}"
+                        if min_ts else "(no parseable rows)")
+        sys.exit(f"error: no sessions in range {range_start.date()} -> "
+                 f"{range_end.date()} (csv has {total_rows} rows total, "
+                 f"span {span_message}).")
+
+    if skipped:
+        print(f"note: skipped {skipped} rows with unparseable first_timestamp",
+              file=sys.stderr)
+
+    buckets, per_label_costs, cumulative, per_label_counts = pivot_to_datasets(
+        rows, granularity,
+    )
+
+    html_text = render_html(
+        range_label=range_label,
+        bucket_granularity=granularity,
+        buckets=buckets,
+        per_label_costs=per_label_costs,
+        per_label_counts=per_label_counts,
+        cumulative=cumulative,
+        inline=arguments.inline_js,
+    )
+
+    if arguments.out:
+        output_path = Path(arguments.out)
+    else:
+        output_path = DEFAULT_OUT_DIR / f"trend-{range_filename}.html"
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(html_text, encoding="utf-8")
+    print(f"Wrote {output_path}", file=sys.stderr)
+
+    if arguments.open_browser:
+        webbrowser.open(output_path.resolve().as_uri())
+
+
+if __name__ == "__main__":
+    main()
