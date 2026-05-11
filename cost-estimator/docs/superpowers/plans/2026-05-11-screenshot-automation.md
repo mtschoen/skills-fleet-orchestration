@@ -754,7 +754,7 @@ EOF
 
 The handoff doc has served its purpose (spec + screenshots now exist). Per spec lifecycle.
 
-- [ ] **Step 1: Remove the handoff**
+- [x] **Step 1: Remove the handoff**
 
 ```bash
 cd C:/Users/mtsch/skills-dev/cost-estimator
@@ -772,7 +772,7 @@ EOF
 
 ### Task 12: Bump umbrella pointer + push
 
-- [ ] **Step 1: Bump pointer**
+- [x] **Step 1: Bump pointer**
 
 ```bash
 cd C:/Users/mtsch/skills-dev
@@ -781,7 +781,7 @@ git add cost-estimator
 git commit -m "bump: cost-estimator -> $COST_SHA (screenshot automation + README embeds)"
 ```
 
-- [ ] **Step 2: Push everything via push-all.bat**
+- [x] **Step 2: Push everything via push-all.bat**
 
 ```bash
 cmd.exe /c "cd /d C:\Users\mtsch\skills-dev && scripts\push-all.bat"
@@ -789,7 +789,7 @@ cmd.exe /c "cd /d C:\Users\mtsch\skills-dev && scripts\push-all.bat"
 
 Expected: cost-estimator pushed to Gitea + GitHub; umbrella pushed to Gitea + GitHub. Both report `up-to-date` or `pushed N commits` for each remote with no error summary at the end.
 
-- [ ] **Step 3: Final verification**
+- [x] **Step 3: Final verification**
 
 ```bash
 git -C C:/Users/mtsch/skills-dev status
