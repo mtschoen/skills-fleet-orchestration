@@ -490,7 +490,7 @@ def test_day_bucket():
 
 def test_month_bucket():
     pt = _load_module()
-    assert pt.bucket_key(datetime(2026, 4, 12), "month") == "2026-Apr"
+    assert pt.bucket_key(datetime(2026, 4, 12), "month") == "2026-04"
 
 
 def test_week_bucket_simple():
@@ -563,10 +563,15 @@ from datetime import datetime
 def bucket_key(timestamp: datetime, granularity: str) -> str:
     """Return a stable string key for grouping by day, week, or month.
 
+    Keys are designed to sort lexically into chronological order so
+    `sorted(bucket_set)` in the pivot step yields the right x-axis
+    ordering without parsing.
+
     - day:   "2026-04-12"
     - week:  "YYYY-Www" using ISO week numbering (year may differ from
              timestamp.year near Jan/Dec boundaries)
-    - month: "2026-Apr"
+    - month: "2026-04"  (locale-immune, lexically sortable; display
+             formatting like "Apr 2026" happens at render time)
     """
     if granularity == "day":
         return timestamp.strftime("%Y-%m-%d")
@@ -574,7 +579,7 @@ def bucket_key(timestamp: datetime, granularity: str) -> str:
         iso_year, iso_week, _ = timestamp.isocalendar()
         return f"{iso_year}-W{iso_week:02d}"
     if granularity == "month":
-        return timestamp.strftime("%Y-%b")
+        return timestamp.strftime("%Y-%m")
     raise ValueError(f"unknown granularity: {granularity!r}")
 
 
