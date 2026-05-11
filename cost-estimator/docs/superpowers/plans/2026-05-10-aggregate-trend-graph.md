@@ -609,7 +609,7 @@ git commit -m "plot-trend: bucket_key + auto_bucket with unit smoke"
 **Files:**
 - Modify: `scripts/plot-trend.py`
 
-- [ ] **Step 1: Add CSV-reading + filtering + pivot helpers**
+- [x] **Step 1: Add CSV-reading + filtering + pivot helpers**
 
 Append to `scripts/plot-trend.py`:
 
@@ -694,7 +694,7 @@ def pivot_to_datasets(rows: list[dict], granularity: str):
     return buckets_sorted, per_label_costs, cumulative, per_label_counts
 ```
 
-- [ ] **Step 2: Quick interactive smoke**
+- [x] **Step 2: Quick interactive smoke**
 
 ```bash
 cd scripts
@@ -727,11 +727,11 @@ if __name__ == "__main__":
 Run: `python scripts/plot-trend.py reports/sessions.csv 2026-04-01T00:00:00 2026-04-30T23:59:59`
 Expected: nonzero rows, sane bucket count, cumulative roughly matching `summarize.py`'s headline number for April.
 
-- [ ] **Step 3: Delete the temporary `__main__` block**
+- [x] **Step 3: Delete the temporary `__main__` block**
 
 We'll add the real CLI in Task 8.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add scripts/plot-trend.py
