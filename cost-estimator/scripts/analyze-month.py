@@ -208,6 +208,48 @@ def date_bounds(start_string, end_string):
     return start, end_exclusive
 
 
+def _resolve_roots(cli_roots, cli_labels, env_value):
+    """Resolve (label, path) pairs from CLI args + CLAUDE_COST_ROOTS env var.
+
+    Precedence:
+      1. CLI roots present  -> use those, ignore env var (print note if env set)
+      2. CLI roots empty + env set -> parse env, use those
+      3. Both empty -> default to [("local", ~/.claude/projects)]
+
+    Env var format: "label1:path1,label2:path2". The FIRST colon in
+    each pair is the delimiter; the rest of the entry is the path
+    (so Windows "C:/..." paths work).
+    """
+    if cli_roots:
+        if env_value:
+            print("note: CLAUDE_COST_ROOTS set but CLI roots given; using CLI",
+                  file=sys.stderr)
+        labels = list(cli_labels or [])
+        while len(labels) < len(cli_roots):
+            labels.append(f"root{len(labels)}")
+        return [(labels[i], Path(cli_roots[i])) for i in range(len(cli_roots))]
+
+    if env_value:
+        pairs = []
+        for entry in env_value.split(","):
+            entry = entry.strip()
+            if not entry:
+                continue
+            if ":" not in entry:
+                sys.exit(f"error: CLAUDE_COST_ROOTS malformed near '{entry}' "
+                         f"(expected 'label:path')")
+            label, _, path = entry.partition(":")
+            label = label.strip()
+            path = path.strip()
+            if not label or not path:
+                sys.exit(f"error: CLAUDE_COST_ROOTS malformed near '{entry}' "
+                         f"(expected 'label:path')")
+            pairs.append((label, Path(path)))
+        return pairs
+
+    return [("local", Path.home() / ".claude" / "projects")]
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("roots", nargs="+", help="One or more .claude/projects directories")

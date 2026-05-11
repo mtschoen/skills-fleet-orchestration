@@ -211,7 +211,7 @@ git commit -m "plot-session: route Chart.js script tags through chart_runtime"
 - Modify: `scripts/analyze-month.py`
 - Create: `scripts/test_resolve_roots.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 """Unit smoke for _resolve_roots() in analyze-month.py."""
@@ -292,12 +292,12 @@ if __name__ == "__main__":
     print("OK")
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `python scripts/test_resolve_roots.py`
 Expected: `AttributeError: module 'analyze_month' has no attribute '_resolve_roots'`
 
-- [ ] **Step 3: Implement `_resolve_roots()` in `analyze-month.py`**
+- [x] **Step 3: Implement `_resolve_roots()` in `analyze-month.py`**
 
 Add this function above `main()` in `scripts/analyze-month.py`:
 
@@ -344,12 +344,12 @@ def _resolve_roots(cli_roots, cli_labels, env_value):
     return [("local", Path.home() / ".claude" / "projects")]
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `python scripts/test_resolve_roots.py`
 Expected: `OK`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/analyze-month.py scripts/test_resolve_roots.py
