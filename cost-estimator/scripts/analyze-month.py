@@ -252,7 +252,7 @@ def _resolve_roots(cli_roots, cli_labels, env_value):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("roots", nargs="+", help="One or more .claude/projects directories")
+    parser.add_argument("roots", nargs="*", help="One or more .claude/projects directories")
     range_group = parser.add_mutually_exclusive_group(required=True)
     range_group.add_argument("--month", help="YYYY-MM (e.g. 2026-04)")
     range_group.add_argument("--start",
@@ -277,14 +277,19 @@ def main():
         range_start, range_end = date_bounds(arguments.start, arguments.end)
         range_label = f"{arguments.start}..{arguments.end}"
 
-    roots = [Path(root) for root in arguments.roots]
-    labels = list(arguments.label or [])
-    while len(labels) < len(roots):
-        labels.append(f"root{len(labels)}")
+    resolved_roots = _resolve_roots(
+        cli_roots=arguments.roots,
+        cli_labels=arguments.label,
+        env_value=os.environ.get("CLAUDE_COST_ROOTS"),
+    )
+    # Validate paths exist before kicking off workers
+    for label, path in resolved_roots:
+        if not path.exists():
+            sys.exit(f"error: root not found: {path} (label={label})")
 
     # Discover all files
     all_files = []
-    for root, label in zip(roots, labels):
+    for label, root in resolved_roots:
         files = discover_files(root)
         print(f"[{label}] {root}: {len(files)} jsonl files", file=sys.stderr)
         for path, parent, is_subagent in files:

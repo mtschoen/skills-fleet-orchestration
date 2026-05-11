@@ -361,7 +361,7 @@ git commit -m "analyze-month: add _resolve_roots() with CLAUDE_COST_ROOTS suppor
 **Files:**
 - Modify: `scripts/analyze-month.py:218-249` (the `roots = [...]` block and the `for root, label in zip(roots, labels)` loop)
 
-- [ ] **Step 1: Replace the existing root-resolution block**
+- [x] **Step 1: Replace the existing root-resolution block**
 
 In `analyze-month.py`'s `main()`, replace lines 238–241 (`roots = [Path(...)]` and the labels-padding loop) with:
 
@@ -394,7 +394,7 @@ Hoist the `import os` to the top of the file (it's already used elsewhere — ch
 
 Also: the `roots` argparse positional must now accept zero args. Change `parser.add_argument("roots", nargs="+")` (or whatever the current spec is) to `nargs="*"` so an env-var-only invocation parses cleanly. Verify current syntax by reading `argparse` setup near line 210.
 
-- [ ] **Step 2: Smoke test with env var unset**
+- [x] **Step 2: Smoke test with env var unset**
 
 ```bash
 unset CLAUDE_COST_ROOTS    # PowerShell: Remove-Item Env:CLAUDE_COST_ROOTS
@@ -403,7 +403,7 @@ python scripts/analyze-month.py --month 2026-04
 
 Expected: `[local] <home>/.claude/projects: N jsonl files`, runs to completion, writes `reports/sessions.csv`.
 
-- [ ] **Step 3: Smoke test with env var set**
+- [x] **Step 3: Smoke test with env var set**
 
 ```bash
 export CLAUDE_COST_ROOTS="local:$HOME/.claude/projects"
@@ -413,7 +413,7 @@ python scripts/analyze-month.py --month 2026-04
 
 Expected: `[local] <home>/.claude/projects: N jsonl files` (matches step 2 output).
 
-- [ ] **Step 4: Smoke test malformed env var**
+- [x] **Step 4: Smoke test malformed env var**
 
 ```bash
 export CLAUDE_COST_ROOTS="no_colon"
@@ -422,7 +422,7 @@ python scripts/analyze-month.py --month 2026-04
 
 Expected: exit code 1, stderr contains `error: CLAUDE_COST_ROOTS malformed near 'no_colon'`.
 
-- [ ] **Step 5: Smoke test missing path**
+- [x] **Step 5: Smoke test missing path**
 
 ```bash
 export CLAUDE_COST_ROOTS="ghost:/nonexistent/path"
@@ -431,7 +431,7 @@ python scripts/analyze-month.py --month 2026-04
 
 Expected: exit code 1, stderr contains `error: root not found: /nonexistent/path (label=ghost)`.
 
-- [ ] **Step 6: Smoke test CLI overrides env**
+- [x] **Step 6: Smoke test CLI overrides env**
 
 ```bash
 export CLAUDE_COST_ROOTS="ghost:/nonexistent/path"
@@ -440,7 +440,7 @@ python scripts/analyze-month.py "$HOME/.claude/projects" --label local --month 2
 
 Expected: prints `note: CLAUDE_COST_ROOTS set but CLI roots given; using CLI`, then runs successfully against the home path (ignoring the bad env entry).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add scripts/analyze-month.py
