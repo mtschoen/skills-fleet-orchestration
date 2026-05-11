@@ -43,7 +43,7 @@ Watch-outs (from spec, repeated here so they're in scope during each phase):
 **Files:**
 - Create: `cost-estimator/scripts/capture-screenshot.py`
 
-- [ ] **Step 1: Write the file**
+- [x] **Step 1: Write the file**
 
 ```python
 #!/usr/bin/env python3
@@ -145,7 +145,7 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 2: Render a smoke HTML against real sessions.csv**
+- [x] **Step 2: Render a smoke HTML against real sessions.csv**
 
 (We don't have the fixture yet — use the existing real data for the smoke.)
 
@@ -156,7 +156,7 @@ python scripts/plot-trend.py --month 2026-04 --inline-js --out reports/_smoke.ht
 
 Expected stderr: `Range: 2026-04-01 -> ...` and bucket info. `reports/_smoke.html` should be created (~150KB with inline Chart.js).
 
-- [ ] **Step 3: Smoke capture-screenshot on the produced HTML**
+- [x] **Step 3: Smoke capture-screenshot on the produced HTML**
 
 ```bash
 python scripts/capture-screenshot.py reports/_smoke.html /tmp/smoke.png
@@ -164,7 +164,7 @@ python scripts/capture-screenshot.py reports/_smoke.html /tmp/smoke.png
 
 Expected stdout: `wrote /tmp/smoke.png (NNNNN bytes)`. No stderr noise.
 
-- [ ] **Step 4: Verify PNG dimensions**
+- [x] **Step 4: Verify PNG dimensions**
 
 ```bash
 python -c "from PIL import Image; im=Image.open('/tmp/smoke.png'); print(im.size, im.mode)"
@@ -172,7 +172,7 @@ python -c "from PIL import Image; im=Image.open('/tmp/smoke.png'); print(im.size
 
 Expected: `(1760, 1440) RGB` (or RGBA — both fine).
 
-- [ ] **Step 5: Visually inspect the PNG**
+- [x] **Step 5: Visually inspect the PNG**
 
 Open `/tmp/smoke.png` in an image viewer. Confirm:
 - Bars are visible (NOT blank canvas — that's the timing-budget failure mode; bump `--budget-ms 10000` if so)
@@ -181,13 +181,13 @@ Open `/tmp/smoke.png` in an image viewer. Confirm:
 
 If blank: re-run Step 3 with `--budget-ms 10000`. Document the working value.
 
-- [ ] **Step 6: Clean up smoke artifacts**
+- [x] **Step 6: Clean up smoke artifacts**
 
 ```bash
 rm reports/_smoke.html /tmp/smoke.png
 ```
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 cd C:/Users/mtsch/skills-dev/cost-estimator
