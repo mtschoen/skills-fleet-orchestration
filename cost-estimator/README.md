@@ -45,7 +45,7 @@ python scripts/plot-trend.py --month 2026-04 --open
 Stacked bars show per-machine cost in each bucket (day / week / month,
 auto-picked from range length or set with `--bucket`). The right-axis
 line is the cumulative total. Multi-machine setups can pre-set
-`CLAUDE_COST_ROOTS="chonkers:C:/Users/you/.claude/projects,llamabox:Y:/.claude/projects"`
+`CLAUDE_COST_ROOTS="host-a:C:/Users/you/.claude/projects,host-b:Y:/.claude/projects"`
 so `analyze-month.py` picks up every root without repeating CLI args.
 
 ![Aggregate cost trend across sessions](screenshot-trend.png)

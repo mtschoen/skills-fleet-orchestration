@@ -232,7 +232,7 @@ Write `/tmp/gen_demo_fixture.py`:
 """One-off generator for tests/fixtures/sessions-demo.csv.
 
 Seeded random; output is deterministic. Covers Feb + March 2026 across
-two synthetic hosts, with chonkers carrying the bulk of spend.
+two synthetic hosts, with host-a carrying the bulk of spend.
 """
 import csv
 import random
@@ -256,8 +256,8 @@ EMPTY_COLS = [c for c in HEADER if c not in {
 
 HOSTS = [
     # (label, sessions/day distribution, cost-scale multiplier)
-    ("chonkers", [0.20, 0.45, 0.25, 0.10], 1.5),
-    ("llamabox", [0.55, 0.35, 0.10, 0.00], 0.7),
+    ("host-a", [0.20, 0.45, 0.25, 0.10], 1.5),
+    ("host-b", [0.55, 0.35, 0.10, 0.00], 0.7),
 ]
 
 day_start = datetime(2026, 2, 1, 12, 0, 0, tzinfo=timezone.utc)
@@ -351,7 +351,7 @@ git commit -m "$(cat <<'EOF'
 fixtures: synthetic sessions data for demo screenshots
 
 Seeded-random hand-curated dataset covering Feb + March 2026 across
-two synthetic hosts (chonkers/llamabox). Drives plot-trend and
+two synthetic hosts (host-a/host-b). Drives plot-trend and
 plot-compare for README screenshot regeneration without snapshotting
 real spend.
 
@@ -444,7 +444,7 @@ Expected: both files >50KB, both 1760×1440.
 - [x] **Step 5: Visually inspect both PNGs**
 
 Open in an image viewer. Confirm:
-- `screenshot-trend.png` shows daily bars for March 2026 with chonkers/llamabox stack and cumulative line
+- `screenshot-trend.png` shows daily bars for March 2026 with host-a/host-b stack and cumulative line
 - `screenshot-compare.png` shows March vs February grouped bars + twin cumulative lines
 
 If either is blank canvas: bump budget. Edit `scripts/regen-screenshots.sh` to pass `--budget-ms 10000` to each `capture-screenshot.py` call.
@@ -565,7 +565,7 @@ In `cost-estimator/README.md`, after the existing block:
 Stacked bars show per-machine cost in each bucket (day / week / month,
 auto-picked from range length or set with `--bucket`). The right-axis
 line is the cumulative total. Multi-machine setups can pre-set
-`CLAUDE_COST_ROOTS="chonkers:C:/Users/you/.claude/projects,llamabox:Y:/.claude/projects"`
+`CLAUDE_COST_ROOTS="host-a:C:/Users/you/.claude/projects,host-b:Y:/.claude/projects"`
 so `analyze-month.py` picks up every root without repeating CLI args.
 ```
 

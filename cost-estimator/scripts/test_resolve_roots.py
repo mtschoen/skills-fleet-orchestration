@@ -24,7 +24,7 @@ def test_cli_roots_override_env(monkeypatch_env=None):
     pairs = am._resolve_roots(
         cli_roots=["/some/cli/path"],
         cli_labels=["host-a"],
-        env_value="chonkers:/x,llamabox:/y",
+        env_value="host-a:/x,host-b:/y",
     )
     assert pairs == [("host-a", Path("/some/cli/path"))]
 
@@ -34,9 +34,9 @@ def test_env_used_when_no_cli():
     pairs = am._resolve_roots(
         cli_roots=[],
         cli_labels=[],
-        env_value="chonkers:/x,llamabox:/y",
+        env_value="host-a:/x,host-b:/y",
     )
-    assert pairs == [("chonkers", Path("/x")), ("llamabox", Path("/y"))]
+    assert pairs == [("host-a", Path("/x")), ("host-b", Path("/y"))]
 
 
 def test_default_when_no_cli_no_env():
@@ -52,9 +52,9 @@ def test_windows_drive_letter_in_env_path():
     am = _load_module()
     pairs = am._resolve_roots(
         cli_roots=[], cli_labels=[],
-        env_value="chonkers:C:/Users/mtsch/.claude/projects",
+        env_value="host-a:C:/Users/mtsch/.claude/projects",
     )
-    assert pairs == [("chonkers", Path("C:/Users/mtsch/.claude/projects"))]
+    assert pairs == [("host-a", Path("C:/Users/mtsch/.claude/projects"))]
 
 
 def test_env_malformed_raises():
