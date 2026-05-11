@@ -269,7 +269,10 @@ def main():
     arguments = parser.parse_args()
 
     if arguments.month:
-        range_start, range_end = month_bounds(arguments.month)
+        try:
+            range_start, range_end = month_bounds(arguments.month)
+        except ValueError:
+            parser.error(f"--month must be YYYY-MM, got {arguments.month!r}")
         range_label = arguments.month
     else:
         if not arguments.end:

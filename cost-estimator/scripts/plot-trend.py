@@ -343,7 +343,10 @@ def main():
     arguments = parser.parse_args()
 
     if arguments.month:
-        range_start, range_end = _month_bounds(arguments.month)
+        try:
+            range_start, range_end = _month_bounds(arguments.month)
+        except ValueError:
+            parser.error(f"--month must be YYYY-MM, got {arguments.month!r}")
         range_label = arguments.month
         range_filename = arguments.month
         span_days = (range_end - range_start).days + 1
