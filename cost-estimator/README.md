@@ -33,6 +33,21 @@ Output lands in `reports/session-<id-prefix>.html` (gitignored).
 Subagent costs are summarized in the page header but not overlaid on
 the timeline — that's a planned Phase 2.
 
+## Trend across sessions
+
+After running `analyze-month.py` for the range you care about, render
+the aggregate trend:
+
+```bash
+python scripts/plot-trend.py --month 2026-04 --open
+```
+
+Stacked bars show per-machine cost in each bucket (day / week / month,
+auto-picked from range length or set with `--bucket`). The right-axis
+line is the cumulative total. Multi-machine setups can pre-set
+`CLAUDE_COST_ROOTS="chonkers:C:/Users/you/.claude/projects,llamabox:Y:/.claude/projects"`
+so `analyze-month.py` picks up every root without repeating CLI args.
+
 ## Files
 
 - `skill-draft/SKILL.md` — the retrospective skill (the working part).

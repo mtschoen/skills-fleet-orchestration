@@ -1195,7 +1195,7 @@ git commit -m "skill: document plot-trend.py and CLAUDE_COST_ROOTS"
 **Files:**
 - Modify: `README.md`
 
-- [ ] **Step 1: Add a paragraph on the trend chart**
+- [x] **Step 1: Add a paragraph on the trend chart**
 
 After the existing `plot-session.py` section, append:
 
@@ -1218,7 +1218,7 @@ so `analyze-month.py` picks up every root without repeating CLI args.
 
 (Skip the screenshot for now — add it after the first real run as a follow-up.)
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add README.md
