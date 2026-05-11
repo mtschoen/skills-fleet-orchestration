@@ -369,7 +369,7 @@ EOF
 **Files:**
 - Create: `cost-estimator/scripts/regen-screenshots.sh`
 
-- [ ] **Step 1: Write the file**
+- [x] **Step 1: Write the file**
 
 ```bash
 #!/usr/bin/env bash
@@ -417,13 +417,13 @@ rm -f reports/_trend-demo.html reports/_compare-demo.html
 echo "done. screenshots at $REPO_ROOT/screenshot-{trend,compare}.png"
 ```
 
-- [ ] **Step 2: Make executable**
+- [x] **Step 2: Make executable**
 
 ```bash
 chmod +x C:/Users/mtsch/skills-dev/cost-estimator/scripts/regen-screenshots.sh
 ```
 
-- [ ] **Step 3: Run it**
+- [x] **Step 3: Run it**
 
 ```bash
 cd C:/Users/mtsch/skills-dev/cost-estimator
@@ -432,7 +432,7 @@ bash scripts/regen-screenshots.sh
 
 Expected stdout (4 steps); both PNGs should be created at repo root.
 
-- [ ] **Step 4: Verify outputs**
+- [x] **Step 4: Verify outputs**
 
 ```bash
 ls -la screenshot-trend.png screenshot-compare.png
@@ -441,7 +441,7 @@ python -c "from PIL import Image; [print(p, Image.open(p).size) for p in ('scree
 
 Expected: both files >50KB, both 1760×1440.
 
-- [ ] **Step 5: Visually inspect both PNGs**
+- [x] **Step 5: Visually inspect both PNGs**
 
 Open in an image viewer. Confirm:
 - `screenshot-trend.png` shows daily bars for March 2026 with chonkers/llamabox stack and cumulative line
@@ -456,7 +456,7 @@ If either is blank canvas: bump budget. Edit `scripts/regen-screenshots.sh` to p
 
 cmd.exe's `:label` parser requires CRLF line endings on Windows. The Write tool emits LF on Windows — see `feedback_write_tool_lf_windows.md`. Plan compensates by explicitly converting after write.
 
-- [ ] **Step 1: Write the file (LF — will be converted in next step)**
+- [x] **Step 1: Write the file (LF — will be converted in next step)**
 
 ```batch
 @echo off
@@ -503,13 +503,13 @@ echo regen-screenshots.bat failed (errorlevel %errorlevel%) 1>&2
 exit /b 1
 ```
 
-- [ ] **Step 2: Convert LF -> CRLF**
+- [x] **Step 2: Convert LF -> CRLF**
 
 ```bash
 sed -i 's/$/\r/' C:/Users/mtsch/skills-dev/cost-estimator/scripts/regen-screenshots.bat
 ```
 
-- [ ] **Step 3: Run it from Windows cmd**
+- [x] **Step 3: Run it from Windows cmd**
 
 ```bash
 cmd.exe /c "cd /d C:\Users\mtsch\skills-dev\cost-estimator && scripts\regen-screenshots.bat"
@@ -517,7 +517,7 @@ cmd.exe /c "cd /d C:\Users\mtsch\skills-dev\cost-estimator && scripts\regen-scre
 
 Expected: 4-step output, both PNGs regenerated. (Should overwrite the PNGs from Task 3 with bit-identical content since input is the same.)
 
-- [ ] **Step 4: Verify both PNGs still 1760×1440 + visible bars**
+- [x] **Step 4: Verify both PNGs still 1760×1440 + visible bars**
 
 ```bash
 python -c "from PIL import Image; [print(p, Image.open(p).size) for p in ('C:/Users/mtsch/skills-dev/cost-estimator/screenshot-trend.png', 'C:/Users/mtsch/skills-dev/cost-estimator/screenshot-compare.png')]"
@@ -527,7 +527,7 @@ Expected: `(1760, 1440)` for each.
 
 ### Task 5: Commit screenshots + orchestrators
 
-- [ ] **Step 1: Commit**
+- [x] **Step 1: Commit**
 
 ```bash
 cd C:/Users/mtsch/skills-dev/cost-estimator
