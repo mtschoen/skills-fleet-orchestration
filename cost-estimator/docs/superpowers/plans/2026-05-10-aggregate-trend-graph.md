@@ -457,7 +457,7 @@ git commit -m "analyze-month: use _resolve_roots() for CLI+env-var root resoluti
 - Create: `scripts/plot-trend.py` (start with just the bucket function + imports)
 - Create: `scripts/test_buckets.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `scripts/test_buckets.py`:
 
@@ -528,12 +528,12 @@ if __name__ == "__main__":
     print("OK")
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `python scripts/test_buckets.py`
 Expected: `FileNotFoundError` or `ModuleNotFoundError` (plot-trend.py doesn't exist yet).
 
-- [ ] **Step 3: Implement `bucket_key()` and `auto_bucket()` in a new `plot-trend.py`**
+- [x] **Step 3: Implement `bucket_key()` and `auto_bucket()` in a new `plot-trend.py`**
 
 Create `scripts/plot-trend.py`:
 
@@ -587,12 +587,12 @@ def auto_bucket(days: int) -> str:
     return "month"
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `python scripts/test_buckets.py`
 Expected: `OK`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/plot-trend.py scripts/test_buckets.py
