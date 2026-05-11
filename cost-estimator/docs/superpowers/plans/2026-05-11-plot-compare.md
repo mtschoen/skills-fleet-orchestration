@@ -16,260 +16,6 @@
 
 ---
 
-## Phase 1: Extract `trend_data.py`
-
-Pure refactor. Move the shared helpers out of `plot-trend.py` into a new importable module so `plot-compare.py` doesn't have to either duplicate them or do the importlib-spec dance. Side benefit: `test_buckets.py` drops its importlib hack.
-
-### Task 1: Extract bucket/range/CSV helpers into `scripts/trend_data.py`
-
-**Files:**
-- Create: `cost-estimator/scripts/trend_data.py`
-- Modify: `cost-estimator/scripts/plot-trend.py` (remove the 5 extracted functions; add `from trend_data import …`; rename `_month_bounds`→`month_bounds`, `_date_bounds`→`date_bounds` at the two call sites in `main()`)
-- Modify: `cost-estimator/scripts/test_buckets.py` (drop importlib hack; `from trend_data import bucket_key, auto_bucket`)
-
-- [x] **Step 1: Create `scripts/trend_data.py` with the 5 extracted functions**
-
-Lift verbatim from `plot-trend.py` (lines 34-103 and 298-323 in the current file). Apply the public-name renames (drop the leading underscore on `month_bounds` and `date_bounds`).
-
-```python
-"""Shared bucket math, CSV reading, and range parsing for cost-estimator
-trend plotters.
-
-Holds the bits that would literally duplicate between plot-trend.py
-(stacked-by-label single-range trend) and plot-compare.py (period-over-
-period overlay). Anything that only one plotter needs (label palette,
-HTML template, render function) stays in that plotter's own file.
-"""
-
-from __future__ import annotations
-
-import csv
-from datetime import datetime, timedelta
-from pathlib import Path
-
-
-def bucket_key(timestamp: datetime, granularity: str) -> str:
-    """Return a stable string key for grouping by day, week, or month.
-
-    Keys are designed to sort lexically into chronological order so
-    `sorted(bucket_set)` in the pivot step yields the right x-axis
-    ordering without parsing.
-
-    - day:   "2026-04-12"
-    - week:  "YYYY-Www" using ISO week numbering (year may differ from
-             timestamp.year near Jan/Dec boundaries)
-    - month: "2026-04"  (locale-immune, lexically sortable; display
-             formatting like "Apr 2026" happens at render time)
-    """
-    if granularity == "day":
-        return timestamp.strftime("%Y-%m-%d")
-    if granularity == "week":
-        iso_year, iso_week, _ = timestamp.isocalendar()
-        return f"{iso_year}-W{iso_week:02d}"
-    if granularity == "month":
-        return timestamp.strftime("%Y-%m")
-    raise ValueError(f"unknown granularity: {granularity!r}")
-
-
-def auto_bucket(days: int) -> str:
-    """Pick a bucket granularity from a date-range span."""
-    if days <= 14:
-        return "day"
-    if days <= 90:
-        return "week"
-    return "month"
-
-
-def read_sessions_in_range(csv_path: Path, range_start: datetime,
-                           range_end: datetime):
-    """Read rows of sessions.csv whose first_timestamp falls in
-    [range_start, range_end] (inclusive).
-
-    Boundaries should be NAIVE datetimes (no tzinfo). The CSV stores
-    tz-aware timestamps; this function strips tzinfo on parse so the
-    range comparison works without the caller needing to know.
-
-    Returns (rows, skipped) where:
-      - rows: list of dicts with two extra fields per row:
-          "_parsed_timestamp" (datetime, naive) and "_cost_usd_float" (float)
-      - skipped: count of rows with missing/unparseable first_timestamp
-    """
-    rows = []
-    skipped = 0
-    with csv_path.open(newline="", encoding="utf-8") as handle:
-        reader = csv.DictReader(handle)
-        for row in reader:
-            timestamp_string = row.get("first_timestamp") or ""
-            if not timestamp_string:
-                skipped += 1
-                continue
-            try:
-                timestamp = datetime.fromisoformat(timestamp_string)
-            except ValueError:
-                skipped += 1
-                continue
-            if timestamp.tzinfo is not None:
-                timestamp = timestamp.replace(tzinfo=None)
-            if range_start <= timestamp <= range_end:
-                row["_parsed_timestamp"] = timestamp
-                row["_cost_usd_float"] = float(row.get("cost_usd") or 0)
-                rows.append(row)
-    return rows, skipped
-
-
-def month_bounds(month_string: str) -> tuple[datetime, datetime]:
-    """Return (start, inclusive_end) for a YYYY-MM string.
-
-    Inclusive end is one second before the start of the next month so
-    that callers passing the pair into read_sessions_in_range() with an
-    inclusive comparison match every timestamp in the month.
-    """
-    year, month = (int(part) for part in month_string.split("-"))
-    start = datetime(year, month, 1)
-    if month == 12:
-        end_exclusive = datetime(year + 1, 1, 1)
-    else:
-        end_exclusive = datetime(year, month + 1, 1)
-    return start, end_exclusive - timedelta(seconds=1)
-
-
-def date_bounds(start_string: str, end_string: str) -> tuple[datetime, datetime]:
-    """Return (start, inclusive_end) for YYYY-MM-DD start + end strings.
-
-    End is bumped to 23:59:59 of the end day so the inclusive comparison
-    in read_sessions_in_range() picks up sessions that started late on
-    that day.
-    """
-    start = datetime.fromisoformat(start_string)
-    end = datetime.fromisoformat(end_string).replace(hour=23, minute=59, second=59)
-    return start, end
-```
-
-- [x] **Step 2: Capture pre-edit baseline HTML from `plot-trend.py`**
-
-```bash
-cd C:/Users/mtsch/skills-dev/cost-estimator
-python scripts/plot-trend.py --month 2026-04 --out /tmp/trend-before-month.html
-python scripts/plot-trend.py --start 2026-04-15 --end 2026-04-21 --out /tmp/trend-before-range.html
-```
-
-Both should produce HTML files; note totals from stderr (e.g. `Wrote …`). Sessions.csv must already cover April 2026 for these to work — if not, run `python scripts/analyze-month.py C:/Users/mtsch/.claude/projects --month 2026-04` first.
-
-- [x] **Step 3: Edit `plot-trend.py` — drop the 5 extracted functions, add import, rename call sites**
-
-In `scripts/plot-trend.py`:
-
-1. **Drop** the function definitions for `bucket_key`, `auto_bucket`, `read_sessions_in_range`, `_month_bounds`, `_date_bounds` (lines 34-63, 66-103, 298-323 in the pre-edit file).
-2. **Add** import after the existing `from chart_runtime import …` line:
-
-```python
-from trend_data import (  # noqa: E402
-    bucket_key, auto_bucket, read_sessions_in_range,
-    month_bounds, date_bounds,
-)
-```
-
-3. **Rename call sites** in `main()`:
-   - `_month_bounds(arguments.month)` → `month_bounds(arguments.month)`
-   - `_date_bounds(arguments.start, arguments.end)` → `date_bounds(arguments.start, arguments.end)`
-
-Imports no longer needed in `plot-trend.py`: `csv` and `timedelta` may still be needed inside the empty-range probe; verify by running the script. If `csv` is unused at module scope, drop the `import csv` line.
-
-- [x] **Step 4: Update `scripts/test_buckets.py` to import directly**
-
-```python
-"""Unit smoke for bucket helpers in trend_data.py."""
-
-from __future__ import annotations
-
-import sys
-from datetime import datetime
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent))
-from trend_data import bucket_key, auto_bucket  # noqa: E402
-
-
-def test_day_bucket():
-    assert bucket_key(datetime(2026, 4, 12), "day") == "2026-04-12"
-
-
-def test_month_bucket():
-    assert bucket_key(datetime(2026, 4, 12), "month") == "2026-04"
-
-
-def test_week_bucket_simple():
-    # 2026-04-13 is a Monday, ISO 2026-W16
-    assert bucket_key(datetime(2026, 4, 13), "week") == "2026-W16"
-
-
-def test_week_bucket_iso_year_boundary():
-    """2024-12-30 (Monday) belongs to ISO 2025-W01."""
-    assert bucket_key(datetime(2024, 12, 30), "week") == "2025-W01"
-
-
-def test_auto_bucket_picker():
-    assert auto_bucket(days=7) == "day"
-    assert auto_bucket(days=14) == "day"
-    assert auto_bucket(days=15) == "week"
-    assert auto_bucket(days=90) == "week"
-    assert auto_bucket(days=91) == "month"
-
-
-if __name__ == "__main__":
-    test_day_bucket()
-    test_month_bucket()
-    test_week_bucket_simple()
-    test_week_bucket_iso_year_boundary()
-    test_auto_bucket_picker()
-    print("OK")
-```
-
-- [x] **Step 5: Capture post-edit HTML + diff**
-
-```bash
-cd C:/Users/mtsch/skills-dev/cost-estimator
-python scripts/plot-trend.py --month 2026-04 --out /tmp/trend-after-month.html
-python scripts/plot-trend.py --start 2026-04-15 --end 2026-04-21 --out /tmp/trend-after-range.html
-diff /tmp/trend-before-month.html /tmp/trend-after-month.html
-diff /tmp/trend-before-range.html /tmp/trend-after-range.html
-```
-
-Expected: both diffs empty (no output). If either has output, the refactor isn't byte-identical — investigate before committing.
-
-- [x] **Step 6: Run tests**
-
-```bash
-cd C:/Users/mtsch/skills-dev/cost-estimator
-bash scripts/run-tests.sh
-```
-
-Expected: prints `OK` twice (one per test file), then `All tests passed.`
-
-- [x] **Step 7: Commit**
-
-```bash
-cd C:/Users/mtsch/skills-dev/cost-estimator
-git add scripts/trend_data.py scripts/plot-trend.py scripts/test_buckets.py
-git commit -m "trend_data: extract bucket/range/csv helpers from plot-trend
-
-Pure refactor in preparation for plot-compare.py. Moves bucket_key,
-auto_bucket, read_sessions_in_range, _month_bounds (renamed to
-month_bounds), and _date_bounds (renamed to date_bounds) into a new
-scripts/trend_data.py module so plot-trend.py and the upcoming
-plot-compare.py share the same logic without one importing the other
-via importlib-spec hacks (plot-trend.py has a hyphen and can't be
-imported normally). test_buckets.py loses its importlib hack as a
-side benefit.
-
-Regression-verified byte-identical HTML output from plot-trend.py for
-both --month and --start/--end invocations.
-
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
-```
-
----
-
 ## Phase 2: New helpers in `trend_data.py`
 
 TDD: failing test → minimal implementation → green → commit. Two helpers: `parse_last` (CLI shorthand for "last Nh/Nd") and `prior_window_for` (compute the same-length prior window for any of the three CLI modes).
@@ -280,7 +26,7 @@ TDD: failing test → minimal implementation → green → commit. Two helpers: 
 - Modify: `cost-estimator/scripts/trend_data.py` (add `parse_last` after `auto_bucket`)
 - Modify: `cost-estimator/scripts/test_buckets.py` (add 5 tests)
 
-- [ ] **Step 1: Add failing tests to `test_buckets.py`**
+- [x] **Step 1: Add failing tests to `test_buckets.py`**
 
 Append after `test_auto_bucket_picker` (and before the `if __name__ == "__main__":` block):
 
@@ -341,7 +87,7 @@ if __name__ == "__main__":
     print("OK")
 ```
 
-- [ ] **Step 2: Run tests — expect failure**
+- [x] **Step 2: Run tests — expect failure**
 
 ```bash
 cd C:/Users/mtsch/skills-dev/cost-estimator
@@ -350,7 +96,7 @@ python scripts/test_buckets.py
 
 Expected: `ImportError: cannot import name 'parse_last' from 'trend_data'` (or `AttributeError` depending on import shape).
 
-- [ ] **Step 3: Implement `parse_last` in `trend_data.py`**
+- [x] **Step 3: Implement `parse_last` in `trend_data.py`**
 
 Append after `auto_bucket`:
 
@@ -376,7 +122,7 @@ def parse_last(value: str) -> timedelta:
     raise ValueError(f"--last suffix must be 'h' or 'd', got {value!r}")
 ```
 
-- [ ] **Step 4: Run tests — expect green**
+- [x] **Step 4: Run tests — expect green**
 
 ```bash
 cd C:/Users/mtsch/skills-dev/cost-estimator
@@ -385,7 +131,7 @@ bash scripts/run-tests.sh
 
 Expected: `OK` from both test files, `All tests passed.`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/trend_data.py scripts/test_buckets.py

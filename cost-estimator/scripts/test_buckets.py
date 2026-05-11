@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from trend_data import bucket_key, auto_bucket  # noqa: E402
+from trend_data import bucket_key, auto_bucket, parse_last  # noqa: E402
 
 
 def test_day_bucket():
@@ -41,10 +41,47 @@ def test_auto_bucket_picker():
     assert auto_bucket(days=91) == "month"
 
 
+def test_parse_last_hours():
+    assert parse_last("168h") == timedelta(hours=168)
+
+
+def test_parse_last_days():
+    assert parse_last("7d") == timedelta(days=7)
+
+
+def test_parse_last_rejects_bad_suffix():
+    try:
+        parse_last("4w")
+    except ValueError:
+        return
+    raise AssertionError("expected ValueError for '4w'")
+
+
+def test_parse_last_rejects_non_digit():
+    try:
+        parse_last("abc168h")
+    except ValueError:
+        return
+    raise AssertionError("expected ValueError for 'abc168h'")
+
+
+def test_parse_last_rejects_zero():
+    try:
+        parse_last("0d")
+    except ValueError:
+        return
+    raise AssertionError("expected ValueError for '0d'")
+
+
 if __name__ == "__main__":
     test_day_bucket()
     test_month_bucket()
     test_week_bucket_simple()
     test_week_bucket_iso_year_boundary()
     test_auto_bucket_picker()
+    test_parse_last_hours()
+    test_parse_last_days()
+    test_parse_last_rejects_bad_suffix()
+    test_parse_last_rejects_non_digit()
+    test_parse_last_rejects_zero()
     print("OK")

@@ -46,6 +46,27 @@ def auto_bucket(days: int) -> str:
     return "month"
 
 
+def parse_last(value: str) -> timedelta:
+    """Parse '168h' or '7d' shorthand into a timedelta.
+
+    Accepts only hours and days for v1 (weeks / months deferred — calendar
+    ambiguity for 'mo'). Raises ValueError on malformed input.
+    """
+    if not value or len(value) < 2:
+        raise ValueError(f"--last must be <digits>(h|d), got {value!r}")
+    quantity_part, suffix = value[:-1], value[-1]
+    if not quantity_part.isdigit():
+        raise ValueError(f"--last must be <digits>(h|d), got {value!r}")
+    quantity = int(quantity_part)
+    if quantity <= 0:
+        raise ValueError(f"--last must be positive, got {value!r}")
+    if suffix == "h":
+        return timedelta(hours=quantity)
+    if suffix == "d":
+        return timedelta(days=quantity)
+    raise ValueError(f"--last suffix must be 'h' or 'd', got {value!r}")
+
+
 def read_sessions_in_range(csv_path: Path, range_start: datetime,
                            range_end: datetime):
     """Read rows of sessions.csv whose first_timestamp falls in
