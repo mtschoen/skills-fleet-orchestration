@@ -133,7 +133,7 @@ git commit -m "chart_runtime: shared Chart.js URL constants + script-tag helper"
 **Files:**
 - Modify: `scripts/plot-session.py`
 
-- [ ] **Step 1: Capture pre-refactor HTML output for regression check**
+- [x] **Step 1: Capture pre-refactor HTML output for regression check**
 
 ```bash
 cd scripts
@@ -142,7 +142,7 @@ python plot-session.py <some-session-id-prefix> --out /tmp/pre-refactor.html
 
 Pick any session-id prefix from the user's recent `sessions.csv` (or use a JSONL path directly). Save the output to `/tmp/pre-refactor.html` (or platform equivalent).
 
-- [ ] **Step 2: Replace the duplicated constants + helpers with imports**
+- [x] **Step 2: Replace the duplicated constants + helpers with imports**
 
 In `scripts/plot-session.py`, delete lines 152–180 (the six URL/version constants and `_cached_download`). Replace with:
 
@@ -170,7 +170,7 @@ chartjs_script_tag, time_adapter_script_tag = chartjs_script_tags(
 
 The `chartjs_inline_bytes` / `time_adapter_inline_bytes` parameters on `render_html` are now unused. Keep them in the signature (and the `main()` call site) so this task's diff stays surgical; remove in a follow-up if desired. The double-download concern is moot — `_cached_download` reads from cache on the second call, so `main()`'s pre-download just pre-warms the cache that `chartjs_script_tags(inline=True, ...)` then reads.
 
-- [ ] **Step 3: Run a session render to verify**
+- [x] **Step 3: Run a session render to verify**
 
 ```bash
 python plot-session.py <same-session-id-prefix> --out /tmp/post-refactor.html
@@ -178,7 +178,7 @@ python plot-session.py <same-session-id-prefix> --out /tmp/post-refactor.html
 
 Expected: succeeds.
 
-- [ ] **Step 4: Diff pre vs post**
+- [x] **Step 4: Diff pre vs post**
 
 ```bash
 diff /tmp/pre-refactor.html /tmp/post-refactor.html
@@ -186,7 +186,7 @@ diff /tmp/pre-refactor.html /tmp/post-refactor.html
 
 Expected: empty diff (byte-identical output).
 
-- [ ] **Step 5: Test `--inline-js` path**
+- [x] **Step 5: Test `--inline-js` path**
 
 ```bash
 python plot-session.py <same-session-id-prefix> --inline-js --out /tmp/post-inline.html
@@ -194,7 +194,7 @@ python plot-session.py <same-session-id-prefix> --inline-js --out /tmp/post-inli
 
 Expected: succeeds, HTML is larger (embedded Chart.js bytes), opens in browser standalone.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add scripts/plot-session.py

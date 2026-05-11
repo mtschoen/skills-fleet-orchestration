@@ -30,6 +30,16 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from pricing import iter_assistant_turns, model_family  # noqa: E402
+from chart_runtime import (  # noqa: E402
+    CHARTJS_CDN_URL,                       # noqa: F401  (kept for HTML_TEMPLATE compat)
+    CHARTJS_INLINE_VERSION,
+    CHARTJS_INLINE_URL,                    # noqa: F401
+    TIME_ADAPTER_CDN_URL,                  # noqa: F401
+    TIME_ADAPTER_INLINE_VERSION,
+    TIME_ADAPTER_INLINE_URL,               # noqa: F401
+    cached_download,
+    chartjs_script_tags,
+)
 
 
 DEFAULT_PROJECTS_ROOT = Path.home() / ".claude" / "projects"
@@ -149,36 +159,6 @@ new Chart(document.getElementById("chart"), {{
 </html>
 """
 
-CHARTJS_CDN_URL = "https://cdn.jsdelivr.net/npm/chart.js@4"
-TIME_ADAPTER_CDN_URL = (
-    "https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/"
-    "chartjs-adapter-date-fns.bundle.min.js"
-)
-
-CHARTJS_INLINE_VERSION = "4.4.7"
-CHARTJS_INLINE_URL = f"https://cdn.jsdelivr.net/npm/chart.js@{CHARTJS_INLINE_VERSION}/dist/chart.umd.min.js"
-TIME_ADAPTER_INLINE_VERSION = "3.0.0"
-TIME_ADAPTER_INLINE_URL = (
-    f"https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@{TIME_ADAPTER_INLINE_VERSION}/"
-    "dist/chartjs-adapter-date-fns.bundle.min.js"
-)
-
-
-def _cached_download(url, cache_filename):
-    """Return bytes of `url`, caching to ~/.cache/cost-estimator/<cache_filename>."""
-    import urllib.request
-
-    cache_directory = Path.home() / ".cache" / "cost-estimator"
-    cache_directory.mkdir(parents=True, exist_ok=True)
-    cache_path = cache_directory / cache_filename
-    if cache_path.is_file():
-        return cache_path.read_bytes()
-    print(f"  fetching {url} -> {cache_path}", file=sys.stderr)
-    with urllib.request.urlopen(url) as response:
-        payload = response.read()
-    cache_path.write_bytes(payload)
-    return payload
-
 
 def _models_label(turns):
     """Build a 'family:tokens' summary like 'opus:1234567,sonnet:23456'."""
@@ -244,20 +224,10 @@ def collect_subagent_summary(parent_jsonl_path):
 def render_html(turns, subagent_count, subagent_cost, session_id,
                 x_axis_mode, chartjs_inline_bytes,
                 time_adapter_inline_bytes):
-    if chartjs_inline_bytes is not None:
-        chartjs_script_tag = f"<script>{chartjs_inline_bytes.decode('utf-8')}</script>"
-    else:
-        chartjs_script_tag = f'<script src="{CHARTJS_CDN_URL}"></script>'
-
-    if x_axis_mode == "time":
-        if time_adapter_inline_bytes is not None:
-            time_adapter_script_tag = (
-                f"<script>{time_adapter_inline_bytes.decode('utf-8')}</script>"
-            )
-        else:
-            time_adapter_script_tag = f'<script src="{TIME_ADAPTER_CDN_URL}"></script>'
-    else:
-        time_adapter_script_tag = ""
+    chartjs_script_tag, time_adapter_script_tag = chartjs_script_tags(
+        inline=chartjs_inline_bytes is not None,
+        want_time_adapter=(x_axis_mode == "time"),
+    )
 
     first_date = turns[0]["timestamp"][:10] if turns and turns[0]["timestamp"] else "?"
     total_cost = turns[-1]["cumulative_cost"] if turns else 0.0
@@ -320,12 +290,12 @@ def main():
     chartjs_bytes = None
     time_adapter_bytes = None
     if arguments.inline_js:
-        chartjs_bytes = _cached_download(
+        chartjs_bytes = cached_download(
             CHARTJS_INLINE_URL,
             f"chart.js-{CHARTJS_INLINE_VERSION}.umd.min.js",
         )
         if arguments.x == "time":
-            time_adapter_bytes = _cached_download(
+            time_adapter_bytes = cached_download(
                 TIME_ADAPTER_INLINE_URL,
                 f"chartjs-adapter-date-fns-{TIME_ADAPTER_INLINE_VERSION}.bundle.min.js",
             )
