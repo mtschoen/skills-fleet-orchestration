@@ -754,7 +754,7 @@ git commit -m "plot-trend: CSV range filter and per-label pivot"
 **Files:**
 - Modify: `scripts/plot-trend.py`
 
-- [ ] **Step 1: Add the HTML template and `render_html()` function**
+- [x] **Step 1: Add the HTML template and `render_html()` function**
 
 Append to `scripts/plot-trend.py`:
 
@@ -906,7 +906,7 @@ def render_html(*, range_label: str, bucket_granularity: str,
     )
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add scripts/plot-trend.py

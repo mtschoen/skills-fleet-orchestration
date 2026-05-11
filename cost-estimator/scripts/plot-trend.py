@@ -18,9 +18,15 @@ Usage:
 from __future__ import annotations
 
 import csv
+import hashlib
+import json
+import sys
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent))
+from chart_runtime import chartjs_script_tags  # noqa: E402
 
 
 def bucket_key(timestamp: datetime, granularity: str) -> str:
@@ -141,3 +147,143 @@ def pivot_to_datasets(rows: list[dict], granularity: str):
         cumulative.append(round(running, 4))
 
     return buckets_sorted, per_label_costs, cumulative, per_label_counts
+
+
+PALETTE = [
+    "#4e79a7", "#f28e2b", "#e15759", "#76b7b2",
+    "#59a14f", "#edc948", "#b07aa1", "#ff9da7",
+]
+
+
+def _label_color(label: str) -> str:
+    """Stable color from label hash; collides past 8 distinct labels."""
+    digest = hashlib.md5(label.encode("utf-8")).digest()
+    return PALETTE[digest[0] % len(PALETTE)]
+
+
+# Filled via str.format(). Literal `{` / `}` in JS/CSS doubled to `{{` / `}}`.
+HTML_TEMPLATE = """<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Trend {range_label}</title>
+{chartjs_script_tag}
+<style>
+  html, body {{ height: 100%; }}
+  body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+         margin: 12px; color: #222; }}
+  h1 {{ margin: 0 0 8px 0; font-size: 18px; }}
+  .meta {{ font-family: ui-monospace, "Cascadia Mono", Menlo, monospace;
+          font-size: 12px; color: #555; margin-bottom: 16px; }}
+  .meta span {{ display: inline-block; margin-right: 18px; }}
+  .chart-wrap {{ position: relative; width: 100%; height: 70vh; min-height: 420px; }}
+  canvas {{ width: 100% !important; height: 100% !important; }}
+  .footnote {{ font-size: 11px; color: #888; margin-top: 12px; }}
+</style>
+</head>
+<body>
+<h1>Cost trend — {range_label}</h1>
+<div class="meta">
+  <span>Bucket: {bucket_granularity}</span>
+  <span>Total: ${total_cost:.4f}</span>
+  <span>Sessions: {total_sessions}</span>
+  <span>Machines: {machines_summary}</span>
+</div>
+<div class="chart-wrap"><canvas id="chart"></canvas></div>
+<div class="footnote">
+  Aggregates per-session costs from sessions.csv; subagent costs are folded
+  into their parent session's total (no separate subagent series).
+</div>
+<script>
+const BUCKETS = {buckets_json};
+const PER_LABEL_COSTS = {per_label_costs_json};
+const PER_LABEL_COUNTS = {per_label_counts_json};
+const PER_LABEL_COLORS = {per_label_colors_json};
+const CUMULATIVE = {cumulative_json};
+
+const labels = Object.keys(PER_LABEL_COSTS);
+const datasets = labels.map(label => ({{
+  type: "bar",
+  label: label,
+  data: PER_LABEL_COSTS[label],
+  backgroundColor: PER_LABEL_COLORS[label],
+  borderColor: PER_LABEL_COLORS[label],
+  stack: "cost",
+  yAxisID: "y",
+}}));
+datasets.push({{
+  type: "line",
+  label: "Cumulative",
+  data: CUMULATIVE,
+  borderColor: "#333",
+  backgroundColor: "rgba(0,0,0,0)",
+  borderWidth: 2,
+  tension: 0.2,
+  pointRadius: 0,
+  yAxisID: "y1",
+}});
+
+new Chart(document.getElementById("chart"), {{
+  data: {{ labels: BUCKETS, datasets: datasets }},
+  options: {{
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {{
+      x: {{ stacked: true, type: "category" }},
+      y: {{ stacked: true, position: "left", beginAtZero: true,
+           title: {{ display: true, text: "Cost ($)" }} }},
+      y1: {{ position: "right", beginAtZero: true,
+            grid: {{ drawOnChartArea: false }},
+            title: {{ display: true, text: "Cumulative ($)" }} }},
+    }},
+    plugins: {{
+      tooltip: {{
+        callbacks: {{
+          afterLabel: (item) => {{
+            if (item.dataset.type !== "bar") return "";
+            const label = item.dataset.label;
+            const count = PER_LABEL_COUNTS[label][item.dataIndex];
+            return `${{count}} session${{count === 1 ? "" : "s"}}`;
+          }},
+        }},
+      }},
+    }},
+  }},
+}});
+</script>
+</body>
+</html>
+"""
+
+
+def render_html(*, range_label: str, bucket_granularity: str,
+                buckets: list[str], per_label_costs: dict,
+                per_label_counts: dict, cumulative: list[float],
+                inline: bool) -> str:
+    chartjs_script_tag, _ = chartjs_script_tags(inline=inline,
+                                                want_time_adapter=False)
+    total_cost = cumulative[-1] if cumulative else 0.0
+    total_sessions = sum(sum(counts) for counts in per_label_counts.values())
+    per_label_totals = {
+        label: (round(sum(costs), 2), sum(per_label_counts[label]))
+        for label, costs in per_label_costs.items()
+    }
+    machines_summary = ", ".join(
+        f"{label} (${cost:.2f}, {count})"
+        for label, (cost, count) in sorted(per_label_totals.items())
+    )
+    per_label_colors = {label: _label_color(label) for label in per_label_costs}
+
+    return HTML_TEMPLATE.format(
+        range_label=range_label,
+        bucket_granularity=bucket_granularity,
+        total_cost=total_cost,
+        total_sessions=total_sessions,
+        machines_summary=machines_summary or "(none)",
+        chartjs_script_tag=chartjs_script_tag,
+        buckets_json=json.dumps(buckets).replace("</", "<\\/"),
+        per_label_costs_json=json.dumps(per_label_costs).replace("</", "<\\/"),
+        per_label_counts_json=json.dumps(per_label_counts).replace("</", "<\\/"),
+        per_label_colors_json=json.dumps(per_label_colors).replace("</", "<\\/"),
+        cumulative_json=json.dumps(cumulative).replace("</", "<\\/"),
+    )
