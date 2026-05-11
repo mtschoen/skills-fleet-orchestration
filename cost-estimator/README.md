@@ -48,6 +48,22 @@ line is the cumulative total. Multi-machine setups can pre-set
 `CLAUDE_COST_ROOTS="chonkers:C:/Users/you/.claude/projects,llamabox:Y:/.claude/projects"`
 so `analyze-month.py` picks up every root without repeating CLI args.
 
+## Comparing two windows
+
+To check whether spend is trending up or down, render any window
+against the same-length prior window:
+
+```bash
+python scripts/plot-compare.py --last 168h --open    # past 168h vs prior 168h
+python scripts/plot-compare.py --month 2026-04 --open  # April vs March
+```
+
+The prior window is auto-derived (no second range to specify). The chart
+shows grouped bars (current vs prior side by side) per bucket and twin
+cumulative lines on a right axis. Bucket-index makes paired bars
+apples-to-apples wall-clock-relative slices — Day 1 covers the first 24h
+of each window, not the same calendar date.
+
 ## Files
 
 - `SKILL.md` — the retrospective skill (the working part).
@@ -66,6 +82,13 @@ so `analyze-month.py` picks up every root without repeating CLI args.
 - `scripts/plot-trend.py` — render aggregate cost trend across
   sessions as a stacked-bar + cumulative-line HTML chart
   (reads `sessions.csv` from `analyze-month.py`).
+- `scripts/plot-compare.py` — render any window vs the same-length
+  prior window as an overlay chart (grouped bars + twin cumulative
+  lines). Uses bucket-index within each window so paired bars are
+  apples-to-apples wall-clock-relative slices.
+- `scripts/trend_data.py` — shared bucket math, CSV reader, and
+  range parsers (month / range / duration). Imported by both
+  `plot-trend.py` and `plot-compare.py`.
 - `reports/` — gitignored save location for synthesized reports.
 - `.gitignore` — keeps reports and CSV outputs out of git.
 

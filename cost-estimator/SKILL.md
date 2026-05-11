@@ -99,7 +99,19 @@ Most invocations need three things; ask only when not obvious:
    Bars stack per-machine cost in each bucket; right-axis line shows
    the cumulative total. Bucket size auto-picks from range length
    (≤14d→day, ≤90d→week, >90d→month) or override with `--bucket`.
-7. **Offer to save.** If the analysis was substantive, save the report
+7. **Compare two windows side-by-side.** When the user asks "is my
+   spend trending up/down?" or "how does this week compare to last?",
+   render the period-over-period overlay:
+   ```bash
+   python <skill-root>/scripts/plot-compare.py \
+       (--month YYYY-MM | --start YYYY-MM-DD --end YYYY-MM-DD | --last <Nh|Nd>) \
+       [--bucket {day,week,month}] [--inline-js] [--open]
+   ```
+   The prior window is auto-derived as the same-length window
+   immediately before the current one. Bucket-index (Day/Week/Month N)
+   makes paired bars apples-to-apples wall-clock-relative slices, not
+   calendar-aligned. Output lands in `<skill-root>/reports/compare-<range>.html`.
+8. **Offer to save.** If the analysis was substantive, save the report
    to `<skill-root>/reports/<range>.md`. That folder (and everything in
    it) is gitignored. Capture the summary.txt alongside via shell
    redirect:
@@ -189,6 +201,12 @@ output rates. Cache multipliers stay relative to the doubled base.
   (uses `pricing.py`).
 - `scripts/plot-trend.py` — aggregate trend chart across sessions.csv
   (uses `chart_runtime.py`). Stacks by machine label.
+- `scripts/plot-compare.py` — period-over-period overlay chart.
+  Renders any window vs the same-length prior window (--month /
+  --start+--end / --last). Imports bucket helpers from `trend_data.py`.
+- `scripts/trend_data.py` — shared bucket math, CSV reader, and range
+  parsers. Imported by plot-trend.py and plot-compare.py so the same
+  bucketing logic stays in one place.
 - `scripts/chart_runtime.py` — shared Chart.js URL/version constants,
   download cache, and script-tag helper used by both plot scripts.
 - `reports/` — created on demand by the scripts; holds CSVs and
