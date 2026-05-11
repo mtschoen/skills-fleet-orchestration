@@ -620,11 +620,18 @@ from pathlib import Path
 
 
 def read_sessions_in_range(csv_path: Path, range_start: datetime,
-                           range_end: datetime) -> list[dict]:
-    """Yield rows of sessions.csv whose first_timestamp falls in
-    [range_start, range_end] (inclusive). Skips rows with unparseable
-    first_timestamp; caller counts skips via the returned 'skipped'
-    sentinel.
+                           range_end: datetime):
+    """Read rows of sessions.csv whose first_timestamp falls in
+    [range_start, range_end] (inclusive).
+
+    Boundaries should be NAIVE datetimes (no tzinfo). The CSV stores
+    tz-aware timestamps; this function strips tzinfo on parse so the
+    range comparison works without the caller needing to know.
+
+    Returns (rows, skipped) where:
+      - rows: list of dicts with two extra fields per row:
+          "_parsed_timestamp" (datetime, naive) and "_cost_usd_float" (float)
+      - skipped: count of rows with missing/unparseable first_timestamp
     """
     rows = []
     skipped = 0
@@ -640,6 +647,10 @@ def read_sessions_in_range(csv_path: Path, range_start: datetime,
             except ValueError:
                 skipped += 1
                 continue
+            # Drop tzinfo so callers can pass naive boundary datetimes
+            # (argparse-derived from "YYYY-MM-DD" strings).
+            if timestamp.tzinfo is not None:
+                timestamp = timestamp.replace(tzinfo=None)
             if range_start <= timestamp <= range_end:
                 row["_parsed_timestamp"] = timestamp
                 row["_cost_usd_float"] = float(row.get("cost_usd") or 0)
