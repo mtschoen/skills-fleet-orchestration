@@ -148,12 +148,12 @@ In `scripts/plot-session.py`, delete lines 152–180 (the six URL/version consta
 
 ```python
 from chart_runtime import (
-    CHARTJS_CDN_URL,                       # noqa: F401  (kept for HTML_TEMPLATE compat)
+    CHARTJS_CDN_URL,                       # noqa: F401  (re-exported for symmetry; chart_runtime uses it)
     CHARTJS_INLINE_VERSION,
-    CHARTJS_INLINE_URL,                    # noqa: F401
-    TIME_ADAPTER_CDN_URL,                  # noqa: F401
+    CHARTJS_INLINE_URL,
+    TIME_ADAPTER_CDN_URL,                  # noqa: F401  (re-exported for symmetry; chart_runtime uses it)
     TIME_ADAPTER_INLINE_VERSION,
-    TIME_ADAPTER_INLINE_URL,               # noqa: F401
+    TIME_ADAPTER_INLINE_URL,
     cached_download,
     chartjs_script_tags,
 )
