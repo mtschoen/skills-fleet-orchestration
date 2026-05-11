@@ -33,6 +33,11 @@ Most invocations need three things; ask only when not obvious:
    include other roots — typically a network-mounted path to another
    host's `~/.claude/projects`. The user's CLAUDE.md often documents
    the cross-machine convention; consult it before guessing.
+
+   Multi-machine setups can set the `CLAUDE_COST_ROOTS` env var once
+   (format: `"label1:path1,label2:path2"`) — analyze-month.py picks it
+   up automatically when no positional roots are given. CLI args
+   always win when both are present.
 3. **Actually paid (optional).** If the user wants prorated cost
    alongside raw, ask what they paid that period (Max plan tier + any
    extra usage). Without it, the script reports raw only — that is
@@ -83,7 +88,18 @@ Most invocations need three things; ask only when not obvious:
    useful for sessions with long idle gaps. Currently plots the
    parent JSONL only — subagent cost appears in the page caption but
    not as overlay curves.
-6. **Offer to save.** If the analysis was substantive, save the report
+6. **Plot the aggregate trend across the range.** Run after
+   analyze-month.py so the CSV exists:
+   ```bash
+   python <skill-root>/scripts/plot-trend.py \
+       (--month YYYY-MM | --start YYYY-MM-DD --end YYYY-MM-DD) \
+       [--bucket {day,week,month}] [--inline-js] [--open]
+   ```
+   Produces an HTML chart at `<skill-root>/reports/trend-<range>.html`.
+   Bars stack per-machine cost in each bucket; right-axis line shows
+   the cumulative total. Bucket size auto-picks from range length
+   (≤14d→day, ≤90d→week, >90d→month) or override with `--bucket`.
+7. **Offer to save.** If the analysis was substantive, save the report
    to `<skill-root>/reports/<range>.md`. That folder (and everything in
    it) is gitignored. Capture the summary.txt alongside via shell
    redirect:
@@ -155,7 +171,6 @@ output rates. Cache multipliers stay relative to the doubled base.
 - Per-project breakdown. The analyzer groups by machine label, not by
   project slug. Easy extension: bucket `parent_path` by its containing
   directory in a follow-up summary.
-- Trend over time beyond daily. No weekly / month-over-month deltas.
 
 ## Files in this skill
 
@@ -172,5 +187,9 @@ output rates. Cache multipliers stay relative to the doubled base.
   Default `--csv` is `<skill-root>/reports/sessions.csv`.
 - `scripts/plot-session.py` — per-session HTML cost trajectory chart
   (uses `pricing.py`).
+- `scripts/plot-trend.py` — aggregate trend chart across sessions.csv
+  (uses `chart_runtime.py`). Stacks by machine label.
+- `scripts/chart_runtime.py` — shared Chart.js URL/version constants,
+  download cache, and script-tag helper used by both plot scripts.
 - `reports/` — created on demand by the scripts; holds CSVs and
   synthesized reports. Gitignored in the source repo.

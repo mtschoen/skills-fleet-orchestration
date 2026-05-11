@@ -1133,7 +1133,7 @@ git commit -m "plot-trend: CLI wiring, range bounds, end-to-end smoke passes"
 **Files:**
 - Modify: `SKILL.md`
 
-- [ ] **Step 1: Drop the "Trend over time beyond daily" bullet**
+- [x] **Step 1: Drop the "Trend over time beyond daily" bullet**
 
 In `SKILL.md`'s "What this skill does not do (yet)" section, delete:
 
@@ -1141,7 +1141,7 @@ In `SKILL.md`'s "What this skill does not do (yet)" section, delete:
 - Trend over time beyond daily. No weekly / month-over-month deltas.
 ```
 
-- [ ] **Step 2: Add a step in the main flow**
+- [x] **Step 2: Add a step in the main flow**
 
 After the existing `plot-session.py` step (step 5), insert:
 
@@ -1161,7 +1161,7 @@ After the existing `plot-session.py` step (step 5), insert:
 
 Renumber subsequent steps. The "Offer to save" step is now step 7.
 
-- [ ] **Step 3: Document `CLAUDE_COST_ROOTS` in the inputs section**
+- [x] **Step 3: Document `CLAUDE_COST_ROOTS` in the inputs section**
 
 In the "Inputs to gather from the user" section, under "Projects roots", add:
 
@@ -1172,7 +1172,7 @@ In the "Inputs to gather from the user" section, under "Projects roots", add:
    always win when both are present.
 ```
 
-- [ ] **Step 4: Add `plot-trend.py` to "Files in this skill"**
+- [x] **Step 4: Add `plot-trend.py` to "Files in this skill"**
 
 After the `plot-session.py` entry:
 
@@ -1183,7 +1183,7 @@ After the `plot-session.py` entry:
   download cache, and script-tag helper used by both plot scripts.
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add SKILL.md
