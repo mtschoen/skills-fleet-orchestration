@@ -342,6 +342,9 @@ def main():
     parser.add_argument("--open", dest="open_browser", action="store_true")
     arguments = parser.parse_args()
 
+    if arguments.month and arguments.end:
+        parser.error("--end requires --start, not --month")
+
     if arguments.month:
         try:
             range_start, range_end = _month_bounds(arguments.month)

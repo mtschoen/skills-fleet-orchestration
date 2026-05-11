@@ -268,6 +268,9 @@ def main():
                         default=max(1, (os.cpu_count() or 4) // 2))
     arguments = parser.parse_args()
 
+    if arguments.month and arguments.end:
+        parser.error("--end requires --start, not --month")
+
     if arguments.month:
         try:
             range_start, range_end = month_bounds(arguments.month)
