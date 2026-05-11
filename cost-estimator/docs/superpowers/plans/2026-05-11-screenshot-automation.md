@@ -220,7 +220,7 @@ EOF
 
 The fixture is produced by a one-off seeded generator. The generator is not committed — only its output is.
 
-- [ ] **Step 1: Write the generator (one-off, not committed)**
+- [x] **Step 1: Write the generator (one-off, not committed)**
 
 ```bash
 mkdir -p C:/Users/mtsch/skills-dev/cost-estimator/tests/fixtures
@@ -300,7 +300,7 @@ with out.open("w", newline="", encoding="utf-8") as handle:
 print(f"wrote {out} ({len(rows)} rows)")
 ```
 
-- [ ] **Step 2: Run the generator**
+- [x] **Step 2: Run the generator**
 
 ```bash
 python /tmp/gen_demo_fixture.py
@@ -308,7 +308,7 @@ python /tmp/gen_demo_fixture.py
 
 Expected stdout: `wrote ...sessions-demo.csv (N rows)` where N is roughly 100-150 (60 days × 2 hosts × mean ~1 session each).
 
-- [ ] **Step 3: Delete the generator**
+- [x] **Step 3: Delete the generator**
 
 ```bash
 rm /tmp/gen_demo_fixture.py
@@ -316,7 +316,7 @@ rm /tmp/gen_demo_fixture.py
 
 (One-off; if you ever need to regenerate, this plan's git history has the source. Don't carry it forward in the tree.)
 
-- [ ] **Step 4: Smoke plot-trend against the fixture**
+- [x] **Step 4: Smoke plot-trend against the fixture**
 
 ```bash
 cd C:/Users/mtsch/skills-dev/cost-estimator
@@ -325,7 +325,7 @@ python scripts/plot-trend.py --month 2026-03 --csv tests/fixtures/sessions-demo.
 
 Expected stderr: `Range: 2026-03-01 -> 2026-03-31` and bucket info. `reports/_smoke-trend.html` should be created.
 
-- [ ] **Step 5: Smoke plot-compare against the fixture**
+- [x] **Step 5: Smoke plot-compare against the fixture**
 
 ```bash
 python scripts/plot-compare.py --month 2026-03 --csv tests/fixtures/sessions-demo.csv --inline-js --out reports/_smoke-compare.html
@@ -333,17 +333,17 @@ python scripts/plot-compare.py --month 2026-03 --csv tests/fixtures/sessions-dem
 
 Expected stderr should show both `Current rows: N` and `Prior rows: M` both > 0 (March = current, February = prior; both populated by the fixture).
 
-- [ ] **Step 6: Visually open both HTMLs in a browser**
+- [x] **Step 6: Visually open both HTMLs in a browser**
 
 Confirm both render real bars (not empty charts). The PoP overlay should show March bars vs February bars side by side.
 
-- [ ] **Step 7: Clean up smoke HTML**
+- [x] **Step 7: Clean up smoke HTML**
 
 ```bash
 rm reports/_smoke-trend.html reports/_smoke-compare.html
 ```
 
-- [ ] **Step 8: Commit the fixture**
+- [x] **Step 8: Commit the fixture**
 
 ```bash
 git add tests/fixtures/sessions-demo.csv
