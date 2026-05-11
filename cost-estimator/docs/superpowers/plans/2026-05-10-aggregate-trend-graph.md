@@ -154,7 +154,7 @@ from chart_runtime import (
     TIME_ADAPTER_CDN_URL,                  # noqa: F401
     TIME_ADAPTER_INLINE_VERSION,
     TIME_ADAPTER_INLINE_URL,               # noqa: F401
-    _cached_download,
+    cached_download,
     chartjs_script_tags,
 )
 ```
