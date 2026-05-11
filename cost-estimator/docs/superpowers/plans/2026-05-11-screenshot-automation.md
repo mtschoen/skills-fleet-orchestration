@@ -646,7 +646,7 @@ This phase edits the umbrella `skills-dev` repo, not cost-estimator.
 **Files:**
 - Modify: `skills-dev/install-skills.sh:38-43` (the `ROOT_EXCLUDES` array)
 
-- [ ] **Step 1: Add `tests` + the three filenames to `ROOT_EXCLUDES`**
+- [x] **Step 1: Add `tests` + the three filenames to `ROOT_EXCLUDES`**
 
 Existing array body:
 ```bash
@@ -676,7 +676,7 @@ ROOT_EXCLUDES=(
 **Files:**
 - Modify: `skills-dev/install-skills.bat:44-45` (the `EXCLUDE_DIRS` + `EXCLUDE_FILES` env vars)
 
-- [ ] **Step 1: Add `tests` to `EXCLUDE_DIRS`**
+- [x] **Step 1: Add `tests` to `EXCLUDE_DIRS`**
 
 Current:
 ```batch
@@ -688,7 +688,7 @@ Replace with:
 set "EXCLUDE_DIRS=.git .github docs evals node_modules reports skill-draft tests"
 ```
 
-- [ ] **Step 2: Add the three filenames to `EXCLUDE_FILES`**
+- [x] **Step 2: Add the three filenames to `EXCLUDE_FILES`**
 
 Current:
 ```batch
@@ -702,7 +702,7 @@ set "EXCLUDE_FILES=.git .gitignore .gitmodules README.md AUDIT.md LICENSE HANDOF
 
 ### Task 9: Verify exclusions in a dry-run
 
-- [ ] **Step 1: Dry-run install-skills.sh against cost-estimator**
+- [x] **Step 1: Dry-run install-skills.sh against cost-estimator**
 
 ```bash
 cd C:/Users/mtsch/skills-dev
@@ -715,7 +715,7 @@ Expected behavior:
 
 (Optional check: do an actual install to a temp dir and `find` for the excluded files to confirm absence.)
 
-- [ ] **Step 2: Sanity-check that screenshot PNGs are NOT excluded**
+- [x] **Step 2: Sanity-check that screenshot PNGs are NOT excluded**
 
 ```bash
 cd C:/Users/mtsch/skills-dev
@@ -727,7 +727,7 @@ Expected: no matches. (We want PNGs to ship so the installed README renders.)
 
 ### Task 10: Commit umbrella exclusions
 
-- [ ] **Step 1: Commit**
+- [x] **Step 1: Commit**
 
 ```bash
 cd C:/Users/mtsch/skills-dev
