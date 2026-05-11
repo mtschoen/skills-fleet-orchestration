@@ -4,4 +4,5 @@ set -euo pipefail
 cd "$(dirname "$0")"
 python test_buckets.py
 python test_resolve_roots.py
+python test_compare.py
 echo "All tests passed."

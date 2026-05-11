@@ -158,7 +158,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 - Modify: `cost-estimator/scripts/run-tests.sh` (add `python test_compare.py`)
 - Modify: `cost-estimator/scripts/run-tests.bat` (add `python test_compare.py` + errorlevel check)
 
-- [ ] **Step 1: Write `scripts/test_compare.py` with failing tests**
+- [x] **Step 1: Write `scripts/test_compare.py` with failing tests**
 
 ```python
 """Unit smoke for prior_window_for() in trend_data.py."""
@@ -234,7 +234,7 @@ if __name__ == "__main__":
     print("OK")
 ```
 
-- [ ] **Step 2: Add `test_compare.py` to test runner scripts**
+- [x] **Step 2: Add `test_compare.py` to test runner scripts**
 
 `scripts/run-tests.sh`:
 
@@ -270,7 +270,7 @@ After writing `.bat`, convert to CRLF:
 sed -i 's/$/\r/' C:/Users/mtsch/skills-dev/cost-estimator/scripts/run-tests.bat
 ```
 
-- [ ] **Step 3: Run tests — expect failure**
+- [x] **Step 3: Run tests — expect failure**
 
 ```bash
 cd C:/Users/mtsch/skills-dev/cost-estimator
@@ -279,7 +279,7 @@ python scripts/test_compare.py
 
 Expected: `ImportError: cannot import name 'prior_window_for' from 'trend_data'`.
 
-- [ ] **Step 4: Implement `prior_window_for` in `trend_data.py`**
+- [x] **Step 4: Implement `prior_window_for` in `trend_data.py`**
 
 Append after `date_bounds`:
 
@@ -320,7 +320,7 @@ def prior_window_for(
     raise ValueError(f"unknown mode {mode!r} (expected 'month', 'range', 'duration')")
 ```
 
-- [ ] **Step 5: Run tests — expect green**
+- [x] **Step 5: Run tests — expect green**
 
 ```bash
 cd C:/Users/mtsch/skills-dev/cost-estimator
@@ -329,7 +329,7 @@ bash scripts/run-tests.sh
 
 Expected: `OK` from all three test files, then `All tests passed.`
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add scripts/trend_data.py scripts/test_compare.py scripts/run-tests.sh scripts/run-tests.bat

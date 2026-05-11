@@ -133,3 +133,39 @@ def date_bounds(start_string: str, end_string: str) -> tuple[datetime, datetime]
     start = datetime.fromisoformat(start_string)
     end = datetime.fromisoformat(end_string).replace(hour=23, minute=59, second=59)
     return start, end
+
+
+def prior_window_for(
+    current_start: datetime, current_end: datetime, *, mode: str,
+) -> tuple[datetime, datetime]:
+    """Return (prior_start, prior_end) for the same-length window
+    immediately before [current_start, current_end].
+
+    Three modes, distinguished by their end-inclusivity convention:
+
+    - "month":    prior is the calendar month before current_start
+                  (handles Dec -> Jan year rollover via month_bounds).
+    - "range":    inclusive end (--start/--end). prior duration =
+                  current_end - current_start; prior_end is 1 second
+                  before current_start.
+    - "duration": half-open end (--last). prior duration is the same;
+                  prior_end equals current_start exactly.
+    """
+    if mode == "month":
+        # current_start is always YYYY-MM-01 00:00 in this mode.
+        if current_start.month == 1:
+            prior_month_string = f"{current_start.year - 1:04d}-12"
+        else:
+            prior_month_string = f"{current_start.year:04d}-{current_start.month - 1:02d}"
+        return month_bounds(prior_month_string)
+    if mode == "range":
+        duration = current_end - current_start
+        prior_start = current_start - duration - timedelta(seconds=1)
+        prior_end = current_start - timedelta(seconds=1)
+        return prior_start, prior_end
+    if mode == "duration":
+        duration = current_end - current_start
+        prior_start = current_start - duration
+        prior_end = current_start
+        return prior_start, prior_end
+    raise ValueError(f"unknown mode {mode!r} (expected 'month', 'range', 'duration')")
