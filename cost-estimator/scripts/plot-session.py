@@ -30,16 +30,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from pricing import iter_assistant_turns, model_family  # noqa: E402
-from chart_runtime import (  # noqa: E402
-    CHARTJS_CDN_URL,                       # noqa: F401  (re-exported for symmetry; chart_runtime uses it)
-    CHARTJS_INLINE_VERSION,
-    CHARTJS_INLINE_URL,
-    TIME_ADAPTER_CDN_URL,                  # noqa: F401  (re-exported for symmetry; chart_runtime uses it)
-    TIME_ADAPTER_INLINE_VERSION,
-    TIME_ADAPTER_INLINE_URL,
-    cached_download,
-    chartjs_script_tags,
-)
+from chart_runtime import chartjs_script_tags  # noqa: E402
 
 
 DEFAULT_PROJECTS_ROOT = Path.home() / ".claude" / "projects"
@@ -222,10 +213,9 @@ def collect_subagent_summary(parent_jsonl_path):
 
 
 def render_html(turns, subagent_count, subagent_cost, session_id,
-                x_axis_mode, chartjs_inline_bytes,
-                time_adapter_inline_bytes):
+                x_axis_mode, inline):
     chartjs_script_tag, time_adapter_script_tag = chartjs_script_tags(
-        inline=chartjs_inline_bytes is not None,
+        inline=inline,
         want_time_adapter=(x_axis_mode == "time"),
     )
 
@@ -287,27 +277,13 @@ def main():
     print(f"  subagents: {subagent_count} files  ${subagent_cost:.4f}",
           file=sys.stderr)
 
-    chartjs_bytes = None
-    time_adapter_bytes = None
-    if arguments.inline_js:
-        chartjs_bytes = cached_download(
-            CHARTJS_INLINE_URL,
-            f"chart.js-{CHARTJS_INLINE_VERSION}.umd.min.js",
-        )
-        if arguments.x == "time":
-            time_adapter_bytes = cached_download(
-                TIME_ADAPTER_INLINE_URL,
-                f"chartjs-adapter-date-fns-{TIME_ADAPTER_INLINE_VERSION}.bundle.min.js",
-            )
-
     html_text = render_html(
         turns=turns,
         subagent_count=subagent_count,
         subagent_cost=subagent_cost,
         session_id=session_id,
         x_axis_mode=arguments.x,
-        chartjs_inline_bytes=chartjs_bytes,
-        time_adapter_inline_bytes=time_adapter_bytes,
+        inline=arguments.inline_js,
     )
 
     if arguments.out:
