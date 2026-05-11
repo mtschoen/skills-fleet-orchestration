@@ -143,6 +143,8 @@ def pivot_to_datasets(rows: list[dict], granularity: str):
 
     cumulative = []
     running = 0.0
+    # Sum from unrounded sums[] (not per_label_costs, whose values are already
+    # rounded to 4dp) so round-down doesn't accumulate across many buckets.
     for bucket in buckets_sorted:
         for label in labels_sorted:
             running += sums[label].get(bucket, 0.0)
@@ -158,7 +160,12 @@ PALETTE = [
 
 
 def _label_color(label: str) -> str:
-    """Stable color from label hash; collides past 8 distinct labels."""
+    """Stable color from label hash.
+
+    Picks from an 8-color palette via `md5(label)[0] % 8`. Distinct labels
+    can collide once you have more than 8; for >8-machine setups, pick
+    visually distinct labels and verify the rendered legend.
+    """
     digest = hashlib.md5(label.encode("utf-8")).digest()
     return PALETTE[digest[0] % len(PALETTE)]
 

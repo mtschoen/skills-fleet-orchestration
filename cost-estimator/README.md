@@ -50,9 +50,12 @@ so `analyze-month.py` picks up every root without repeating CLI args.
 
 ## Files
 
-- `skill-draft/SKILL.md` — the retrospective skill (the working part).
+- `SKILL.md` — the retrospective skill (the working part).
 - `scripts/pricing.py` — canonical pricing formula and JSONL
   turn-iterator, shared by the analyzer and plotter.
+- `scripts/chart_runtime.py` — shared Chart.js version constants,
+  CDN/inline download cache, and `<script>` tag builder used by
+  both plotters.
 - `scripts/analyze-month.py` — JSONL walker + per-turn pricer
   (uses `pricing.py`).
 - `scripts/summarize.py` — CSV reader + waste-pattern report.
@@ -60,6 +63,9 @@ so `analyze-month.py` picks up every root without repeating CLI args.
   cost trajectory as an interactive HTML chart (Chart.js). Useful for
   investigating a session that `summarize.py` flagged as a top
   spender; shows where in the session the cost actually accrued.
+- `scripts/plot-trend.py` — render aggregate cost trend across
+  sessions as a stacked-bar + cumulative-line HTML chart
+  (reads `sessions.csv` from `analyze-month.py`).
 - `reports/` — gitignored save location for synthesized reports.
 - `.gitignore` — keeps reports and CSV outputs out of git.
 
