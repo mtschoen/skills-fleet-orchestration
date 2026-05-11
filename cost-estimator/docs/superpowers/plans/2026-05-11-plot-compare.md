@@ -27,7 +27,7 @@ Pure refactor. Move the shared helpers out of `plot-trend.py` into a new importa
 - Modify: `cost-estimator/scripts/plot-trend.py` (remove the 5 extracted functions; add `from trend_data import …`; rename `_month_bounds`→`month_bounds`, `_date_bounds`→`date_bounds` at the two call sites in `main()`)
 - Modify: `cost-estimator/scripts/test_buckets.py` (drop importlib hack; `from trend_data import bucket_key, auto_bucket`)
 
-- [ ] **Step 1: Create `scripts/trend_data.py` with the 5 extracted functions**
+- [x] **Step 1: Create `scripts/trend_data.py` with the 5 extracted functions**
 
 Lift verbatim from `plot-trend.py` (lines 34-103 and 298-323 in the current file). Apply the public-name renames (drop the leading underscore on `month_bounds` and `date_bounds`).
 
@@ -145,7 +145,7 @@ def date_bounds(start_string: str, end_string: str) -> tuple[datetime, datetime]
     return start, end
 ```
 
-- [ ] **Step 2: Capture pre-edit baseline HTML from `plot-trend.py`**
+- [x] **Step 2: Capture pre-edit baseline HTML from `plot-trend.py`**
 
 ```bash
 cd C:/Users/mtsch/skills-dev/cost-estimator
@@ -155,7 +155,7 @@ python scripts/plot-trend.py --start 2026-04-15 --end 2026-04-21 --out /tmp/tren
 
 Both should produce HTML files; note totals from stderr (e.g. `Wrote …`). Sessions.csv must already cover April 2026 for these to work — if not, run `python scripts/analyze-month.py C:/Users/mtsch/.claude/projects --month 2026-04` first.
 
-- [ ] **Step 3: Edit `plot-trend.py` — drop the 5 extracted functions, add import, rename call sites**
+- [x] **Step 3: Edit `plot-trend.py` — drop the 5 extracted functions, add import, rename call sites**
 
 In `scripts/plot-trend.py`:
 
@@ -175,7 +175,7 @@ from trend_data import (  # noqa: E402
 
 Imports no longer needed in `plot-trend.py`: `csv` and `timedelta` may still be needed inside the empty-range probe; verify by running the script. If `csv` is unused at module scope, drop the `import csv` line.
 
-- [ ] **Step 4: Update `scripts/test_buckets.py` to import directly**
+- [x] **Step 4: Update `scripts/test_buckets.py` to import directly**
 
 ```python
 """Unit smoke for bucket helpers in trend_data.py."""
@@ -225,7 +225,7 @@ if __name__ == "__main__":
     print("OK")
 ```
 
-- [ ] **Step 5: Capture post-edit HTML + diff**
+- [x] **Step 5: Capture post-edit HTML + diff**
 
 ```bash
 cd C:/Users/mtsch/skills-dev/cost-estimator
@@ -237,7 +237,7 @@ diff /tmp/trend-before-range.html /tmp/trend-after-range.html
 
 Expected: both diffs empty (no output). If either has output, the refactor isn't byte-identical — investigate before committing.
 
-- [ ] **Step 6: Run tests**
+- [x] **Step 6: Run tests**
 
 ```bash
 cd C:/Users/mtsch/skills-dev/cost-estimator
@@ -246,7 +246,7 @@ bash scripts/run-tests.sh
 
 Expected: prints `OK` twice (one per test file), then `All tests passed.`
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 cd C:/Users/mtsch/skills-dev/cost-estimator
