@@ -32,7 +32,7 @@ Refactor first so `plot-trend.py` (Phase 3) imports an already-stable module.
 **Files:**
 - Create: `scripts/chart_runtime.py`
 
-- [ ] **Step 1: Write the module**
+- [x] **Step 1: Write the module**
 
 ```python
 """Shared Chart.js runtime helpers for plot-session.py and plot-trend.py.
@@ -115,13 +115,13 @@ def chartjs_script_tags(inline: bool, want_time_adapter: bool) -> tuple[str, str
     return chartjs_tag, adapter_tag
 ```
 
-- [ ] **Step 2: Verify it imports cleanly**
+- [x] **Step 2: Verify it imports cleanly**
 
 Run: `python -c "from chart_runtime import chartjs_script_tags; print(chartjs_script_tags(False, False))"`
 
 Expected: prints `('<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>', '')`. Run from `scripts/` directory.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add scripts/chart_runtime.py
