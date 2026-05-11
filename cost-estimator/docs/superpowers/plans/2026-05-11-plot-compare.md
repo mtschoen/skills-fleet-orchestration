@@ -200,7 +200,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 - Modify: `cost-estimator/scripts/test_buckets.py` (add `test_bucket_by_index_within_window`)
 - Modify: `cost-estimator/scripts/plot-compare.py` (add row-aggregation helpers + HTML template + render_html; wire into main)
 
-- [ ] **Step 1a: Add `bucket_index` + `num_buckets` to `trend_data.py`**
+- [x] **Step 1a: Add `bucket_index` + `num_buckets` to `trend_data.py`**
 
 Append after `prior_window_for`:
 
@@ -239,7 +239,7 @@ def num_buckets(span_days: int, granularity: str) -> int:
     raise ValueError(f"unknown granularity: {granularity!r}")
 ```
 
-- [ ] **Step 1b: Add `test_bucket_by_index_within_window` to `test_buckets.py`**
+- [x] **Step 1b: Add `test_bucket_by_index_within_window` to `test_buckets.py`**
 
 Append after `test_auto_bucket_picker` (and before the `test_parse_last_*` tests added in Task 2):
 
@@ -257,7 +257,7 @@ def test_bucket_by_index_within_window():
 
 Add `test_bucket_by_index_within_window()` to the `if __name__ == "__main__":` block before the `test_parse_last_*` calls.
 
-- [ ] **Step 1c: Add row-aggregation helpers to `plot-compare.py`**
+- [x] **Step 1c: Add row-aggregation helpers to `plot-compare.py`**
 
 Below the `_resolve_current_window` helper in `plot-compare.py`:
 
@@ -304,7 +304,7 @@ def bucket_labels(current_start, prior_start, granularity, total_buckets):
     return labels
 ```
 
-- [ ] **Step 2: Add `chart_runtime` import + HTML_TEMPLATE + render_html**
+- [x] **Step 2: Add `chart_runtime` import + HTML_TEMPLATE + render_html**
 
 Add to imports near the top:
 
@@ -429,7 +429,7 @@ def render_html(*, range_label, current_start, current_end,
     )
 ```
 
-- [ ] **Step 3: Wire rendering into `main()`**
+- [x] **Step 3: Wire rendering into `main()`**
 
 Replace the `# Rendering follows in Task 5.` placeholder and the `print("(skeleton ...")` line with:
 
@@ -470,7 +470,7 @@ if arguments.open_browser:
     webbrowser.open(output_path.resolve().as_uri())
 ```
 
-- [ ] **Step 4: End-to-end smoke**
+- [x] **Step 4: End-to-end smoke**
 
 ```bash
 cd C:/Users/mtsch/skills-dev/cost-estimator
@@ -488,7 +488,7 @@ python scripts/plot-compare.py --last 168h --out /tmp/compare-week.html
 
 Expected: 7 daily bars (--last 168h = 7d, span_days=7, auto-bucket→day).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/plot-compare.py

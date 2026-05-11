@@ -169,3 +169,37 @@ def prior_window_for(
         prior_end = current_start
         return prior_start, prior_end
     raise ValueError(f"unknown mode {mode!r} (expected 'month', 'range', 'duration')")
+
+
+def bucket_index(timestamp: datetime, window_start: datetime,
+                 granularity: str) -> int:
+    """Return 0-based bucket index for a timestamp within its window.
+
+    Distinct from `bucket_key`: bucket-index makes paired bars in an
+    overlay chart apples-to-apples wall-clock-relative slices (Day 1
+    = first 24h after window_start in BOTH windows), while bucket_key
+    is calendar-aligned (good for single-window stacking, wrong for
+    cross-window comparison).
+    """
+    delta = timestamp - window_start
+    if granularity == "day":
+        return delta.days
+    if granularity == "week":
+        return delta.days // 7
+    if granularity == "month":
+        # Approximate: chunks of ~30 days. Calendar months don't align
+        # with arbitrary window starts, so use 30-day chunks here for
+        # symmetry with day/week.
+        return delta.days // 30
+    raise ValueError(f"unknown granularity: {granularity!r}")
+
+
+def num_buckets(span_days: int, granularity: str) -> int:
+    """Number of buckets covering a span at the given granularity."""
+    if granularity == "day":
+        return max(1, span_days)
+    if granularity == "week":
+        return max(1, (span_days + 6) // 7)
+    if granularity == "month":
+        return max(1, (span_days + 29) // 30)
+    raise ValueError(f"unknown granularity: {granularity!r}")

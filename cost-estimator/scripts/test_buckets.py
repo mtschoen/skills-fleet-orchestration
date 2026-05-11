@@ -7,7 +7,9 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from trend_data import bucket_key, auto_bucket, parse_last  # noqa: E402
+from trend_data import (  # noqa: E402
+    auto_bucket, bucket_index, bucket_key, parse_last,
+)
 
 
 def test_day_bucket():
@@ -39,6 +41,15 @@ def test_auto_bucket_picker():
     assert auto_bucket(days=15) == "week"
     assert auto_bucket(days=90) == "week"
     assert auto_bucket(days=91) == "month"
+
+
+def test_bucket_by_index_within_window():
+    """Two timestamps separated by 36h fall in bucket 0 and bucket 1 at day granularity."""
+    window_start = datetime(2026, 5, 4, 9, 30, 0)
+    t0 = window_start + timedelta(hours=1)
+    t1 = window_start + timedelta(hours=36)
+    assert bucket_index(t0, window_start, "day") == 0
+    assert bucket_index(t1, window_start, "day") == 1
 
 
 def test_parse_last_hours():
@@ -79,6 +90,7 @@ if __name__ == "__main__":
     test_week_bucket_simple()
     test_week_bucket_iso_year_boundary()
     test_auto_bucket_picker()
+    test_bucket_by_index_within_window()
     test_parse_last_hours()
     test_parse_last_days()
     test_parse_last_rejects_bad_suffix()
