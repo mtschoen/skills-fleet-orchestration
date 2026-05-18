@@ -19,6 +19,7 @@
 > the UI table. Use parallel subagents where it makes sense.
 >
 > **Context you need:**
+>
 > - Python FastAPI project. Dashboard routers in
 >   `src/myrepo/dashboard/routers/` (hardware page is `hardware.py`).
 >   Templates in `src/myrepo/dashboard/templates/`. GPU/hardware detection
@@ -33,7 +34,7 @@
 >   new scaffolding.
 > - **The benchmark tool itself: nvbandwidth.** You need to build NVIDIA's
 >   `nvbandwidth` from source on remote-host — it's not installed. The repo is
->   at https://github.com/NVIDIA/nvbandwidth. Build it in
+>   at <https://github.com/NVIDIA/nvbandwidth>. Build it in
 >   `/home/user/nvbandwidth-baseline/` (create the dir if missing). Clone,
 >   follow its CMake build instructions, run it with flags that produce the
 >   host↔device and device↔device matrices, parse its output into structured

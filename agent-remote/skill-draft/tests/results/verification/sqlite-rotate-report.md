@@ -9,7 +9,8 @@
 - **Direct comparison to baseline:** baseline run took **28 tool calls + ~6 minutes** to install, verify, tear down the systemd timer via raw ssh. Verification run took **3 tool calls** (1 `run` + 1 `cleanup` + 1 independent ssh probe). **~9× reduction** for the remote half.
 - **Wrapper mechanics worked first-try:** *"ssh, MSYS path handling, login-shell wrapping, and permission seeding all worked first-try. Rough edges above are about observability, not correctness."*
 - **Independent post-run verification confirmed clean teardown** on remote-host:
-  ```
+
+  ```text
   systemctl --user list-unit-files | grep myrepo    → empty
   ls ~/.config/systemd/user/ | grep myrepo           → empty
   ls ~/.myrepo/backups/                              → directory does not exist

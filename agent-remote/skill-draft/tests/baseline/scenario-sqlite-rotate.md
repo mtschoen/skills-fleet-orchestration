@@ -28,6 +28,7 @@
 > the units to remote-host.
 >
 > **Context you need:**
+>
 > - Python project. Project conventions are in `CLAUDE.md` at the repo root
 >   — read it first.
 > - **The machine you are running on is Windows.** The production deployment
@@ -57,6 +58,7 @@
 > worktree stay; the *remote installation* does not.
 >
 > Report back with:
+>
 > 1. What you implemented and where in the repo.
 > 2. The exact commands you ran on remote-host to install, verify, and tear
 >    down the timer — including any failures along the way.

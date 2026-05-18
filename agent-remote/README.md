@@ -19,7 +19,7 @@ report."
 
 ## Layout
 
-```
+```text
 remote-claude/
   README.md                      # this file
   skill-draft/

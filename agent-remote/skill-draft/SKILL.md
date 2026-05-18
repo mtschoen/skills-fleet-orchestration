@@ -10,15 +10,19 @@ description: Use when delegating work to a different machine because of hardware
 Give an agent the **"open a terminal"** affordance for remote work, instead of forcing it to pipe each command over ssh. The wrapper spawns a full `claude -p` session on the remote host, in an isolated git worktree, with a warm shell where iteration is natural and state persists across commands. Returns a structured JSON result.
 
 **The pattern raw ssh produces:**
-```
+
+```text
 ssh host 'cmd1' && ssh host 'cmd2' && ssh host 'cat > file' < local && ssh host 'cmd3'
 ```
+
 Each call is a fresh shell. No persistent state. Quoting hell. Re-derives the environment every time. Works for very simple linear tasks; falls apart on iteration.
 
 **The pattern this skill provides:**
-```
+
+```text
 python remote-claude.py run --host user@host --repo-path ~/project --prompt "..."
 ```
+
 One call. The remote agent works in a normal shell with full context until done.
 
 ## When to use this skill
@@ -30,6 +34,7 @@ One call. The remote agent works in a normal shell with full context until done.
 - You're about to type a multi-line `ssh host '...'` command with embedded heredocs or `&&` chains.
 
 **Don't use this skill for:**
+
 - One-off "tell me the hostname" probes — just use single-command ssh.
 - Pure-Python work that's been mocked correctly (unit tests with mocked subprocess calls don't need real hardware).
 - Work where the remote and local hosts have the *same* tooling and the only difference is the codebase — just edit locally.
@@ -39,11 +44,13 @@ One call. The remote agent works in a normal shell with full context until done.
 **The wrapper does NOT push your local changes to the remote, and does NOT pull remote-authored files back.** It creates a worktree on the remote starting from the *remote's existing HEAD*. This is the most common pitfall — three independent verification runs all rediscovered it.
 
 The model is:
+
 - The wrapper hands a fresh worktree on the remote to a `claude -p` session.
 - That session works in its own warm shell, on the remote's git state, and may commit to the worktree branch.
 - When done, the wrapper returns the branch name and SHA. Your local clone has not been touched.
 
 **If your task needs your local changes on the remote, push first.**
+
 ```bash
 git push origin <your-branch>
 ssh user@host 'git -C /path/to/remote/repo fetch'
@@ -51,6 +58,7 @@ ssh user@host 'git -C /path/to/remote/repo fetch'
 ```
 
 **If you need the remote-authored files back in your local tree, fetch after.**
+
 ```bash
 git fetch <your-remote> remote-claude/<branch-name>
 git checkout remote-claude/<branch-name>     # to inspect
@@ -62,17 +70,20 @@ git merge remote-claude/<branch-name>        # to merge the whole branch
 ### Edge case: detached HEAD or no shared remote
 
 If your local clone is in **detached HEAD** state, `git push` won't work without naming a branch. Create one first:
+
 ```bash
 git switch -c local-changes-for-remote-claude
 git push origin local-changes-for-remote-claude
 ```
 
 If your local clone has **no shared git remote with the target host** (e.g. you work over a private LAN with no Gitea/GitHub between them), the simplest workaround is to put the file content in the prompt itself:
+
 ```bash
 python remote-claude.py run --host ... --prompt "Create a file at src/foo.py with this exact content:
 <paste full file content here>
 Then run pytest and report results."
 ```
+
 That's slower for large files but avoids the need for a shared git remote entirely. **Don't use this for files larger than a few hundred lines** — prompt token cost dominates.
 
 If you have **a shared git remote but the remote checkout doesn't track it**, ssh in once and `git remote add origin <url>` on the remote checkout. One-time setup.
@@ -123,6 +134,7 @@ The `run` output is JSON on stdout: `{success, branch, worktree_path, parent_com
 ```
 
 **Remote (per host you'll target):**
+
 1. **Claude CLI must be installed.** `npm install -g @anthropic-ai/claude-code` or equivalent. The wrapper's `probe` subcommand reports its presence.
 2. **An ssh key authorized for passwordless login.** `ssh-copy-id user@host` once.
 3. **An existing checkout of the repo** at a known path on the remote. The wrapper creates a *sibling* worktree under `<parent-of-repo>/remote-claude-worktrees/`; it does not modify the existing checkout.
@@ -158,6 +170,7 @@ python remote-claude.py run \
 ```
 
 Returns (abbreviated):
+
 ```json
 {
   "success": true,

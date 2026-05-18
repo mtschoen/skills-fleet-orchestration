@@ -96,7 +96,8 @@ confirmed via symlink output that it didn't.
 ## Teardown
 
 Final state probe (verbatim):
-```
+
+```text
 === timers ===
 none
 === unit files ===

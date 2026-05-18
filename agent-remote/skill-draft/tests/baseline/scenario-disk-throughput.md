@@ -15,6 +15,7 @@
 > for **both Windows and Linux**. Use parallel subagents where it makes sense.
 >
 > **Context you need:**
+>
 > - This is a Python FastAPI project. Dashboard routers live in
 >   `src/myrepo/dashboard/routers/`. The hardware page router is
 >   `hardware.py`. Templates (Jinja2) live in
@@ -40,6 +41,7 @@
 > run code there.
 >
 > Report back with:
+>
 > 1. What you implemented and where.
 > 2. How you verified each platform.
 > 3. Any obstacles, awkwardness, or dead-ends you hit — especially around
