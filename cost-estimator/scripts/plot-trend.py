@@ -50,8 +50,8 @@ def pivot_to_datasets(rows: list[dict], granularity: str):
       - per_label_counts: dict[label, list[int]] — session counts per
         bucket, used by hover tooltips at render time.
     """
-    sums = defaultdict(lambda: defaultdict(float))     # sums[label][bucket]
-    counts = defaultdict(lambda: defaultdict(int))     # counts[label][bucket]
+    sums: dict[str, dict[str, float]] = defaultdict(lambda: defaultdict(float))   # sums[label][bucket]
+    counts: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))     # counts[label][bucket]
     bucket_set = set()
     label_set = set()
     for row in rows:

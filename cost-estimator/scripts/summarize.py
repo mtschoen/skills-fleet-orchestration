@@ -90,7 +90,6 @@ def main():
     # Tool-call aggregation
     tool_totals = Counter()
     tool_sessions = Counter()
-    tool_costs = defaultdict(float)
     for row in rows:
         tools = parse_tools(row["top_tools"])
         for name, count in tools.items():
