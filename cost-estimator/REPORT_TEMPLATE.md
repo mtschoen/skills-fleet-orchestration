@@ -46,6 +46,7 @@ Source: top-N rows from `sessions.csv`.
 | ... | | | | | | | |
 
 If the user asked about a specific session, include the absolute path:
+
 - Parent: `<roots>/<slug>/<session-id>.jsonl`
 - Subagents: `<roots>/<slug>/<session-id>/subagents/agent-*.jsonl`
 

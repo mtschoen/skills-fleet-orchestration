@@ -49,19 +49,23 @@ Most invocations need three things; ask only when not obvious:
    For arbitrary ranges, pass `--start YYYY-MM-DD --end YYYY-MM-DD` (end
    is inclusive).
 2. Run the analyzer:
+
    ```bash
    python <skill-root>/scripts/analyze-month.py \
        <root-1> [<root-2> ...] \
        --month <YYYY-MM>           # OR --start ... --end ...
        --label <name-1> [--label <name-2> ...]
    ```
+
    This writes `sessions.csv` and `daily.csv` next to the script (both
    are gitignored by the parent `cost-estimator/.gitignore`) and prints
    a brief stderr summary.
 3. Run the deeper summary:
+
    ```bash
    python <skill-root>/scripts/summarize.py [--paid <usd>]
    ```
+
    Pass `--paid` only if the user supplied an actually-paid amount. The
    summary prints subagent-vs-parent reconciliation, top tool calls,
    first-turn input bloat, top-N sessions, daily totals, and (when
@@ -77,9 +81,11 @@ Most invocations need three things; ask only when not obvious:
 5. **Plot top spike sessions on demand.** When the report flags a
    top-N session that the user wants to investigate, render its
    per-turn trajectory:
+
    ```bash
    python <skill-root>/scripts/plot-session.py <session-id-prefix> --open
    ```
+
    This produces an HTML chart (per-turn bars + cumulative line +
    hover tooltips) at `<skill-root>/reports/session-<prefix>.html`,
    helping the user see *where* in the session the spike happened.
@@ -90,11 +96,13 @@ Most invocations need three things; ask only when not obvious:
    not as overlay curves.
 6. **Plot the aggregate trend across the range.** Run after
    analyze-month.py so the CSV exists:
+
    ```bash
    python <skill-root>/scripts/plot-trend.py \
        (--month YYYY-MM | --start YYYY-MM-DD --end YYYY-MM-DD) \
        [--bucket {day,week,month}] [--inline-js] [--open]
    ```
+
    Produces an HTML chart at `<skill-root>/reports/trend-<range>.html`.
    Bars stack per-machine cost in each bucket; right-axis line shows
    the cumulative total. Bucket size auto-picks from range length
@@ -102,11 +110,13 @@ Most invocations need three things; ask only when not obvious:
 7. **Compare two windows side-by-side.** When the user asks "is my
    spend trending up/down?" or "how does this week compare to last?",
    render the period-over-period overlay:
+
    ```bash
    python <skill-root>/scripts/plot-compare.py \
        (--month YYYY-MM | --start YYYY-MM-DD --end YYYY-MM-DD | --last <Nh|Nd>) \
        [--bucket {day,week,month}] [--inline-js] [--open]
    ```
+
    The prior window is auto-derived as the same-length window
    immediately before the current one. Bucket-index (Day/Week/Month N)
    makes paired bars apples-to-apples wall-clock-relative slices, not
@@ -115,6 +125,7 @@ Most invocations need three things; ask only when not obvious:
    to `<skill-root>/reports/<range>.md`. That folder (and everything in
    it) is gitignored. Capture the summary.txt alongside via shell
    redirect:
+
    ```bash
    python <skill-root>/scripts/summarize.py [--paid <usd>] \
        > <skill-root>/reports/summary.txt
