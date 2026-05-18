@@ -36,6 +36,7 @@ The single biggest fleet-orchestration failure mode is dispatching a vague task 
 ## Two modes: never mix them
 
 **Maintenance pass**: bounded, mechanical, no product judgment.
+
 - Push latest branch tip if behind
 - Lint changed files
 - Prune merged worktrees, `[gone]` branches
@@ -43,6 +44,7 @@ The single biggest fleet-orchestration failure mode is dispatching a vague task 
 - Run tests on current HEAD
 
 **Feature pass**: PLAN-driven, may require interpretation.
+
 - Implement an unchecked PLAN.md item
 - Fix a reported bug
 - Refactor a module
@@ -70,7 +72,7 @@ Triage runs **before** the user pre-approval step — the user shouldn't have to
 
 When refusing to dispatch, give the user a paste-ready way to start a new session:
 
-```
+```text
 This task needs supervised work in a fresh session. Try:
 
   cd <absolute path to repo>
@@ -92,7 +94,7 @@ After triage, **before dispatching**, present the shortlist to the user and wait
 
 Format the shortlist as a compact table:
 
-```
+```text
 About to dispatch N agents in parallel. Approve?
 
   # | Project    | Task                                | Risk
@@ -109,6 +111,7 @@ Reply: "go", "skip N", "all but N", or ask about any task.
 ```
 
 Required elements:
+
 - **PLAN.md line numbers** so the user can jump to source.
 - **Risk color** (green/yellow — reds are already filtered out) so attention goes to the right rows.
 - **One-line "what worried me"** for every yellow.
@@ -143,7 +146,7 @@ A great fleet brief includes the answer to the ambiguity you'd otherwise have ha
 
 Before dispatching into any target repo, run these three commands and read the output:
 
-```
+```text
 git -C <repo> status
 git -C <repo> worktree list
 git -C <repo> stash list
@@ -151,7 +154,7 @@ git -C <repo> stash list
 
 Signs an active parallel session is using this repo: uncommitted changes you didn't make, worktrees under `.claude/worktrees/agent-*` (or any other non-main worktree), or named stashes from another session. If detected, **pre-bake an isolated worktree from HEAD** for your agent before dispatching:
 
-```
+```text
 git -C <repo> worktree add <repo>/.claude/worktrees/orchestrator-<task> -b claude/<task> HEAD
 ```
 
@@ -181,6 +184,7 @@ When agents return, **do not** forward open questions to the user. Instead:
 4. Either apply the answer yourself, or surface it to the user **with your recommendation and the evidence**, not as a raw open question.
 
 Only bubble up to the user when:
+
 - The question is genuinely a product call (only they know which interpretation they meant), or
 - Two interpretations are equally plausible after investigation, or
 - The fix requires a destructive action you need authorization for.
@@ -220,11 +224,13 @@ Quick format reference (full schema in `references/maintenance-format.md`):
 ```
 
 **Staleness rules** (already enforced by projdash):
+
 - `per-commit` → stale when `last_run_commit != git rev-parse HEAD`
 - `time-based` → stale when `now - last_run > interval_days`
 - A task with `status: "failed"` at the **same** HEAD is **not** stale — re-running a failed task at an unchanged commit will fail again. Wait for HEAD to move.
 
 **Runner contract:**
+
 1. Read current state with `get_maintenance_state` or directly from disk.
 2. Skip if `is_task_stale` returns False.
 3. Do the work.
@@ -235,7 +241,7 @@ Quick format reference (full schema in `references/maintenance-format.md`):
 
 ### Maintenance pass
 
-```
+```text
 1. find_stale_maintenance(task_name="push-latest")
    → ["myrepo", "site"]                  # other repos clean, skipped
 2. For each stale project:
@@ -249,7 +255,7 @@ Re-running 5 minutes later returns only `["site"]`. Cheap.
 
 ### Feature pass
 
-```
+```text
 1. Identify candidate tasks (read PLAN.md from N projects).
 2. Triage each (the four questions above). Drop reds, produce handoff prompts.
 3. Present green/yellow shortlist to the user. Wait for approval.

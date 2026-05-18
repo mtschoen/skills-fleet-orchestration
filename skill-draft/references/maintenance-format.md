@@ -88,6 +88,7 @@ Add new names freely; just be consistent across the fleet.
 ```
 
 In this example:
+
 - `push-latest` is clean at the current HEAD → skip on next pass.
 - `stale-worktrees` is clean and well within its 30-day window → skip.
 - `lint-changed` failed at commit `cded4b8`. If HEAD is still `cded4b8`, **skip** (it'll fail again). When HEAD moves, retry.
