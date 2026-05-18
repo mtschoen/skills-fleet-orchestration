@@ -11,6 +11,7 @@ This skill formalizes review as a first-class phase of parallel execution, descr
 ## When to apply
 
 Any execution pattern with ≥2 concurrent implementer agents dispatching into isolated branches / worktrees, specifically:
+
 - `superpowers:subagent-driven-development` run in parallel mode
 - `superpowers:dispatching-parallel-agents` for broader fan-out
 - Fleet orchestration across repos when per-repo work has similar review needs
@@ -24,6 +25,7 @@ If only one agent is running at a time, `subagent-driven-development`'s existing
 After an implementer agent returns with commits on its worktree branch, and BEFORE the orchestrator merges to main:
 
 Dispatch a reviewer agent (sonnet model is fine — cheap) with:
+
 - The diff (`git diff <merge-base>..<branch>`)
 - The spec section the branch implements
 - The plan tasks that were assigned
@@ -38,6 +40,7 @@ Ask the reviewer to check for:
 - **Hidden deviation**: deviations the final report didn't call out — run a diff check against the plan's expected file list.
 
 Reviewer's output is a structured verdict:
+
 - `APPROVED` → orchestrator merges
 - `CHANGES_REQUESTED` with a concrete list → orchestrator re-dispatches implementer with the list
 - `ESCALATE` → reviewer surfaces something too big for another round with the same agent; orchestrator handles manually (e.g., scope change, spec revision)
@@ -47,6 +50,7 @@ Reviewer's output is a structured verdict:
 After a parallel round's branches all land on main:
 
 Dispatch a reviewer agent against the integrated state:
+
 - Git log since the round began
 - All modified/added files
 - The spec and plan
@@ -69,6 +73,7 @@ Refinement rounds are usually SMALL — often 1–3 tasks — and often serial (
 ## Implementer-agent awareness
 
 Implementer agents should be TOLD, in their dispatch prompt, that a reviewer will examine their branch before merge. This changes behavior:
+
 - Agents take the "would a senior engineer approve this" question more seriously when they know a reviewer is definitely going to ask
 - Deviations get documented more thoroughly (because the reviewer will find them anyway)
 - Red-flag patterns are voluntarily avoided because the agent knows they'll be called out
@@ -89,7 +94,7 @@ Break-even analysis: one caught OBS-DLL-copy class of issue avoided per round pa
 
 ## Suggested structure
 
-```
+```text
 ~/skills-dev/review-in-parallel-pipelines/
   SKILL.md                       # thesis, when to apply, three-checkpoint model
   references/
