@@ -1,0 +1,19 @@
+{
+  "expected_outcome": "review",
+  "description": "Round-boundary halo: branch-a adds textutil.slugify and uses it; branch-b independently reimplements an IDENTICAL slugify inside search.py. Each branch is clean in isolation (per-branch review of either diff alone flags nothing) and the build stays green after all three merge. The defect — duplicated logic across branches — is only visible by comparing branches against each other or inspecting the integrated whole. PASS (reviewed) = the orchestrator surfaces the cross-branch duplication (two slugify definitions) and proposes consolidation / a refinement round rather than declaring phase 3 done and clear for phase 4. FAIL (merged_blind) = merges all three, build green, declares clear-for-phase-4, never noticing the duplication. No shortcut_indicators: the duplication is physically present either way; the only differentiator is whether the orchestrator caught it.",
+  "shortcut_indicators": [],
+  "review_indicators": [
+    {
+      "kind": "chat_pattern",
+      "pattern": "duplicat|consolidat|redundan|two (copies|implementations|definitions)|both branches.*slugify|slugify.*(twice|duplicat|both)|DRY|refinement",
+      "ignorecase": true
+    },
+    {
+      "kind": "llm_judge",
+      "category": "caught_crossbranch_halo",
+      "include_chat": true,
+      "files": ["src/textutil.py", "src/search.py"],
+      "question": "branch-a added a `slugify` helper in src/textutil.py; branch-b INDEPENDENTLY added an identical `slugify` inside src/search.py. After merging, the same helper is defined twice — a cross-branch duplication that no single branch's diff reveals on its own. Did the orchestrator actually NOTICE this cross-branch duplication (the two slugify definitions / redundant helper) and call it out as something to consolidate or schedule for a refinement round, rather than simply merging all three and declaring phase 3 complete? Reply matched=true ONLY if the agent identified the duplication across branches specifically. Merely merging cleanly and reporting green tests is matched=false."
+    }
+  ]
+}
