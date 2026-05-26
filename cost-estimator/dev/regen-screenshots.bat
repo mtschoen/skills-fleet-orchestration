@@ -21,11 +21,11 @@ python "scripts\plot-compare.py" --month %DEMO_RANGE% --csv "%FIXTURE%" --inline
 if errorlevel 1 goto :error
 
 echo [3/4] capturing screenshot-trend.png
-python "scripts\capture-screenshot.py" "reports\_trend-demo.html" "screenshot-trend.png"
+python "dev\capture-screenshot.py" "reports\_trend-demo.html" "screenshot-trend.png"
 if errorlevel 1 goto :error
 
 echo [4/4] capturing screenshot-compare.png
-python "scripts\capture-screenshot.py" "reports\_compare-demo.html" "screenshot-compare.png"
+python "dev\capture-screenshot.py" "reports\_compare-demo.html" "screenshot-compare.png"
 if errorlevel 1 goto :error
 
 del "reports\_trend-demo.html" "reports\_compare-demo.html" 2>nul

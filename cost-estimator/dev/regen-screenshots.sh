@@ -28,12 +28,12 @@ python scripts/plot-compare.py \
     --out "reports/_compare-demo.html"
 
 echo "[3/4] capturing screenshot-trend.png"
-python scripts/capture-screenshot.py \
+python dev/capture-screenshot.py \
     "reports/_trend-demo.html" \
     "screenshot-trend.png"
 
 echo "[4/4] capturing screenshot-compare.png"
-python scripts/capture-screenshot.py \
+python dev/capture-screenshot.py \
     "reports/_compare-demo.html" \
     "screenshot-compare.png"
 

@@ -11,7 +11,7 @@ def _load_module():
     """analyze-month.py has a hyphen; import via spec loader."""
     spec = importlib.util.spec_from_file_location(
         "analyze_month",
-        Path(__file__).parent / "analyze-month.py",
+        Path(__file__).parent.parent / "scripts" / "analyze-month.py",
     )
     module = importlib.util.module_from_spec(spec)
     sys.modules["analyze_month"] = module
