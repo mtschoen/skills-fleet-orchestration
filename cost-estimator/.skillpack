@@ -1,0 +1,3 @@
+# Extra top-level entries to install beyond the baseline
+# (SKILL.md, scripts/, references/, assets/). One per line; # = comment.
+REPORT_TEMPLATE.md
