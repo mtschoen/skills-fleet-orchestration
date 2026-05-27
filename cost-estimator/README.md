@@ -107,6 +107,10 @@ of each window, not the same calendar date.
 
 ## Predictive companion (planned)
 
+**Scope: cost, not time.** Estimating how *long* a task will take is the
+`progress-beacon` skill's job (its calibrated ETA); this companion owns the
+*spend* question only. The two are complementary, not overlapping.
+
 The originating user goal: get a defensible cost estimate **before**
 invoking Claude on a task. Concrete shapes:
 
