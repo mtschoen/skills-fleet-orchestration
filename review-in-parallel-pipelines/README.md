@@ -57,7 +57,7 @@ install-skills.bat -y review-in-parallel-pipelines
 
 Installs to `~/.claude/skills/review-in-parallel-pipelines/`. The installer ships
 `SKILL.md` + `references/` and excludes development-only files (this `README.md`,
-`HANDOFF.md`, `LICENSE`, `evals/`). The agent loads `SKILL.md` from the install
+`LICENSE`, `evals/`). The agent loads `SKILL.md` from the install
 location; this README is for human readers browsing the repo.
 
 ## Layout
@@ -66,7 +66,6 @@ location; this README is for human readers browsing the repo.
 review-in-parallel-pipelines/
   SKILL.md                          thesis, the three checkpoints, red flags, self-check
   README.md                         this file
-  HANDOFF.md                        original design brief (kept for posterity)
   references/
     review-dispatch-templates.md    reviewer-agent prompts (per-branch + round-boundary) + implementer-awareness snippet
     round-boundary-checklist.md     halo / drift / carry-over / gate-integrity catalogue
