@@ -1,0 +1,11 @@
+# Eval workspace (generated locally, never shipped)
+workspace/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# OS
+.DS_Store
+Thumbs.db
