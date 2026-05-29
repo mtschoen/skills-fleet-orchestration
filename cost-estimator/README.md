@@ -68,6 +68,37 @@ of each window, not the same calendar date.
 
 ![Current vs prior window comparison](screenshot-compare.png)
 
+## Reconciling against /stats
+
+The analyzer prices *surviving* transcripts. Under Claude Code's old
+30-day retention, heavy old days were garbage-collected before they could
+be priced, so a report for a pre-retention window undercounts. The
+`stats-cache.json` behind the `/stats` dashboard keeps a per-machine
+`dailyModelTokens` aggregate that survives transcript deletion — the only
+fossil record of those days.
+
+`analyze-month.py` prints a "COVERAGE vs /stats" guardrail automatically;
+for the full per-day breakdown run:
+
+```bash
+python scripts/stats_cache.py ~/.claude/projects --month 2026-04
+```
+
+It classifies each day as match / partial / **cleared** and reports a
+coverage %. The comparison is raw-transcript-in+out vs `/stats`
+`dailyModelTokens` — both non-deduped, so they agree to the token on
+intact days (verified), and a low coverage means real data loss, not the
+~3.2× no-dedup artifact that bites a deduped-vs-raw comparison. `/stats`
+carries no dollars and no cache, so cleared days are flagged and counted
+but not priced; the report labels the affected total a floor.
+
+## Cache TTL diagnostic
+
+`scripts/cache_ttl.py <root>` reports the `ephemeral_5m` vs `ephemeral_1h`
+split of cache-write tokens and an inter-turn-gap behavioral table — for
+confirming whether the account writes 1h-TTL cache (the subscription
+default) or is leaking cost to 5m-TTL prefix expiry.
+
 ## Files
 
 - `SKILL.md` — the retrospective skill (the working part).
@@ -77,7 +108,14 @@ of each window, not the same calendar date.
   CDN/inline download cache, and `<script>` tag builder used by
   both plotters.
 - `scripts/analyze-month.py` — JSONL walker + per-turn pricer
-  (uses `pricing.py`).
+  (uses `pricing.py`); also prints the "COVERAGE vs /stats" guardrail.
+- `scripts/roots.py` — shared root resolution, date-bound parsers, and
+  `stats_file_for()`. Imported by the analyzer, `stats_cache.py`, and
+  `cache_ttl.py`.
+- `scripts/stats_cache.py` — reconciles surviving transcripts against the
+  per-machine `/stats` `stats-cache.json`; flags cache-cleared days and
+  reports coverage %. Standalone CLI + helpers the analyzer imports.
+- `scripts/cache_ttl.py` — cache-write TTL (5m vs 1h) diagnostic.
 - `scripts/summarize.py` — CSV reader + waste-pattern report.
 - `scripts/plot-session.py` — render a single session's per-turn
   cost trajectory as an interactive HTML chart (Chart.js). Useful for

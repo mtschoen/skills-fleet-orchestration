@@ -27,4 +27,4 @@ jobs:
       - run: pip install ruff mypy pytest
       - run: ruff check scripts/
       - run: mypy scripts/ --ignore-missing-imports
-      - run: pytest scripts/
+      - run: pytest tests/

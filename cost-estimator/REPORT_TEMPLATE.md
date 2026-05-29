@@ -13,6 +13,32 @@ labelled prorated. {IF --paid SUPPLIED: "Prorated cost = raw × {DISCOUNT_FACTOR
 | {LABEL_2} | ${COST} | {N} | {HIT}% |
 | **Total** | **${TOTAL}** | **{N}** | **{HIT}%** |
 
+## Coverage / confidence
+
+Source: the "COVERAGE vs /stats" section of `analyze-month.py` output (or
+run `scripts/stats_cache.py` for the per-day breakdown).
+
+State plainly whether this report covers the full range or is a **floor**:
+
+- **If coverage ≥ 90%** (or no `/stats` aggregate exists): say the total is
+  complete to within normal staleness. One line is enough.
+- **If coverage < 90%**: the dollar total is a **FLOOR**. Some days were
+  cache-cleared — their transcripts were garbage-collected before they could
+  be priced (the old 30-day retention; now 365 days, so the gap is historical
+  and stops growing). Report:
+
+  | | |
+  |---|---|
+  | Coverage | **{PCT}%** of the /stats in+out aggregate present in transcripts |
+  | Cleared days | **{N}** ({CLEARED_TOKENS} in+out tokens with no surviving transcript) |
+  | Implication | reported spend is a **lower bound** for this range |
+
+  Comparison is raw-transcript-in+out vs `/stats` `dailyModelTokens` (both
+  non-deduped, so apples-to-apples — verified equal to the token on intact
+  days). `/stats` carries no dollars and no cache, so the cleared days cannot
+  be priced; name them and move on. Do **not** present the floor as the
+  definitive total.
+
 ## Subscription leverage
 
 *Include this section only when the user supplied --paid.*

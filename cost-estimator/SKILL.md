@@ -59,7 +59,12 @@ Most invocations need three things; ask only when not obvious:
 
    This writes `sessions.csv` and `daily.csv` next to the script (both
    are gitignored by the parent `cost-estimator/.gitignore`) and prints
-   a brief stderr summary.
+   a brief stderr summary. It also prints a **"COVERAGE vs /stats"**
+   section: a guardrail that flags when surviving transcripts undercount
+   the range because old days were cache-cleared (transcripts
+   garbage-collected under the old 30-day retention). When it warns, the
+   dollar total is a **floor** — carry that into the report (step 4), and
+   drill in with `stats_cache.py` (step 8) for the per-day breakdown.
 3. Run the deeper summary:
 
    ```bash
@@ -72,12 +77,15 @@ Most invocations need three things; ask only when not obvious:
    `--paid` is set) leverage and prorated columns.
 4. **Synthesize a markdown report** for the user. Follow
    `REPORT_TEMPLATE.md` — it specifies every section to include
-   (headline, leverage, top sessions, top tool calls, first-turn bloat,
-   daily totals, things-to-avoid walkthrough, methodology). Don't drop
-   sections to save space; the value of the report is precisely that it
-   surfaces patterns the user wouldn't see in a one-line summary. Pull
-   each section from the corresponding part of summarize.py's stdout.
-   Always label raw vs prorated explicitly — never leave it ambiguous.
+   (headline, coverage/confidence, leverage, top sessions, top tool
+   calls, first-turn bloat, daily totals, things-to-avoid walkthrough,
+   methodology). Don't drop sections to save space; the value of the
+   report is precisely that it surfaces patterns the user wouldn't see
+   in a one-line summary. Pull each section from the corresponding part
+   of summarize.py's stdout — except the coverage section, which comes
+   from analyze-month.py's "COVERAGE vs /stats" output. Always label raw
+   vs prorated explicitly, and if coverage warned, label the total a
+   floor — never leave either ambiguous.
 5. **Plot top spike sessions on demand.** When the report flags a
    top-N session that the user wants to investigate, render its
    per-turn trajectory:
@@ -121,7 +129,40 @@ Most invocations need three things; ask only when not obvious:
    immediately before the current one. Bucket-index (Day/Week/Month N)
    makes paired bars apples-to-apples wall-clock-relative slices, not
    calendar-aligned. Output lands in `<skill-root>/reports/compare-<range>.html`.
-8. **Offer to save.** If the analysis was substantive, save the report
+8. **Reconcile against /stats on demand.** When the coverage warning
+   fires (or the user asks "why doesn't this match /stats?"), run the
+   full per-day reconciliation:
+
+   ```bash
+   python <skill-root>/scripts/stats_cache.py \
+       <root-1> [<root-2> ...] \
+       (--month YYYY-MM | --start YYYY-MM-DD --end YYYY-MM-DD) \
+       [--label <name-1> ...] [--threshold 0.90]
+   ```
+
+   Prints, per machine: the `stats-cache.json` `modelUsage` inventory, a
+   per-day `/stats`-vs-transcript table (match / partial / cleared), and
+   the coverage %. `cleared` days are ones whose transcripts were
+   garbage-collected — `/stats` `dailyModelTokens` is their only
+   surviving record (in+out only, no cache, no dollars). The comparison
+   is raw-vs-raw (both non-deduped, verified equal to the token on intact
+   days), so a fully-present range reads ~100%. Use this to *explain* the
+   gap, not to "fix" the dollar total — cleared days genuinely cannot be
+   priced. Roots/stats files are resolved exactly like analyze-month.py
+   (`CLAUDE_COST_ROOTS` or positional roots; the stats file is the
+   sibling `stats-cache.json` of each projects root).
+9. **Probe cache TTL on demand.** If the user asks whether their cache is
+   1h- or 5m-TTL, or why cache-write cost looks high:
+
+   ```bash
+   python <skill-root>/scripts/cache_ttl.py <root-1> [<root-2> ...]
+   ```
+
+   Reports the `ephemeral_5m` vs `ephemeral_1h` split of cache-write
+   tokens and a behavioral inter-turn-gap table (a high "miss%" in the
+   5–60m buckets would betray a 5m TTL letting prefixes expire).
+   Subscription accounts write 1h-TTL by default.
+10. **Offer to save.** If the analysis was substantive, save the report
    to `<skill-root>/reports/<range>.md`. That folder (and everything in
    it) is gitignored. Capture the summary.txt alongside via shell
    redirect:
@@ -194,6 +235,14 @@ output rates. Cache multipliers stay relative to the doubled base.
 - Per-project breakdown. The analyzer groups by machine label, not by
   project slug. Easy extension: bucket `parent_path` by its containing
   directory in a follow-up summary.
+- Dollar backfill of cache-cleared days. `stats_cache.py` *detects* and
+  *quantifies* cleared days (coverage %, cleared in+out tokens) but does
+  not estimate their dollars. `/stats` `dailyModelTokens` is raw
+  (non-deduped, ~3.2× hot), carries no input/output split (only a
+  per-model in+out sum), and excludes cache entirely — so any backfilled
+  dollar figure would be a coarse guess stacked on three approximations.
+  Deferred until that estimation can be designed deliberately; for now
+  the floor + the cleared-token count is the honest answer.
 
 ## Files in this skill
 
@@ -206,6 +255,19 @@ output rates. Cache multipliers stay relative to the doubled base.
   formula does not drift.
 - `scripts/analyze-month.py` — JSONL walker and per-turn pricer
   (uses `pricing.py`). Default `--out` is `<skill-root>/reports/`.
+  Also prints the "COVERAGE vs /stats" guardrail (uses `stats_cache.py`).
+- `scripts/roots.py` — shared root resolution (`CLAUDE_COST_ROOTS` /
+  positional roots), date-bound parsers, and `stats_file_for()`.
+  Imported by `analyze-month.py`, `stats_cache.py`, and `cache_ttl.py`
+  so path/range logic stays in one place.
+- `scripts/stats_cache.py` — reconciles surviving transcripts against
+  Claude Code's per-machine `/stats` aggregate (`stats-cache.json`).
+  Flags cache-cleared (garbage-collected) days and reports coverage %,
+  so a report never silently presents an undercount as the full total.
+  Exposes `coverage_for_roots` / `format_warning` for the analyze-month
+  guardrail, plus a standalone per-day reconciliation CLI.
+- `scripts/cache_ttl.py` — diagnostic for cache-write TTL (5m vs 1h
+  split) and an inter-turn-gap behavioral table.
 - `scripts/summarize.py` — CSV reader and waste-pattern report.
   Default `--csv` is `<skill-root>/reports/sessions.csv`.
 - `scripts/plot-session.py` — per-session HTML cost trajectory chart
