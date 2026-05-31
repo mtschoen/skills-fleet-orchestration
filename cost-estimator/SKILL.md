@@ -31,7 +31,7 @@ Most invocations need three things; ask only when not obvious:
 2. **Projects roots.** Default to `~/.claude/projects` on the current
    host. If the user works across multiple machines, ask whether to
    include other roots — typically a network-mounted path to another
-   host's `~/.claude/projects`. The user's CLAUDE.md often documents
+   host's `~/.claude/projects`. The user's AGENTS.md (or CLAUDE.md) often documents
    the cross-machine convention; consult it before guessing.
 
    Multi-machine setups can set the `CLAUDE_COST_ROOTS` env var once
