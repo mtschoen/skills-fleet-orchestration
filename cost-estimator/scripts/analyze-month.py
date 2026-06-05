@@ -2,13 +2,13 @@
 
 Walks all session JSONLs (parents + subagents) under one or more
 .claude/projects roots, dedupes assistant turns by message.id, and prices
-each turn per the canonical formula (Opus / Sonnet / Haiku rates with
-1M-tier doubling, cache read 0.1x, cache write 1.25x).
+each turn per the canonical formula (Opus / Sonnet / Haiku rates, flat
+across the 1M-context tier, cache read 0.1x, cache write 1.25x).
 
 Backs the retrospective half of the cost-estimator skill. Answers "what
 did I spend?" with per-session, daily, and waste-pattern detail —
 crossing the gap that `/cost` (current session only) and `ccusage` (no
-1M-tier modeling, no per-machine grouping) leave open.
+per-machine grouping, no waste-pattern flags) leave open.
 
 Usage:
     python analyze-month.py <projects_root> [<projects_root> ...]

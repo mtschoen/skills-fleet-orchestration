@@ -58,9 +58,9 @@ Subagent spend was ${SUB} ({PCT}% of total).
 
 `ccusage monthly --since YYYYMMDD --until YYYYMMDD` reports ${CCUSAGE_TOTAL}
 across {LABELS}. Analyzer reports ${ANALYZER_TOTAL} — delta {DELTA}%.
-Where they disagree, this analyzer reads slightly hot because it doubles
-rates for `[1m]` (1M-context tier) traffic which ccusage does not model.
-Treat **${LOW}–${HIGH}** as the honest bracketed range.
+Where they disagree, treat **${LOW}–${HIGH}** as the honest bracketed
+range; residual gaps come from subagent handling and the $0.01/web-search
+charge, not 1M-tier pricing (both price `[1m]` at the flat rate).
 
 ## Top sessions
 
@@ -161,7 +161,7 @@ specific dollar figures and session IDs.
   double-count gotcha.
 - Prices each turn per the canonical Anthropic rate table (Opus
   $5/$25, Sonnet $3/$15, Haiku $1/$5; cache read 0.1×, cache write
-  1.25× input rate; rates doubled when `model.id` contains `[1m]`).
+  1.25× input rate; the 1M tier bills at the flat rate, no surcharge).
 - Filters by first-entry timestamp into [start, end+1) UTC.
 - Re-runnable: `python scripts/analyze-month.py <projects> --month YYYY-MM`
   then `python scripts/summarize.py [--paid <usd>]`.

@@ -1,6 +1,6 @@
 ---
 name: cost-estimator
-description: Use when the user asks for a retrospective Claude Code spend analysis over a date range — what they spent, top sessions, cache discipline, waste patterns, subscription leverage. Triggers include "/cost estimate", "what did I spend", "how much did last month cost", "cost breakdown", "where did my Claude budget go", "analyze my Claude spending", "audit my Claude usage". Walks local session JSONLs (parents and subagents), prices each turn per the canonical Anthropic rate table (Opus / Sonnet / Haiku with 1M-tier doubling, cache read 0.1x, cache write 1.25x), and produces per-session, daily, and waste-pattern reports. Predictive cost estimation ("how much will this plan cost") is not yet built — see github.com/mtschoen/skills-cost-estimator for the planned design.
+description: Use when the user asks for a retrospective Claude Code spend analysis over a date range — what they spent, top sessions, cache discipline, waste patterns, subscription leverage. Triggers include "/cost estimate", "what did I spend", "how much did last month cost", "cost breakdown", "where did my Claude budget go", "analyze my Claude spending", "audit my Claude usage". Walks local session JSONLs (parents and subagents), prices each turn per the canonical Anthropic rate table (Opus / Sonnet / Haiku, flat across the 1M-context tier, cache read 0.1x, cache write 1.25x), and produces per-session, daily, and waste-pattern reports. Predictive cost estimation ("how much will this plan cost") is not yet built — see github.com/mtschoen/skills-cost-estimator for the planned design.
 ---
 
 # cost-estimator (retrospective)
@@ -8,7 +8,7 @@ description: Use when the user asks for a retrospective Claude Code spend analys
 This skill answers "what did I spend on Claude Code over [some date range]?"
 It walks the local session transcripts and produces a defensible cost
 breakdown that goes beyond `/cost` (current session only) and `ccusage`
-(no 1M-tier modeling, no per-machine grouping, no waste-pattern flags).
+(no per-machine grouping, no waste-pattern flags).
 
 ## When to invoke
 
@@ -198,10 +198,10 @@ here":
 Always show the user that the number is defensible. The summary script
 already prints subagent-vs-parent breakdowns. When the user asks about
 a single specific number, also report what `ccusage monthly` says for
-the same range — they will diverge by a few percent (this script
-applies the 1M-context-tier rate doubling that ccusage does not, so
-this script reads slightly hot when there is heavy `[1m]` traffic).
-Bracket the truth between the two values rather than asserting one.
+the same range — they may diverge by a few percent (from subagent
+handling and the $0.01/web-search charge, not from 1M-tier pricing:
+both price the 1M tier at the flat rate). Bracket the truth between the
+two values rather than asserting one.
 
 ## Pricing table (canonical, inlined)
 
@@ -219,8 +219,11 @@ Cache multipliers (relative to base input rate, all models): cache read
 **0.1x**, cache write **1.25x** (empirical for both 5m and 1h TTLs as of
 2026-04, despite docs claiming 2.0x for 1h-TTL writes).
 
-The 1M-context tier (when `model.id` contains `[1m]`) doubles input and
-output rates. Cache multipliers stay relative to the doubled base.
+The 1M-context tier (when `model.id` contains `[1m]`) bills at the SAME
+flat per-token rate — no surcharge above 200K (verified 2026-06 against
+`~/.claude.json` billing across 28 Opus[1m] sessions and current
+Anthropic docs). Earlier docs and this skill modeled a 2x doubling; it
+was never present in the billed aggregate.
 
 ## What this skill does not do (yet)
 
@@ -250,7 +253,7 @@ output rates. Cache multipliers stay relative to the doubled base.
 - `REPORT_TEMPLATE.md` — section-by-section template for the markdown
   report this skill produces. Follow it.
 - `scripts/pricing.py` — canonical pricing formula (rates, cache
-  multipliers, 1M-tier doubling) plus the JSONL turn-iterator helper.
+  multipliers, flat 1M-tier pricing) plus the JSONL turn-iterator helper.
   Both retrospective and per-session scripts import from here so the
   formula does not drift.
 - `scripts/analyze-month.py` — JSONL walker and per-turn pricer

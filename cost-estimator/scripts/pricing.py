@@ -1,9 +1,9 @@
 """Canonical pricing helpers shared across cost-estimator scripts.
 
-Single source of truth for the per-MTok rates, cache multipliers, and
-1M-context-tier doubling. Both analyze-month.py (retrospective bulk
-analysis) and plot-session.py (single-session trajectory) import from
-here so the formula does not drift.
+Single source of truth for the per-MTok rates and cache multipliers.
+Both analyze-month.py (retrospective bulk analysis) and plot-session.py
+(single-session trajectory) import from here so the formula does not
+drift.
 
 Source of truth for the rate table is
 ~/.claude/notes/reference_anthropic_pricing.md; the values below are
@@ -38,10 +38,6 @@ def model_family(model_identifier):
     return None
 
 
-def is_one_million_tier(model_identifier):
-    return bool(model_identifier and "[1m]" in model_identifier)
-
-
 def parse_timestamp(value):
     if not value:
         return None
@@ -57,9 +53,9 @@ def cost_for_turn(model_identifier, input_tokens, output_tokens,
     if family is None:
         return 0.0
     input_rate, output_rate = PRICES[family]
-    if is_one_million_tier(model_identifier):
-        input_rate *= 2
-        output_rate *= 2
+    # The 1M-context tier (`[1m]` model ids) bills at the SAME flat per-token
+    # rate -- no surcharge above 200K, verified 2026-06 against ~/.claude.json
+    # billing across 28 Opus[1m] sessions and current Anthropic docs.
     return (input_tokens * input_rate
             + output_tokens * output_rate
             + cache_read_tokens * input_rate * CACHE_READ_MULTIPLIER

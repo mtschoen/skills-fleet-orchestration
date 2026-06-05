@@ -252,7 +252,7 @@ The skill should:
   explicitly: "between $X and $Y".
 - Pin the pricing table inline (don't depend on memory notes — skill
   should stay self-contained, eventually publishable).
-- Honor the cache-write/read multipliers and the Opus 1M-context tier
-  doubling.
+- Honor the cache-write/read multipliers. The Opus 1M-context tier bills
+  at the flat rate (no surcharge above 200K).
 - Present output as a breakdown: input cost + output cost + cache
   savings (if applicable) + total range.
