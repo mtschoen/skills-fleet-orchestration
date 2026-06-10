@@ -20,7 +20,7 @@ CLI prints the full per-day reconciliation + the stats file's own modelUsage
 inventory. analyze-month.py imports `coverage_for_roots` + `format_warning`
 to emit a one-line guardrail in the normal report flow.
 
-Caveats (see ~/.claude/notes/reference_claude_code_stats_cache.md):
+Caveats:
   - per-machine, not account-wide (one stats-cache.json per root);
   - daily granularity only; `dailyModelTokens` excludes cache entirely;
   - the file is stale until `/stats` is opened (lastComputedDate);

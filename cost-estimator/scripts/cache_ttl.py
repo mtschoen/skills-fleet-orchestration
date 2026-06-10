@@ -10,9 +10,9 @@ Two readouts over parent session transcripts:
      would indicate a 5m TTL letting the prefix expire; low miss% across long
      gaps indicates 1h-TTL warmth.
 
-Findings for this account are recorded in
-~/.claude/notes/reference_claude_code_cache_ttl.md (98.7% 1h-TTL). This script
-is the reusable probe behind that note. Paths are parameterized via roots.py
+On the account this probe was built against, 98.7% of cache-write tokens were
+1h-TTL; re-run the probe to measure the current account rather than assuming
+that split. Paths are parameterized via roots.py
 (CLI roots or CLAUDE_COST_ROOTS) -- no hard-coded machine paths.
 """
 

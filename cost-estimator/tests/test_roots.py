@@ -44,9 +44,9 @@ def test_windows_drive_letter_in_env_path():
     """First colon is the delimiter; rest is the path (includes C:)."""
     pairs = roots._resolve_roots(
         cli_roots=[], cli_labels=[],
-        env_value="host-a:C:/Users/mtsch/.claude/projects",
+        env_value="host-a:C:/Users/someone/.claude/projects",
     )
-    assert pairs == [("host-a", Path("C:/Users/mtsch/.claude/projects"))]
+    assert pairs == [("host-a", Path("C:/Users/someone/.claude/projects"))]
 
 
 def test_env_malformed_raises():

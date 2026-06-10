@@ -5,9 +5,9 @@ Both analyze-month.py (retrospective bulk analysis) and plot-session.py
 (single-session trajectory) import from here so the formula does not
 drift.
 
-Source of truth for the rate table is
-~/.claude/notes/reference_anthropic_pricing.md; the values below are
-duplicated for skill self-containment.
+The PRICES table below is the source of truth for these scripts;
+SKILL.md's pricing table mirrors it. Keep the two in sync when rates
+change.
 """
 
 from __future__ import annotations

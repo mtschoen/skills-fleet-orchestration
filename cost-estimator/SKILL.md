@@ -205,9 +205,9 @@ two values rather than asserting one.
 
 ## Pricing table (canonical, inlined)
 
-The analyzer applies these rates per million tokens. Source of truth is
-`~/.claude/notes/reference_anthropic_pricing.md`; the table here is
-duplicated for skill self-containment.
+The analyzer applies these rates per million tokens. This table and
+`scripts/pricing.py` are the source of truth - keep the two in sync
+when rates change.
 
 | Family | Input | Output |
 |---|---|---|
