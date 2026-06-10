@@ -43,7 +43,7 @@ Repo-local breadcrumb file recording the last run of recurring maintenance tasks
 
 ## Standard task names
 
-Reserved names — use these exactly so projdash and the orchestrator skill can reason about them across repos:
+Reserved names — use these exactly so project-tracker and the orchestrator skill can reason about them across repos:
 
 | Name | Kind | Purpose |
 |---|---|---|
@@ -93,14 +93,14 @@ In this example:
 - `stale-worktrees` is clean and well within its 30-day window → skip.
 - `lint-changed` failed at commit `cded4b8`. If HEAD is still `cded4b8`, **skip** (it'll fail again). When HEAD moves, retry.
 
-## projdash integration
+## project-tracker integration
 
-projdash reads these files via the scanner module `projdash.scanner.maintenance` and exposes two MCP tools:
+project-tracker reads these files via its maintenance scanner module and exposes two MCP tools:
 
-- `mcp__projdash__get_maintenance_state(name)` → parsed contents
-- `mcp__projdash__find_stale_maintenance(task_name?)` → list of stale projects
+- `mcp__project-tracker__get_maintenance_state(name)` → parsed contents
+- `mcp__project-tracker__find_stale_maintenance(task_name?)` → list of stale projects
 
-The Python helpers (importable from `projdash.scanner.maintenance`):
+The Python helpers (importable from the maintenance scanner module):
 
 - `read_maintenance_state(project_path) -> dict`
 - `write_maintenance_state(project_path, state)` — also appends to `.gitignore`

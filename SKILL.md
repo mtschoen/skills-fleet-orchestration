@@ -223,7 +223,7 @@ Quick format reference (full schema in `references/maintenance-format.md`):
 }
 ```
 
-**Staleness rules** (already enforced by projdash):
+**Staleness rules** (already enforced by project-tracker):
 
 - `per-commit` → stale when `last_run_commit != git rev-parse HEAD`
 - `time-based` → stale when `now - last_run > interval_days`
