@@ -85,6 +85,8 @@ def process_file(path, parent_session, is_subagent):
                     entry = _loads(line)
                 except Exception:
                     continue
+                if not isinstance(entry, dict):
+                    continue
                 saw_any = True
 
                 timestamp = parse_timestamp(entry.get("timestamp"))

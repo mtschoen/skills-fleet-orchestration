@@ -100,6 +100,8 @@ def iter_assistant_turns(jsonl_path):
                 entry = _loads(line)
             except Exception:
                 continue
+            if not isinstance(entry, dict):
+                continue
             if entry.get("type") != "assistant":
                 continue
             message = entry.get("message") or {}
