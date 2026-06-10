@@ -1,6 +1,6 @@
 ---
 name: remote-claude
-description: Use when delegating work to a different machine because of hardware, OS-specific tooling, locally-installed services, or anything else that physically can't be done on the orchestrator's host. Triggers include "I need to run this on the linux box," "the GPU server has the data," "verify on the production host," or any task where verification requires touching a remote machine. Replaces piping individual commands over ssh with a single call that spawns a full claude -p session in an isolated worktree on the remote.
+description: Use when delegating work to a different machine because of hardware, OS-specific tooling, locally-installed services, or anything else that physically can't be done on the orchestrator's host. Triggers include "I need to run this on the linux box," "the GPU server has the data," "verify on the production host," any task where verification requires touching a remote machine, or when about to chain multiple ssh commands for multi-step remote work.
 ---
 
 # remote-claude
@@ -35,13 +35,13 @@ One call. The remote agent works in a normal shell with full context until done.
 
 **Don't use this skill for:**
 
-- One-off "tell me the hostname" probes — just use single-command ssh.
+- One-off "tell me the hostname" probes - just use single-command ssh.
 - Pure-Python work that's been mocked correctly (unit tests with mocked subprocess calls don't need real hardware).
-- Work where the remote and local hosts have the *same* tooling and the only difference is the codebase — just edit locally.
+- Work where the remote and local hosts have the *same* tooling and the only difference is the codebase - just edit locally.
 
 ## Critical: how code flows between local and remote
 
-**The wrapper does NOT push your local changes to the remote, and does NOT pull remote-authored files back.** It creates a worktree on the remote starting from the *remote's existing HEAD*. This is the most common pitfall — three independent verification runs all rediscovered it.
+**The wrapper does NOT push your local changes to the remote, and does NOT pull remote-authored files back.** It creates a worktree on the remote starting from the *remote's existing HEAD*. This is the most common pitfall - three independent verification runs all rediscovered it.
 
 The model is:
 
@@ -84,7 +84,7 @@ python remote-claude.py run --host ... --prompt "Create a file at src/foo.py wit
 Then run pytest and report results."
 ```
 
-That's slower for large files but avoids the need for a shared git remote entirely. **Don't use this for files larger than a few hundred lines** — prompt token cost dominates.
+That's slower for large files but avoids the need for a shared git remote entirely. **Don't use this for files larger than a few hundred lines** - prompt token cost dominates.
 
 If you have **a shared git remote but the remote checkout doesn't track it**, ssh in once and `git remote add origin <url>` on the remote checkout. One-time setup.
 
@@ -92,11 +92,11 @@ If you have **a shared git remote but the remote checkout doesn't track it**, ss
 
 ## Critical: framing prevents silent drift
 
-When delegating cross-platform work, agents will rationalize *"I'll write the code and trust it works on the other platform — verifying is too much trouble."* This is silent drift. To prevent it, **the prompt you pass to the wrapper must explicitly forbid unverified deliverables.** Required phrasing pattern:
+When delegating cross-platform work, agents will rationalize *"I'll write the code and trust it works on the other platform - verifying is too much trouble."* This is silent drift. To prevent it, **the prompt you pass to the wrapper must explicitly forbid unverified deliverables.** Required phrasing pattern:
 
 > "You must actually run this end-to-end on the remote and include the real output in your report. Do not paste hypothetical examples. If the output isn't in the report, the task isn't done."
 
-Baseline testing showed that agents who saw this framing in their prompt resisted drift; agents who didn't, drifted. The wrapper itself does not enforce this — it's the caller's job to embed it in the `--prompt`.
+Baseline testing showed that agents who saw this framing in their prompt resisted drift; agents who didn't, drifted. The wrapper itself does not enforce this - it's the caller's job to embed it in the `--prompt`.
 
 ## Quick reference
 
@@ -147,12 +147,12 @@ The wrapper writes a narrow `.claude/settings.local.json` into each remote workt
 |---|---|---|
 | Using raw `ssh host 'cmd'` chains for multi-step work | Quoting hell, lost state between calls, slow iteration | Use this wrapper instead |
 | Writing the local half of a task in your live working tree | Pollutes the live tree with parallel-implementation duplicates of files the remote also wrote | Use a local worktree (`git worktree add ...`) for the local half OR delegate the whole task to the remote |
-| Expecting the remote to see your local uncommitted changes | The remote starts from its own `git HEAD` — your local working state is invisible to it | `git push` your branch first, then `ssh host 'git -C /repo fetch'`. See "How code flows between local and remote" above |
+| Expecting the remote to see your local uncommitted changes | The remote starts from its own `git HEAD` - your local working state is invisible to it | `git push` your branch first, then `ssh host 'git -C /repo fetch'`. See "How code flows between local and remote" above |
 | Expecting the wrapper to bring remote-authored files back to local | The wrapper returns SHA + filenames but does NOT pull files | `git fetch <remote> <branch-name>` after the run completes, then merge/cherry-pick. See edge cases above |
-| Trying `scp` to push files to the remote | Often denied by sandbox harnesses | Wrapper writes files via stdin redirect — handled |
-| Assuming `~/.local/bin` is on remote PATH | `claude`, `pipx` tools, npm-globals "not found" in non-interactive ssh | Wrapper prepends `~/.local/bin:~/.npm-global/bin:~/bin` — handled |
-| Running `nvcc`/`cmake`/`conda` over plain `ssh host 'cmd'` | Mysterious "not found" because non-interactive PATH lacks `/opt/cuda/bin` etc. | Wrapper uses `bash -lc` so login-shell PATH applies — handled |
-| Passing remote paths from Git Bash on Windows | MSYS converts `/home/x` to `C:/Program Files/Git/home/x` in argv before Python sees it | Wrapper detects and reverses the prefix — handled. As fallback, pass `//home/x` or set `MSYS_NO_PATHCONV=1` |
+| Trying `scp` to push files to the remote | Often denied by sandbox harnesses | Wrapper writes files via stdin redirect - handled |
+| Assuming `~/.local/bin` is on remote PATH | `claude`, `pipx` tools, npm-globals "not found" in non-interactive ssh | Wrapper prepends `~/.local/bin:~/.npm-global/bin:~/bin` - handled |
+| Running `nvcc`/`cmake`/`conda` over plain `ssh host 'cmd'` | Mysterious "not found" because non-interactive PATH lacks `/opt/cuda/bin` etc. | Wrapper uses `bash -lc` so login-shell PATH applies - handled |
+| Passing remote paths from Git Bash on Windows | MSYS converts `/home/x` to `C:/Program Files/Git/home/x` in argv before Python sees it | Wrapper detects and reverses the prefix - handled. As fallback, pass `//home/x` or set `MSYS_NO_PATHCONV=1` |
 | Hardcoding `~/project/.venv/bin/python` in unit files | Many remote checkouts have no venv (editable-installed system-wide) | Probe first; use `python3` or `command -v python3` |
 | `systemctl --user` without `loginctl enable-linger` | Timer fires only while user has an active session | Document the linger requirement; don't try to escalate |
 | Skipping verification "because the code is obviously correct" | Silent drift, ships unverified code | Embed the framing pattern from "Critical: framing prevents silent drift" above into every prompt |
