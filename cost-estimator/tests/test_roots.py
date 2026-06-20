@@ -84,6 +84,22 @@ def test_date_bounds_end_is_exclusive_next_day():
     assert end == datetime(2026, 5, 1, tzinfo=timezone.utc)
 
 
+def test_reports_directory_default_is_outside_skill_tree(monkeypatch):
+    monkeypatch.delenv("CLAUDE_COST_REPORTS_DIR", raising=False)
+    result = roots.reports_directory()
+    assert result == Path.home() / ".claude" / "cost-estimator" / "reports"
+
+
+def test_reports_directory_environment_override(monkeypatch):
+    monkeypatch.setenv("CLAUDE_COST_REPORTS_DIR", "/custom/spot")
+    assert roots.reports_directory() == Path("/custom/spot")
+
+
+def test_reports_directory_override_expands_user(monkeypatch):
+    monkeypatch.setenv("CLAUDE_COST_REPORTS_DIR", "~/elsewhere")
+    assert roots.reports_directory() == Path.home() / "elsewhere"
+
+
 if __name__ == "__main__":
     test_cli_roots_override_env()
     test_env_used_when_no_cli()

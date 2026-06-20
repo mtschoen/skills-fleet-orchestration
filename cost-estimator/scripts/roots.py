@@ -8,9 +8,22 @@ it imports cleanly from anywhere.
 
 from __future__ import annotations
 
+import os
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+
+def reports_directory() -> Path:
+    """Stable output directory for CSVs, HTML charts, and saved reports.
+
+    Lives OUTSIDE the installed skill tree so skill reinstalls can never
+    delete generated data. Override with CLAUDE_COST_REPORTS_DIR.
+    """
+    override = os.environ.get("CLAUDE_COST_REPORTS_DIR")
+    if override:
+        return Path(override).expanduser()
+    return Path.home() / ".claude" / "cost-estimator" / "reports"
 
 
 def _resolve_roots(cli_roots, cli_labels, env_value):
