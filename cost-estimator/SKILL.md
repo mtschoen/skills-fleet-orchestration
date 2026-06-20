@@ -57,8 +57,10 @@ Most invocations need three things; ask only when not obvious:
        --label <name-1> [--label <name-2> ...]
    ```
 
-   This writes `sessions.csv` and `daily.csv` next to the script (both
-   are gitignored by the parent `cost-estimator/.gitignore`) and prints
+   This writes `sessions.csv` and `daily.csv` to
+   `~/.claude/cost-estimator/reports/` - outside the installed skill tree,
+   so a skill reinstall never deletes generated data (override the location
+   with `CLAUDE_COST_REPORTS_DIR`) - and prints
    a brief stderr summary. It also prints a **"COVERAGE vs /stats"**
    section: a guardrail that flags when surviving transcripts undercount
    the range because old days were cache-cleared (transcripts
@@ -95,7 +97,7 @@ Most invocations need three things; ask only when not obvious:
    ```
 
    This produces an HTML chart (per-turn bars + cumulative line +
-   hover tooltips) at `<skill-root>/reports/session-<prefix>.html`,
+   hover tooltips) at `~/.claude/cost-estimator/reports/session-<prefix>.html`,
    helping the user see *where* in the session the spike happened.
    Pass `--inline-js` for an offline-viewable file. Pass `--x time`
    to render the x-axis as wall-clock time instead of turn number -
@@ -111,7 +113,7 @@ Most invocations need three things; ask only when not obvious:
        [--bucket {day,week,month}] [--inline-js] [--open]
    ```
 
-   Produces an HTML chart at `<skill-root>/reports/trend-<range>.html`.
+   Produces an HTML chart at `~/.claude/cost-estimator/reports/trend-<range>.html`.
    Bars stack per-machine cost in each bucket; right-axis line shows
    the cumulative total. Bucket size auto-picks from range length
    (≤14d→day, ≤90d→week, >90d→month) or override with `--bucket`.
@@ -128,7 +130,7 @@ Most invocations need three things; ask only when not obvious:
    The prior window is auto-derived as the same-length window
    immediately before the current one. Bucket-index (Day/Week/Month N)
    makes paired bars apples-to-apples wall-clock-relative slices, not
-   calendar-aligned. Output lands in `<skill-root>/reports/compare-<range>.html`.
+   calendar-aligned. Output lands in `~/.claude/cost-estimator/reports/compare-<range>.html`.
 8. **Reconcile against /stats on demand.** When the coverage warning
    fires (or the user asks "why doesn't this match /stats?"), run the
    full per-day reconciliation:
@@ -163,13 +165,13 @@ Most invocations need three things; ask only when not obvious:
    5–60m buckets would betray a 5m TTL letting prefixes expire).
    Subscription accounts write 1h-TTL by default.
 10. **Offer to save.** If the analysis was substantive, save the report
-   to `<skill-root>/reports/<range>.md`. That folder (and everything in
-   it) is gitignored. Capture the summary.txt alongside via shell
-   redirect:
+   to `~/.claude/cost-estimator/reports/<range>.md`. That directory lives
+   outside the installed skill and survives reinstalls. Capture the
+   summary.txt alongside via shell redirect:
 
    ```bash
    python <skill-root>/scripts/summarize.py [--paid <usd>] \
-       > <skill-root>/reports/summary.txt
+       > ~/.claude/cost-estimator/reports/summary.txt
    ```
 
 ## What "things to avoid" looks like in this skill's output
@@ -257,7 +259,8 @@ was never present in the billed aggregate.
   Both retrospective and per-session scripts import from here so the
   formula does not drift.
 - `scripts/analyze-month.py` - JSONL walker and per-turn pricer
-  (uses `pricing.py`). Default `--out` is `<skill-root>/reports/`.
+  (uses `pricing.py`). Default `--out` is `~/.claude/cost-estimator/reports/`
+  (override `CLAUDE_COST_REPORTS_DIR`).
   Also prints the "COVERAGE vs /stats" guardrail (uses `stats_cache.py`).
 - `scripts/roots.py` - shared root resolution (`CLAUDE_COST_ROOTS` /
   positional roots), date-bound parsers, and `stats_file_for()`.
@@ -272,7 +275,7 @@ was never present in the billed aggregate.
 - `scripts/cache_ttl.py` - diagnostic for cache-write TTL (5m vs 1h
   split) and an inter-turn-gap behavioral table.
 - `scripts/summarize.py` - CSV reader and waste-pattern report.
-  Default `--csv` is `<skill-root>/reports/sessions.csv`.
+  Default `--csv` is `~/.claude/cost-estimator/reports/sessions.csv`.
 - `scripts/plot-session.py` - per-session HTML cost trajectory chart
   (uses `pricing.py`).
 - `scripts/plot-trend.py` - aggregate trend chart across sessions.csv
@@ -285,5 +288,7 @@ was never present in the billed aggregate.
   bucketing logic stays in one place.
 - `scripts/chart_runtime.py` - shared Chart.js URL/version constants,
   download cache, and script-tag helper used by both plot scripts.
-- `reports/` - created on demand by the scripts; holds CSVs and
-  synthesized reports. Gitignored in the source repo.
+- `reports/` - dev-only scratch for screenshot fixtures (see
+  `dev/regen-screenshots`); gitignored. Generated cost data (CSVs, charts,
+  saved reports) now lands in `~/.claude/cost-estimator/reports/`, outside
+  the installed skill, via `roots.reports_directory()`.
