@@ -18,8 +18,12 @@ from __future__ import annotations
 
 import argparse
 import csv
+import sys
 from collections import Counter, defaultdict
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent))
+from roots import reports_directory  # noqa: E402  -- after sys.path manipulation
 
 
 def parse_tools(serialized):
@@ -40,9 +44,9 @@ def parse_tools(serialized):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--csv",
-                        default=str(Path(__file__).parent.parent / "reports" / "sessions.csv"),
+                        default=str(reports_directory() / "sessions.csv"),
                         help="sessions.csv path produced by analyze-month.py "
-                             "(default: <skill-root>/reports/sessions.csv)")
+                             "(default: ~/.claude/cost-estimator/reports/sessions.csv)")
     parser.add_argument("--paid", type=float, default=None,
                         help="Actual USD paid for the period (Max plan + extras). "
                              "When provided, reports leverage and prorated columns.")

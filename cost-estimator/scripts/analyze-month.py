@@ -44,6 +44,7 @@ from roots import (  # noqa: E402  -- after sys.path manipulation
     _resolve_roots,
     date_bounds,
     month_bounds,
+    reports_directory,
 )
 import stats_cache  # noqa: E402  -- after sys.path manipulation
 
@@ -201,8 +202,10 @@ def main():
     parser.add_argument("--label", action="append",
                         help="Label paired with each root (repeat to label multiple)")
     parser.add_argument("--out",
-                        default=str(Path(__file__).parent.parent / "reports"),
-                        help="Output directory for CSVs (default: <skill-root>/reports/)")
+                        default=str(reports_directory()),
+                        help="Output directory for CSVs "
+                             "(default: ~/.claude/cost-estimator/reports/, "
+                             "override dir via CLAUDE_COST_REPORTS_DIR)")
     parser.add_argument("--workers", type=int,
                         default=max(1, (os.cpu_count() or 4) // 2))
     arguments = parser.parse_args()

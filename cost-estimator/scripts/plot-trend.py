@@ -29,6 +29,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from chart_runtime import chartjs_script_tags  # noqa: E402
+from roots import reports_directory  # noqa: E402
 from trend_data import (  # noqa: E402
     bucket_key, auto_bucket, read_sessions_in_range,
     month_bounds, date_bounds,
@@ -230,8 +231,8 @@ def render_html(*, range_label: str, bucket_granularity: str,
     )
 
 
-DEFAULT_CSV_PATH = Path(__file__).resolve().parent.parent / "reports" / "sessions.csv"
-DEFAULT_OUT_DIR = Path(__file__).resolve().parent.parent / "reports"
+DEFAULT_CSV_PATH = reports_directory() / "sessions.csv"
+DEFAULT_OUT_DIR = reports_directory()
 
 
 def main():

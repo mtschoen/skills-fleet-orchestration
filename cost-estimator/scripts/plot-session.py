@@ -15,7 +15,7 @@ Usage:
         [--projects <root> ...]    # default: ~/.claude/projects
         [--x {turn,time}]           # default: turn
         [--inline-js]               # embed Chart.js into the HTML
-        [--out <path>]              # default: <skill-root>/reports/session-<id-prefix>.html
+        [--out <path>]              # default: ~/.claude/cost-estimator/reports/session-<id-prefix>.html
         [--open]                    # open the resulting HTML in default browser
 """
 
@@ -31,6 +31,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 from pricing import iter_assistant_turns, model_family  # noqa: E402
 from chart_runtime import chartjs_script_tags  # noqa: E402
+from roots import reports_directory  # noqa: E402
 
 
 DEFAULT_PROJECTS_ROOT = Path.home() / ".claude" / "projects"
@@ -254,7 +255,8 @@ def main():
     parser.add_argument("--inline-js", action="store_true",
                         help="Embed Chart.js into the HTML rather than CDN-load")
     parser.add_argument("--out", default=None,
-                        help="Output HTML path (default: <skill-root>/reports/session-<prefix>.html)")
+                        help="Output HTML path "
+                             "(default: ~/.claude/cost-estimator/reports/session-<prefix>.html)")
     parser.add_argument("--open", dest="open_browser", action="store_true",
                         help="Open the resulting HTML in the default browser")
     arguments = parser.parse_args()
@@ -289,8 +291,7 @@ def main():
     if arguments.out:
         output_path = Path(arguments.out)
     else:
-        skill_root = Path(__file__).resolve().parent.parent
-        output_path = skill_root / "reports" / f"session-{session_id[:8]}.html"
+        output_path = reports_directory() / f"session-{session_id[:8]}.html"
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(html_text, encoding="utf-8")

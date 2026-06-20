@@ -31,9 +31,10 @@ from trend_data import (  # noqa: E402
     parse_last, prior_window_for, read_sessions_in_range,
 )
 from chart_runtime import chartjs_script_tags  # noqa: E402
+from roots import reports_directory  # noqa: E402
 
-DEFAULT_CSV_PATH = Path(__file__).resolve().parent.parent / "reports" / "sessions.csv"
-DEFAULT_OUT_DIR = Path(__file__).resolve().parent.parent / "reports"
+DEFAULT_CSV_PATH = reports_directory() / "sessions.csv"
+DEFAULT_OUT_DIR = reports_directory()
 
 
 def _resolve_current_window(arguments, parser):
