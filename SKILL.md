@@ -164,13 +164,25 @@ Pre-baking is cheap (~100ms per repo). When in doubt, do it. Cleanup after mergi
 
 **Symptom you missed this check**: your agent reports an Edit denial on a file that was modified by another agent in a different worktree, OR your post-dispatch `git status` in the target repo shows a mix of files you don't recognize alongside your agent's edits.
 
+## Worktree hygiene + base verification (any worktree fan-out, intra- or cross-repo)
+
+`isolation: "worktree"` does NOT branch from your checked-out HEAD. Verified empirically 2026-07-01 (the created branch's reflog reads `branch: Created from origin/main`): auto-created worktrees branch from **origin/main** - the remote-tracking default branch, which may be stale and never contains unmerged feature-branch work. In the incident that surfaced this, five agents dispatched from a feature-branch checkout all received a pre-feature-branch base; one attempted to "self-correct" with an unauthorized merge.
+
+Before ANY worktree fan-out:
+
+1. **Hygiene pass.** `git worktree list` + `git worktree prune`. Leftover `agent-*` / task worktrees from dead sessions get removed (check `git -C <wt> status` for uncommitted work first). `git fetch` so remote-tracking refs - including the base auto-isolation will use - are current.
+2. **Choose the base explicitly.** If the work builds on anything other than fresh origin/main (a feature branch, unpushed commits, a pinned SHA), do NOT rely on `isolation: "worktree"`. Pre-bake: `git worktree add .claude/worktrees/<task> -b <branch> <sha>`, then dispatch WITHOUT the isolation option and pass the worktree path in the brief.
+3. **Verify base after creation, before work starts.** Every worktree, auto or pre-baked: `git rev-parse HEAD` must equal the intended base SHA. For auto-created worktrees you can't inspect pre-dispatch, put it in the brief verbatim: "FIRST ACTION: confirm `git rev-parse HEAD` prints `<full sha>`; on mismatch STOP and report. Do not merge, rebase, or reset to self-correct."
+
+**Symptom you missed this check**: agents report that files or functions named in the brief "don't exist in this checkout", or a returned diff re-implements work that already exists on the real base.
+
 ## Cross-repo dispatch mechanics
 
 The parent skill covers parallel dispatch. Three cross-repo specifics:
 
 - **One repo per agent - and one *session* per repo.** Two agents in the same repo (or one agent + an active parallel session) collide unless you pre-bake separate worktrees per session - see Pre-flight check above. Across different repos with no parallel sessions, isolation is automatic.
 - **`isolation: "worktree"` is intra-repo only - it cannot help here.** It worktrees the *orchestrator's* repo, not the target. For cross-repo dispatch, pre-bake a worktree in the target via `git -C <target> worktree add ...` and pass the path to the agent in the brief.
-- **Verify worktree isolation actually took.** If you requested `isolation: "worktree"` and the agent's result doesn't include a `worktreePath`, isolation silently failed and the agent worked on the parent tree. Assume cross-contamination and investigate before dispatching more parallel work.
+- **Verify worktree isolation actually took.** If you requested `isolation: "worktree"` and the agent's result doesn't include a `worktreePath`, isolation silently failed and the agent worked on the parent tree. Assume cross-contamination and investigate before dispatching more parallel work. And even when it took, verify the BASE - see "Worktree hygiene + base verification" above.
 
 ## Result triage (the part the parent skill doesn't cover)
 
