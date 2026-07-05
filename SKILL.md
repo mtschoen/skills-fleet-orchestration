@@ -139,8 +139,19 @@ The parent skill's prompt structure applies. On top of it, every fleet brief mus
 - **Permission boundary**: "if Edit/Write is denied for files under <repo path>, STOP immediately and report it as a permission issue. Do not work around."
 - **Hard prohibitions**: "Do NOT commit. Do NOT push. Leave changes in the working tree." No-commit is the fleet default: the orchestrator commits after review. If you instead brief implementers to commit to isolated branches (the review-in-parallel-pipelines pattern), say so explicitly in the brief - either way, nothing merges or pushes without orchestrator review.
 - **Concise reporting format**: files changed (with one-line summary each), test results, anything needing human review.
+- **Close-out findings section**: the final report must include a distinct "non-obvious durable findings" section - environment gotchas, stale refs, wrong assumptions found in docs/specs, anything the next agent would waste an hour rediscovering. "None" is a valid entry. Subagents do NOT write memory files (parallel writers race, duplicate, and lack curation context); the **orchestrator** curates worthwhile findings into memory after result triage. Without this line in the brief, discoveries die in the transcript - subagent sessions have no /wrap step.
 
 A great fleet brief includes the answer to the ambiguity you'd otherwise have had to chase down later.
+
+## Long-running external processes (batch test suites, builds)
+
+Any brief that includes a run longer than one tool call (Unity batch suites, full builds - often 10-40 min on slow hardware) must spell out the wait pattern, or the agent will strand itself:
+
+- **The failure mode**: the agent detaches the process (correct - a foreground call would time out), then STOPS its turn "waiting for the notification." A raw detached OS process is not harness-tracked, so nothing ever re-invokes the agent; its stop surfaces to the orchestrator as `completed` with a non-result ("Still running... pausing"). This is the top-level reflex (the main session genuinely gets task-notifications) pattern-matched one level down, where it's wrong.
+- **Brief the fix verbatim**: "wrap launch + wait + result-parse in ONE tracked background Bash (`run_in_background`) that exits only when the run is done - wait on the pid or until the results file exists, and put a hard timeout on the run itself (e.g. `timeout 3600 <cmd>`) so a hang can't strand you. Its exit re-invokes you exactly once. Never detach a process and stop your turn to 'wait'." Chained sub-cap foreground polls are an acceptable fallback.
+- **Orchestrator backstop**: when a lane still stops with "waiting...", don't trust `completed` status - read the result text. Verify the process state yourself (pgrep, lockfile, log mtime) and arm your own watcher (`while kill -0 <pid>; do sleep 30; done` in a tracked background Bash) so you get re-invoked to nudge or intervene. A log that hasn't grown in an hour with the process still alive is a HUNG run: read the log tail for the culprit (often an async op nothing pumps in batch mode), kill it, clear any shared lock, and send the diagnosis back to the agent - don't wait it out.
+
+**Symptom you missed this**: repeated completion notifications from the same agent whose "result" is a status update, each needing a manual nudge; or a shared test-pool lock held for hours by a run whose log went quiet.
 
 ## Pre-flight: check target repos for parallel sessions
 
