@@ -143,6 +143,14 @@ The parent skill's prompt structure applies. On top of it, every fleet brief mus
 
 A great fleet brief includes the answer to the ambiguity you'd otherwise have had to chase down later.
 
+## Model routing
+
+- **Orchestrator seat is the premium-tier model** - reserve it for judgment: triage, writing briefs, synthesizing results, and any delicate or irreversible step (live-system changes, destructive git, cross-repo merges).
+- **Worker lanes default to the mid-tier model** - not just for search and mechanical work. A well-specified feature implementation, a multi-file refactor, or a test-writing lane all belong on the mid tier when the brief is concrete; premium tier is not the default just because the task is "real work."
+- **Never let a lane inherit the orchestrator's model by omission** - pass an explicit model on every dispatch call. Omission silently burns the scarcer/pricier tier on work the mid tier handles fine.
+- **Delegate inline grunt work instead of doing it in the orchestrator seat.** Log forensics, fan-out searches, report/XML crunching, and mechanical multi-file edits are worker-lane tasks even mid-triage or mid-result-review - "it's quick, I'll just do it here" is the failure mode, not a shortcut.
+- **Escalate a single lane to premium only when triage calls for it** - ambiguous architecture, a product call embedded in the task, or a delicate live-system/git step that can't be pre-answered in the brief (see Pre-dispatch triage above). Escalate the lane, not the fleet.
+
 ## Long-running external processes (batch test suites, builds)
 
 Any brief that includes a run longer than one tool call (Unity batch suites, full builds - often 10-40 min on slow hardware) must spell out the wait pattern, or the agent will strand itself:
