@@ -133,7 +133,8 @@ def process_file(path, parent_session, is_subagent):
                 model_identifier = message.get("model") or ""
                 totals.cost_usd += cost_for_turn(model_identifier, input_tokens,
                                                  output_tokens, cache_read_tokens,
-                                                 cache_write_tokens)
+                                                 cache_write_tokens,
+                                                 timestamp=entry.get("timestamp") or "")
 
                 model_breakdown = totals.by_model.setdefault(
                     model_identifier, [0, 0, 0, 0]
