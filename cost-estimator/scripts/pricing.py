@@ -15,11 +15,17 @@ from __future__ import annotations
 from datetime import datetime
 
 
-# Per-MTok rates (verified 2026-04 against Anthropic docs).
+# Per-MTok rates (verified 2026-04 against Anthropic docs; fable/sonnet5
+# rows added 2026-07-16, verified against the live pricing page same day).
 PRICES = {
-    "opus":   (5.0, 25.0),
-    "sonnet": (3.0, 15.0),
-    "haiku":  (1.0, 5.0),
+    "fable":   (10.0, 50.0),
+    # Sonnet 5 introductory pricing, in effect through 2026-08-31; from
+    # 2026-09-01 it moves to the standard sonnet card (3.0, 15.0). Windows
+    # spanning that boundary will need date-aware rates here.
+    "sonnet5": (2.0, 10.0),
+    "opus":    (5.0, 25.0),
+    "sonnet":  (3.0, 15.0),
+    "haiku":   (1.0, 5.0),
 }
 CACHE_WRITE_MULTIPLIER = 1.25
 CACHE_READ_MULTIPLIER = 0.10
@@ -29,8 +35,13 @@ def model_family(model_identifier):
     if not model_identifier:
         return None
     name = model_identifier.lower()
+    if "fable" in name or "mythos" in name:
+        return "fable"
     if "opus" in name:
         return "opus"
+    # sonnet-5 before the generic sonnet match: distinct intro rate card.
+    if "sonnet-5" in name:
+        return "sonnet5"
     if "sonnet" in name:
         return "sonnet"
     if "haiku" in name:

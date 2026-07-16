@@ -213,7 +213,9 @@ when rates change.
 
 | Family | Input | Output |
 |---|---|---|
-| Opus 4.5 / 4.6 / 4.7 | $5  | $25 |
+| Fable 5 / Mythos     | $10 | $50 |
+| Opus 4.5 - 4.8       | $5  | $25 |
+| Sonnet 5 (intro rate through 2026-08-31; $3/$15 after) | $2 | $10 |
 | Sonnet 4.5 / 4.6     | $3  | $15 |
 | Haiku 4.5            | $1  | $5  |
 

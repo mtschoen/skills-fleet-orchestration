@@ -97,6 +97,8 @@ def daily_in_out_of_file(path, dedupe=True):
                 entry = json.loads(line)
             except Exception:
                 continue
+            if not isinstance(entry, dict):
+                continue
             if entry.get("type") != "assistant":
                 continue
             message = entry.get("message") or {}
