@@ -1,38 +1,41 @@
 #!/usr/bin/env python3
 """
-remote-claude.py — spawn a Claude Code session on a remote host to do work
-in an isolated git worktree, capture a structured result, return.
+agent-remote.py — spawn an agent session (claude, opencode, or agy) on a remote host
+to do work in an isolated git worktree, capture a structured result, return.
 
 The "open a terminal" affordance for agent orchestrators: instead of piping
-each command over ssh, hand a task to a remote `claude -p` session running
+each command over ssh, hand a task to a remote agent session running
 in its own warm shell with persistent context.
 
 Usage:
-    remote-claude.py run \\
-        --host user@remote-host \\
-        --repo-path ~/myrepo \\
-        --prompt "Build nvbandwidth, run it against all GPUs, report the matrix." \\
-        [--branch remote-claude/nvbw-2026-04-07] \\
-        [--permission-mode acceptEdits]
+    agent-remote.py run \
+        --host user@remote-host \
+        --repo-path ~/myrepo \
+        --prompt "Build nvbandwidth, run it against all GPUs, report the matrix." \
+        [--branch agent-remote/nvbw-2026-04-07] \
+        [--permission-mode acceptEdits] \
+        [--agent opencode] \
+        [--model llamalab-steamdeck/qwen3.5-9b]
 
-    remote-claude.py cleanup \\
-        --host user@remote-host \\
-        --branch remote-claude/nvbw-2026-04-07
+    agent-remote.py cleanup \
+        --host user@remote-host \
+        --branch agent-remote/nvbw-2026-04-07 \
+        --repo-path ~/myrepo
 
-    remote-claude.py probe \\
-        --host user@remote-host \\
+    agent-remote.py probe \
+        --host user@remote-host \
         --repo-path ~/myrepo
 
 `run` returns a JSON result on stdout with:
     host, branch, worktree_path, parent_commit, new_commit (or null),
-    files_changed, claude_exit_code, stdout_tail, stderr_tail,
+    files_changed, agent_exit_code, claude_exit_code, stdout_tail, stderr_tail,
     cleanup_command
 
 Environment variables:
-    REMOTE_CLAUDE_ALLOW_BYPASS=1   Allow --permission-mode bypassPermissions
-                                   (otherwise that mode is refused)
-    REMOTE_CLAUDE_TIMEOUT=3600     Max seconds for the remote claude -p run
-                                   (default 3600)
+    REMOTE_AGENT_ALLOW_BYPASS=1   Allow --permission-mode bypassPermissions
+                                  (otherwise that mode is refused)
+    REMOTE_AGENT_TIMEOUT=3600     Max seconds for the remote agent run
+                                  (default 3600)
 """
 
 from __future__ import annotations
@@ -89,14 +92,14 @@ class RunResult:
     parent_commit: str
     new_commit: Optional[str]
     files_changed: list[str]
-    claude_exit_code: int
+    agent_exit_code: int
     stdout_tail: str
     stderr_tail: str
     cleanup_command: str
     success: bool = field(init=False)
 
     def __post_init__(self) -> None:
-        self.success = self.claude_exit_code == 0
+        self.success = self.agent_exit_code == 0
 
     def to_json(self) -> str:
         payload = {
@@ -107,7 +110,8 @@ class RunResult:
             "parent_commit": self.parent_commit,
             "new_commit": self.new_commit,
             "files_changed": self.files_changed,
-            "claude_exit_code": self.claude_exit_code,
+            "agent_exit_code": self.agent_exit_code,
+            "claude_exit_code": self.agent_exit_code,  # backwards compatibility
             "stdout_tail": self.stdout_tail,
             "stderr_tail": self.stderr_tail,
             "cleanup_command": self.cleanup_command,
@@ -123,8 +127,8 @@ class RunResult:
 #: PATH prefix injected before every remote command. Ensures user-local
 #: install dirs (~/.local/bin, ~/.npm-global/bin, ~/bin) are reachable
 #: from non-interactive ssh sessions, where many distros' login shells
-#: leave them off PATH. Without this, `claude`, `pipx`-installed tools,
-#: and a lot of npm-global binaries are mysteriously "not found."
+#: leave them off PATH. Without this, `claude`, `opencode`, `agy`, `pipx`-installed
+#: tools, and a lot of npm-global binaries are mysteriously "not found."
 REMOTE_PATH_PREFIX = "$HOME/.local/bin:$HOME/.npm-global/bin:$HOME/bin"
 
 
@@ -168,7 +172,7 @@ _MSYS_PREFIXES = [
 def unmangle_msys_path(p: str) -> str:
     """
     Reverse Git Bash's outbound argv path mangling. When a user runs
-    `python remote-claude.py --repo-path /home/user/myrepo` from Git
+    `python agent-remote.py --repo-path /home/user/myrepo` from Git
     Bash on Windows, MSYS rewrites `/home/user/myrepo` into
     `C:/Program Files/Git/home/user/myrepo` BEFORE python.exe sees
     its argv. Python has no way to recover the original string from its
@@ -281,13 +285,16 @@ def ssh_check(host: str, remote_command: str, *, error_context: str = "") -> str
 
 def compute_worktree_path(repo_path: str, branch: str) -> str:
     """
-    Worktrees live SIBLING to the repo, not inside it, under a
-    `remote-claude-worktrees/` directory. Branch-name is used as the
+    Worktrees live SIBLING to the repo, not inside it, under an
+    `agent-remote-worktrees/` directory. Branch-name is used as the
     directory name, with slashes replaced.
     """
     parent = os.path.dirname(repo_path.rstrip("/"))
     safe_branch = branch.replace("/", "_")
-    return f"{parent}/remote-claude-worktrees/{safe_branch}"
+    # Backwards compatibility check
+    if branch.startswith("remote-claude"):
+        return f"{parent}/remote-claude-worktrees/{safe_branch}"
+    return f"{parent}/agent-remote-worktrees/{safe_branch}"
 
 
 def ensure_worktree(host: str, repo_path: str, branch: str) -> tuple[str, str]:
@@ -347,48 +354,95 @@ def seed_settings(host: str, worktree_path: str, allowlist: list[str]) -> None:
 
 
 # --------------------------------------------------------------------------
-# The actual remote claude -p invocation
+# The remote agent invocation
 # --------------------------------------------------------------------------
 
 
-def run_remote_claude(
+def run_remote_agent(
     host: str,
     worktree_path: str,
     prompt: str,
     permission_mode: str,
     timeout: float,
+    agent: str,
+    model: Optional[str] = None,
 ) -> tuple[int, str, str]:
     """
-    Invoke `claude -p` on the remote in the worktree directory.
+    Invoke the selected agent CLI on the remote in the worktree directory.
     Returns (exit_code, stdout, stderr).
     """
-    # Build the remote command. The prompt comes in via stdin to avoid any
-    # argv-length or quoting issues. `claude -p` reads the prompt from its
-    # first positional arg if given, or from stdin if --input is used.
-    # We pipe via stdin using a heredoc-free approach: `claude -p <<<"$PROMPT"`
-    # is bash-specific; safer is: `echo "$PROMPT" | claude -p`.
-    #
-    # But echo mangles backslashes on some shells; printf is safer:
-    #     printf '%s' "$PROMPT" | claude -p --permission-mode MODE
-    #
-    # And we pass PROMPT via an env var we set in the same shell line.
-    # Since we're already wrapped in bash -lc by ssh_run, env var syntax works.
-    remote_cmd = (
-        f"cd {shlex.quote(worktree_path)} && "
-        f"printf '%s' \"$REMOTE_CLAUDE_PROMPT\" | "
-        f"claude -p --permission-mode {shlex.quote(permission_mode)}"
-    )
-    # We can't set env vars via ssh_run's interface because it uses bash -lc.
-    # Pass the prompt via stdin INSTEAD — redirect stdin through the pipe.
-    # Simpler approach: write prompt to a file, then `claude -p < /tmp/prompt`.
-    prompt_file = f"{worktree_path}/.claude-prompt.txt"
+    prompt_file = f"{worktree_path}/.agent-prompt.txt"
     ssh_put_file(host, prompt_file, prompt)
 
-    remote_cmd = (
-        f"cd {qrp(worktree_path)} && "
-        f"claude -p --permission-mode {shlex.quote(permission_mode)} "
-        f"< {qrp(prompt_file)}"
-    )
+    if agent == "claude":
+        remote_cmd = (
+            f"cd {qrp(worktree_path)} && "
+            f"claude -p --permission-mode {shlex.quote(permission_mode)} "
+            f"< {qrp(prompt_file)}"
+        )
+    elif agent == "agy":
+        args_list = ["agy", "--print", "PROMPT_PLACEHOLDER"]
+        if permission_mode == "plan":
+            args_list.extend(["--mode", "plan"])
+        elif permission_mode in ("acceptEdits", "bypassPermissions"):
+            args_list.append("--dangerously-skip-permissions")
+            args_list.extend(["--mode", "accept-edits"])
+        if model:
+            args_list.extend(["--model", model])
+
+        args_json = json.dumps(args_list)
+        py_cmd = (
+            "import json, subprocess; "
+            f"args = json.loads({repr(args_json)}); "
+            f"args[args.index('PROMPT_PLACEHOLDER')] = open({repr(prompt_file)}).read(); "
+            "subprocess.run(args)"
+        )
+        remote_cmd = f"cd {qrp(worktree_path)} && python3 -c {shlex.quote(py_cmd)}"
+    elif agent == "opencode":
+        opencode_args = ["opencode", "run"]
+        if permission_mode in ("acceptEdits", "bypassPermissions"):
+            opencode_args.append("--auto")
+        if model:
+            opencode_args.extend(["--model", model])
+
+        args_json = json.dumps(opencode_args + ["PROMPT_PLACEHOLDER"])
+        py_cmd = (
+            "import json, subprocess; "
+            f"args = json.loads({repr(args_json)}); "
+            f"args[args.index('PROMPT_PLACEHOLDER')] = open({repr(prompt_file)}).read(); "
+            "subprocess.run(args)"
+        )
+        remote_cmd = f"cd {qrp(worktree_path)} && python3 -c {shlex.quote(py_cmd)}"
+    elif agent == "pi":
+        pi_args = ["pi", "-p"]
+        if model:
+            pi_args.extend(["--model", model])
+
+        args_json = json.dumps(pi_args + ["PROMPT_PLACEHOLDER"])
+        py_cmd = (
+            "import json, subprocess; "
+            f"args = json.loads({repr(args_json)}); "
+            f"args[args.index('PROMPT_PLACEHOLDER')] = open({repr(prompt_file)}).read(); "
+            "subprocess.run(args)"
+        )
+        remote_cmd = f"cd {qrp(worktree_path)} && python3 -c {shlex.quote(py_cmd)}"
+    elif agent == "codex":
+        codex_args = ["codex", "exec"]
+        if permission_mode in ("acceptEdits", "bypassPermissions"):
+            codex_args.append("--dangerously-bypass-approvals-and-sandbox")
+        if model:
+            codex_args.extend(["--model", model])
+
+        args_json = json.dumps(codex_args + ["PROMPT_PLACEHOLDER"])
+        py_cmd = (
+            "import json, subprocess; "
+            f"args = json.loads({repr(args_json)}); "
+            f"args[args.index('PROMPT_PLACEHOLDER')] = open({repr(prompt_file)}).read(); "
+            "subprocess.run(args)"
+        )
+        remote_cmd = f"cd {qrp(worktree_path)} && python3 -c {shlex.quote(py_cmd)}"
+    else:
+        raise ValueError(f"Unknown agent: {agent}")
 
     result = ssh_run(host, remote_cmd, timeout=timeout)
 
@@ -411,15 +465,15 @@ def collect_result(
     worktree_path: str,
     branch: str,
     parent_commit: str,
-    claude_exit_code: int,
-    claude_stdout: str,
-    claude_stderr: str,
+    agent_exit_code: int,
+    agent_stdout: str,
+    agent_stderr: str,
 ) -> RunResult:
     """
-    After claude -p exits, figure out what changed in the worktree and
+    After the agent exits, figure out what changed in the worktree and
     build a RunResult.
     """
-    # New commit (if claude committed something)
+    # New commit (if agent committed something)
     new_commit_raw = ssh_check(
         host,
         f"git -C {qrp(worktree_path)} rev-parse HEAD",
@@ -438,7 +492,7 @@ def collect_result(
     ))
 
     cleanup_command = (
-        f"python remote-claude.py cleanup "
+        f"python agent-remote.py cleanup "
         f"--host {shlex.quote(host)} "
         f"--branch {shlex.quote(branch)}"
     )
@@ -450,14 +504,12 @@ def collect_result(
         parent_commit=parent_commit,
         new_commit=new_commit,
         files_changed=files_changed,
-        claude_exit_code=claude_exit_code,
+        agent_exit_code=agent_exit_code,
         # Tail size: enough to capture verification output from a multi-step
         # remote agent (systemctl status, journalctl excerpts, benchmark
-        # matrices, etc.). 2000 was too small — sqlite-rotate verification
-        # report lost all the verification commands' output and only kept
-        # the final summary line.
-        stdout_tail=claude_stdout[-20000:] if claude_stdout else "",
-        stderr_tail=claude_stderr[-5000:] if claude_stderr else "",
+        # matrices, etc.).
+        stdout_tail=agent_stdout[-20000:] if agent_stdout else "",
+        stderr_tail=agent_stderr[-5000:] if agent_stderr else "",
         cleanup_command=cleanup_command,
     )
 
@@ -473,32 +525,56 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     # Permission mode guardrail
     if args.permission_mode == "bypassPermissions":
-        if os.environ.get("REMOTE_CLAUDE_ALLOW_BYPASS") != "1":
+        if os.environ.get("REMOTE_AGENT_ALLOW_BYPASS") != "1" and os.environ.get("REMOTE_CLAUDE_ALLOW_BYPASS") != "1":
             print(
                 "refused: --permission-mode bypassPermissions requires "
-                "REMOTE_CLAUDE_ALLOW_BYPASS=1 in the environment.",
+                "REMOTE_AGENT_ALLOW_BYPASS=1 in the environment.",
                 file=sys.stderr,
             )
             return 2
 
     # Auto-generate branch name if not provided
-    branch = args.branch or f"remote-claude/auto-{int(time.time())}"
+    branch = args.branch or f"agent-remote/auto-{int(time.time())}"
 
-    timeout = float(os.environ.get("REMOTE_CLAUDE_TIMEOUT", "3600"))
+    timeout_str = os.environ.get("REMOTE_AGENT_TIMEOUT") or os.environ.get("REMOTE_CLAUDE_TIMEOUT") or "3600"
+    timeout = float(timeout_str)
 
     try:
         worktree_path, parent_commit = ensure_worktree(
             args.host, args.repo_path, branch,
         )
 
-        allowlist = list(DEFAULT_REMOTE_ALLOWLIST)
-        if args.extra_allow:
-            allowlist.extend(args.extra_allow)
-        seed_settings(args.host, worktree_path, allowlist)
+        # Resolve agent
+        agent = args.agent
+        if not agent:
+            if os.environ.get("ANTIGRAVITY_AGENT") == "1":
+                agent = "agy"
+            elif any(k.startswith("OPENCODE_") for k in os.environ.keys()):
+                agent = "opencode"
+            elif any(k.startswith("CLAUDE_CODE") for k in os.environ.keys()) or os.environ.get("CLAUDE_CODE_SUBPROCESS_ENV_SCRUB") == "1":
+                agent = "claude"
+            elif any(k.startswith("PI_") for k in os.environ.keys()):
+                agent = "pi"
+            elif any(k.startswith("CODEX_") for k in os.environ.keys()):
+                agent = "codex"
+            else:
+                agent = "opencode"
 
-        exit_code, stdout, stderr = run_remote_claude(
-            args.host, worktree_path, args.prompt,
-            args.permission_mode, timeout,
+        # Seed settings only for Claude
+        if agent == "claude":
+            allowlist = list(DEFAULT_REMOTE_ALLOWLIST)
+            if args.extra_allow:
+                allowlist.extend(args.extra_allow)
+            seed_settings(args.host, worktree_path, allowlist)
+
+        exit_code, stdout, stderr = run_remote_agent(
+            host=args.host,
+            worktree_path=worktree_path,
+            prompt=args.prompt,
+            permission_mode=args.permission_mode,
+            timeout=timeout,
+            agent=agent,
+            model=args.model,
         )
 
         result = collect_result(
@@ -575,7 +651,7 @@ def cmd_probe(args: argparse.Namespace) -> int:
     """
     Sanity-check the remote environment. Prints a JSON object with:
     user, hostname, uname, repo-path-exists, git-version, claude-version,
-    python-version, PATH.
+    agy-version, opencode-version, python-version, PATH.
     """
     args.repo_path = unmangle_msys_path(args.repo_path)
     try:
@@ -588,6 +664,10 @@ def cmd_probe(args: argparse.Namespace) -> int:
             f"\"$(test -d {qrp(args.repo_path)}/.git && echo true || echo false)\"; "
             "printf '\"git\":\"%s\",' \"$(git --version 2>/dev/null || echo missing)\"; "
             "printf '\"claude\":\"%s\",' \"$(claude --version 2>/dev/null || echo missing)\"; "
+            "printf '\"agy\":\"%s\",' \"$(agy --version 2>/dev/null || echo missing)\"; "
+            "printf '\"opencode\":\"%s\",' \"$(opencode --version 2>/dev/null || echo missing)\"; "
+            "printf '\"pi\":\"%s\",' \"$(pi --version 2>/dev/null || echo missing)\"; "
+            "printf '\"codex\":\"%s\",' \"$(codex --version 2>/dev/null || echo missing)\"; "
             "printf '\"python\":\"%s\",' \"$(python3 --version 2>/dev/null || echo missing)\"; "
             "printf '\"path\":\"%s\"' \"$PATH\"; "
             "printf '}\\n'"
@@ -622,8 +702,8 @@ def cmd_probe(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="remote-claude",
-        description="Spawn a Claude Code session on a remote host in an isolated worktree.",
+        prog="agent-remote",
+        description="Spawn an agent session on a remote host in an isolated worktree.",
     )
     subparsers = parser.add_subparsers(dest="cmd", required=True)
 
@@ -636,14 +716,19 @@ def build_parser() -> argparse.ArgumentParser:
     p_run.add_argument("--repo-path", required=True,
                        help="path to the existing git repo on the remote")
     p_run.add_argument("--prompt", required=True,
-                       help="prompt to pass to the remote claude -p session")
+                       help="prompt to pass to the remote agent session")
     p_run.add_argument("--branch", default=None,
-                       help="branch name for the worktree (default: remote-claude/auto-<epoch>)")
+                       help="branch name for the worktree (default: agent-remote/auto-<epoch>)")
     p_run.add_argument("--permission-mode", default="acceptEdits",
                        choices=["default", "acceptEdits", "bypassPermissions", "plan"],
-                       help="permission mode for the spawned claude -p")
+                       help="permission mode for the spawned agent")
     p_run.add_argument("--extra-allow", action="append", default=[],
-                       help="additional permission rule(s) to add to the remote settings.local.json")
+                       help="additional permission rule(s) to add to the remote settings.local.json (only for claude)")
+    p_run.add_argument("--agent", default=None,
+                       choices=["claude", "opencode", "agy", "pi", "codex"],
+                       help="agent runner to spawn on the remote (defaults to auto-detection: agy if ANTIGRAVITY_AGENT=1, else opencode)")
+    p_run.add_argument("--model", "-m", default=None,
+                       help="model/provider to use for the agent session (e.g. llamalab-steamdeck/qwen3.5-9b, only for agy/opencode/pi/codex)")
     p_run.set_defaults(func=cmd_run)
 
     # cleanup
