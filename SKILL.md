@@ -1,6 +1,6 @@
 ---
 name: fleet-orchestration
-description: "Use when dispatching subagents across multiple LOCAL PROJECT REPOSITORIES - feature implementation, maintenance sweeps, or fleet-wide investigation across the user's project directory. Triggers: 'spawn agents to fix X across all my projects', 'run a maintenance pass', 'work on tasks from several repos at once', use of project-tracker MCP tools (list_projects, find_dirty, find_stale_maintenance) to plan multi-repo work. Extends superpowers:dispatching-parallel-agents with cross-repo governance."
+description: "Use when dispatching subagents across multiple LOCAL PROJECT REPOSITORIES - feature implementation, maintenance sweeps, or fleet-wide investigation across the user's project directory. Triggers: 'spawn agents to fix X across all my projects', 'run a maintenance pass', 'work on tasks from several repos at once', use of project-tracker MCP tools (list_projects, find_dirty, find_stale_maintenance) to plan multi-repo work. Extends superpowers:dispatching-parallel-agents with cross-repo governance. project-tracker MCP tools are optional - without them, enumerate repos from ~/.project-tracker/projects.json and use git directly."
 ---
 
 # Fleet Orchestration
@@ -232,6 +232,8 @@ Maintenance state lives in each repo as `.maintenance.json` (gitignored). projec
 - `mcp__project-tracker__get_maintenance_state(name)` - read one project's breadcrumbs
 - `mcp__project-tracker__find_stale_maintenance(task_name?)` - find projects where a task is stale
 
+Without the MCP server, read each repo's `.maintenance.json` directly (enumerating repos from `~/.project-tracker/projects.json`) and compute staleness with git, e.g. `git rev-list <last_run_commit>..HEAD --count`.
+
 Quick format reference (full schema in `references/maintenance-format.md`):
 
 ```json
@@ -265,7 +267,7 @@ Quick format reference (full schema in `references/maintenance-format.md`):
 1. Read current state with `get_maintenance_state` or directly from disk.
 2. Skip if `is_task_stale` returns False.
 3. Do the work.
-4. Write a new entry with `status` and either `last_run_commit` (per-commit) or `last_run` (time-based). Use `project_tracker.scanner.maintenance.write_maintenance_state` so `.gitignore` gets updated automatically.
+4. Write a new entry with `status` and either `last_run_commit` (per-commit) or `last_run` (time-based). Use `project_tracker.scanner.maintenance.write_maintenance_state` so `.gitignore` gets updated automatically (or, without project-tracker installed, write the JSON entry directly and add `.maintenance.json` to `.gitignore` yourself).
 5. Never delete entries - overwrite in place.
 
 ## Workflows
