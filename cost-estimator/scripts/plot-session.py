@@ -22,6 +22,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import sys
 import webbrowser
@@ -223,15 +224,17 @@ def render_html(turns, subagent_count, subagent_cost, session_id,
     first_date = turns[0]["timestamp"][:10] if turns and turns[0]["timestamp"] else "?"
     total_cost = turns[-1]["cumulative_cost"] if turns else 0.0
 
+    # Escape string fields rendered into HTML text context - model ids can
+    # legitimately contain angle brackets (e.g. `<synthetic>`).
     return HTML_TEMPLATE.format(
-        session_id=session_id,
-        session_id_prefix=session_id[:8],
+        session_id=html.escape(session_id),
+        session_id_prefix=html.escape(session_id[:8]),
         chartjs_script_tag=chartjs_script_tag,
         time_adapter_script_tag=time_adapter_script_tag,
-        first_date=first_date,
+        first_date=html.escape(first_date),
         total_cost=total_cost,
         turn_count=len(turns),
-        models_label=_models_label(turns),
+        models_label=html.escape(_models_label(turns)),
         subagent_count=subagent_count,
         subagent_cost=subagent_cost,
         # Escape `</` as `<\/` so a `</script>` substring inside any string
