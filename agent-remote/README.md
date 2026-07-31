@@ -41,4 +41,3 @@ agent-remote/
    the wrapper or reach for raw ssh, close the loophole and re-test.
 
 See `tests/baseline/` for the scenarios.
-
