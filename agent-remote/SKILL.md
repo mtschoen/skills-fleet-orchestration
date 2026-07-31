@@ -30,9 +30,9 @@ One call. The remote agent works in a normal shell with full context until done.
 By default, the script attempts to auto-detect your current agent platform using active environment variables (e.g., defaulting to `agy` if running in an Antigravity session, or `opencode` if running in an Opencode session). If it cannot detect the environment, it defaults to `opencode` to minimize API token costs.
 
 However, **you are not restricted to the hosting environment's default.** You can cross-delegate to other agents or models using the CLI arguments:
+
 - Use `--agent <claude|opencode|agy|pi|codex>` to explicitly choose the remote execution framework.
 - Use `--model <model>` (or `-m`) to override the LLM model used by the remote agent (supported by `opencode`, `agy`, `pi`, and `codex`).
-
 
 ## When to use this skill
 
@@ -224,4 +224,3 @@ These are real, observed during verification testing, and not yet fixed in the w
 - **Doesn't merge results back.** It returns the branch name; you decide whether to fetch+merge, cherry-pick, or discard.
 - **Doesn't enforce framing against silent drift.** That's the caller's responsibility. The skill can only document the pattern.
 - **Doesn't replace local work.** Use this when verification *requires* the remote, not as a default.
-
