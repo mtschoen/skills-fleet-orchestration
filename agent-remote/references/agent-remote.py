@@ -15,7 +15,7 @@ Usage:
         [--branch agent-remote/nvbw-2026-04-07] \
         [--permission-mode acceptEdits] \
         [--agent opencode] \
-        [--model llamalab-steamdeck/qwen3.5-9b]
+        [--model ollama/qwen3.5-9b]
 
     agent-remote.py cleanup \
         --host user@remote-host \
@@ -728,7 +728,7 @@ def build_parser() -> argparse.ArgumentParser:
                        choices=["claude", "opencode", "agy", "pi", "codex"],
                        help="agent runner to spawn on the remote (defaults to auto-detection: agy if ANTIGRAVITY_AGENT=1, else opencode)")
     p_run.add_argument("--model", "-m", default=None,
-                       help="model/provider to use for the agent session (e.g. llamalab-steamdeck/qwen3.5-9b, only for agy/opencode/pi/codex)")
+                       help="model/provider to use for the agent session (e.g. ollama/qwen3.5-9b, only for agy/opencode/pi/codex)")
     p_run.set_defaults(func=cmd_run)
 
     # cleanup

@@ -85,7 +85,7 @@ git switch -c local-changes-for-agent-remote
 git push origin local-changes-for-agent-remote
 ```
 
-If your local clone has **no shared git remote with the target host** (e.g. you work over a private LAN with no Gitea/GitHub between them), the simplest workaround is to put the file content in the prompt itself:
+If your local clone has **no shared git remote with the target host** (e.g. you work over a private LAN with no shared Git host between them), the simplest workaround is to put the file content in the prompt itself:
 
 ```bash
 python agent-remote.py run --host ... --prompt "Create a file at src/foo.py with this exact content:
@@ -121,7 +121,7 @@ python agent-remote.py run \
   [--branch agent-remote/my-task] \
   [--permission-mode acceptEdits] \
   [--agent opencode] \
-  [--model llamalab-steamdeck/qwen3.5-9b]
+  [--model ollama/qwen3.5-9b]
   [--extra-allow "Bash(sudo systemctl *)"]
 
 # Clean up a worktree+branch on the remote when you're done
@@ -178,7 +178,7 @@ python agent-remote.py run \
   --repo-path /home/user/myrepo \
   --branch agent-remote/nvbw-2026-04-07 \
   --agent opencode \
-  --model llamalab-steamdeck/qwen3.5-9b \
+  --model ollama/qwen3.5-9b \
   --prompt "Clone https://github.com/NVIDIA/nvbandwidth into ~/nvbw-build, build it with cmake, run \`./nvbandwidth\` against all available GPUs, parse the host-to-device and device-to-device matrices, and write the result to /tmp/nvbw-result.json. You MUST run this end-to-end on this machine and include the real numeric matrix in your final report. Do not paste hypothetical examples. If the matrix isn't in the report, the task isn't done."
 ```
 
