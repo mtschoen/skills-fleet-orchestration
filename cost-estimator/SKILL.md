@@ -1,6 +1,6 @@
 ---
 name: cost-estimator
-description: Use when the user asks for a retrospective Claude Code spend analysis over a date range - what they spent, top sessions, cache discipline, waste patterns, subscription leverage. Triggers include "/cost estimate", "what did I spend", "how much did last month cost", "cost breakdown", "where did my Claude budget go", "analyze my Claude spending", "audit my Claude usage". Predictive cost estimation ("how much will this plan cost") is not yet built - see github.com/mtschoen/skills-cost-estimator for the planned design.
+description: Use when the user asks for a retrospective Claude Code spend analysis over a date range - what they spent, top sessions, cache discipline, waste patterns, subscription leverage. Triggers include "/cost estimate", "what did I spend", "how much did last month cost", "cost breakdown", "where did my Claude budget go", "analyze my Claude spending", "audit my Claude usage". Predictive cost estimation ("how much will this plan cost") is not yet built.
 ---
 
 # cost-estimator (retrospective)
@@ -17,9 +17,7 @@ like "what did I spend last month", "/cost estimate April", "audit my
 Claude usage", "where did my budget go", "show me my top sessions",
 "break down my spending". If they instead ask "how much will THIS cost"
 about something they have not yet run, that is the predictive case which
-is not yet built - point the user at
-<https://github.com/mtschoen/skills-cost-estimator> for design notes
-and say so.
+is not yet built - say so.
 
 ## Inputs to gather from the user
 
@@ -231,9 +229,8 @@ was never present in the billed aggregate.
 
 ## What this skill does not do (yet)
 
-- Predict cost for a future task. A predictive companion is in design;
-  see <https://github.com/mtschoen/skills-cost-estimator> for the
-  build path (uses `count_tokens` API + heuristics + the historical
+- Predict cost for a future task. A predictive companion is in design
+  (uses `count_tokens` API + heuristics + the historical
   `sessions.csv` as a reference dataset).
 - Subagent timeline overlays. `plot-session.py` plots the parent
   JSONL only; subagent costs are summarized in the chart caption but
