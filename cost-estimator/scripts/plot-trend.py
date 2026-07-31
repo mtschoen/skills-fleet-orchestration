@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import csv
 import hashlib
+import html
 import json
 import sys
 import webbrowser
@@ -216,12 +217,14 @@ def render_html(*, range_label: str, bucket_granularity: str,
     )
     per_label_colors = {label: _label_color(label) for label in per_label_costs}
 
+    # Escape string fields rendered into HTML text context - machine labels
+    # come from the CSV and range_label from the CLI, neither is trusted.
     return HTML_TEMPLATE.format(
-        range_label=range_label,
-        bucket_granularity=bucket_granularity,
+        range_label=html.escape(range_label),
+        bucket_granularity=html.escape(bucket_granularity),
         total_cost=total_cost,
         total_sessions=total_sessions,
-        machines_summary=machines_summary or "(none)",
+        machines_summary=html.escape(machines_summary or "(none)"),
         chartjs_script_tag=chartjs_script_tag,
         buckets_json=json.dumps(buckets).replace("</", "<\\/"),
         per_label_costs_json=json.dumps(per_label_costs).replace("</", "<\\/"),

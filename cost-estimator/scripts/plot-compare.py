@@ -19,6 +19,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import sys
 import webbrowser
@@ -207,9 +208,10 @@ def render_html(*, range_label, current_start, current_end,
                 prior_per_bucket, prior_cumulative_data, inline):
     chartjs_script_tag, _ = chartjs_script_tags(inline=inline,
                                                 want_time_adapter=False)
+    # range_label comes from the CLI; escape it for the HTML text context.
     return HTML_TEMPLATE.format(
         chartjs_script_tag=chartjs_script_tag,
-        range_label=range_label,
+        range_label=html.escape(range_label),
         current_start=current_start.isoformat(),
         current_end=current_end.isoformat(),
         prior_start=prior_start.isoformat(),
