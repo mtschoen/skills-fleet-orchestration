@@ -59,8 +59,6 @@ import subprocess
 import sys
 import time
 from dataclasses import dataclass, field
-from typing import Optional
-
 
 # --------------------------------------------------------------------------
 # Narrow allowlist written into the REMOTE worktree's .claude/settings.local.json
@@ -73,7 +71,7 @@ from typing import Optional
 # should widen this via --extra-allow "Bash(sudo *)" etc.
 # --------------------------------------------------------------------------
 DEFAULT_REMOTE_ALLOWLIST: list[str] = [
-    "Bash",          # full Bash — the remote session is already sandboxed by the worktree
+    "Bash",  # full Bash — the remote session is already sandboxed by the worktree
     "Read",
     "Edit",
     "Write",
@@ -90,7 +88,7 @@ class RunResult:
     branch: str
     worktree_path: str
     parent_commit: str
-    new_commit: Optional[str]
+    new_commit: str | None
     files_changed: list[str]
     agent_exit_code: int
     stdout_tail: str
@@ -190,14 +188,19 @@ def unmangle_msys_path(p: str) -> str:
         return p
     for prefix in _MSYS_PREFIXES:
         if p.startswith(prefix + "/") or p.startswith(prefix + "\\"):
-            tail = p[len(prefix):].replace("\\", "/")
+            tail = p[len(prefix) :].replace("\\", "/")
             # tail starts with /, which is what we want for a POSIX path
             return tail
     return p
 
 
-def ssh_run(host: str, remote_command: str, *, input_text: Optional[str] = None,
-            timeout: Optional[float] = None) -> subprocess.CompletedProcess:
+def ssh_run(
+    host: str,
+    remote_command: str,
+    *,
+    input_text: str | None = None,
+    timeout: float | None = None,
+) -> subprocess.CompletedProcess:
     """
     Run a single command on the remote host via ssh.
 
@@ -365,7 +368,7 @@ def run_remote_agent(
     permission_mode: str,
     timeout: float,
     agent: str,
-    model: Optional[str] = None,
+    model: str | None = None,
 ) -> tuple[int, str, str]:
     """
     Invoke the selected agent CLI on the remote in the worktree directory.
@@ -393,8 +396,8 @@ def run_remote_agent(
         args_json = json.dumps(args_list)
         py_cmd = (
             "import json, subprocess; "
-            f"args = json.loads({repr(args_json)}); "
-            f"args[args.index('PROMPT_PLACEHOLDER')] = open({repr(prompt_file)}).read(); "
+            f"args = json.loads({args_json!r}); "
+            f"args[args.index('PROMPT_PLACEHOLDER')] = open({prompt_file!r}).read(); "
             "subprocess.run(args)"
         )
         remote_cmd = f"cd {qrp(worktree_path)} && python3 -c {shlex.quote(py_cmd)}"
@@ -408,8 +411,8 @@ def run_remote_agent(
         args_json = json.dumps(opencode_args + ["PROMPT_PLACEHOLDER"])
         py_cmd = (
             "import json, subprocess; "
-            f"args = json.loads({repr(args_json)}); "
-            f"args[args.index('PROMPT_PLACEHOLDER')] = open({repr(prompt_file)}).read(); "
+            f"args = json.loads({args_json!r}); "
+            f"args[args.index('PROMPT_PLACEHOLDER')] = open({prompt_file!r}).read(); "
             "subprocess.run(args)"
         )
         remote_cmd = f"cd {qrp(worktree_path)} && python3 -c {shlex.quote(py_cmd)}"
@@ -421,8 +424,8 @@ def run_remote_agent(
         args_json = json.dumps(pi_args + ["PROMPT_PLACEHOLDER"])
         py_cmd = (
             "import json, subprocess; "
-            f"args = json.loads({repr(args_json)}); "
-            f"args[args.index('PROMPT_PLACEHOLDER')] = open({repr(prompt_file)}).read(); "
+            f"args = json.loads({args_json!r}); "
+            f"args[args.index('PROMPT_PLACEHOLDER')] = open({prompt_file!r}).read(); "
             "subprocess.run(args)"
         )
         remote_cmd = f"cd {qrp(worktree_path)} && python3 -c {shlex.quote(py_cmd)}"
@@ -436,8 +439,8 @@ def run_remote_agent(
         args_json = json.dumps(codex_args + ["PROMPT_PLACEHOLDER"])
         py_cmd = (
             "import json, subprocess; "
-            f"args = json.loads({repr(args_json)}); "
-            f"args[args.index('PROMPT_PLACEHOLDER')] = open({repr(prompt_file)}).read(); "
+            f"args = json.loads({args_json!r}); "
+            f"args[args.index('PROMPT_PLACEHOLDER')] = open({prompt_file!r}).read(); "
             "subprocess.run(args)"
         )
         remote_cmd = f"cd {qrp(worktree_path)} && python3 -c {shlex.quote(py_cmd)}"
@@ -446,11 +449,12 @@ def run_remote_agent(
 
     result = ssh_run(host, remote_cmd, timeout=timeout)
 
-    # Clean up the prompt file (best-effort, don't fail the run if this fails)
+    # Cleanup remains best-effort because the agent result is the primary outcome.
     try:
         ssh_run(host, f"rm -f {qrp(prompt_file)}")
-    except Exception:
-        pass
+    except (OSError, subprocess.SubprocessError) as exception:
+        cleanup_warning = f"warning: could not remove remote prompt file: {exception}"
+        stderr = "\n".join(part for part in (stderr, cleanup_warning) if part)
 
     return result.returncode, result.stdout, result.stderr
 
@@ -478,7 +482,7 @@ def collect_result(
         host,
         f"git -C {qrp(worktree_path)} rev-parse HEAD",
     ).strip()
-    new_commit: Optional[str] = new_commit_raw if new_commit_raw != parent_commit else None
+    new_commit: str | None = new_commit_raw if new_commit_raw != parent_commit else None
 
     # Files changed: diff against parent commit (includes committed changes)
     # plus any uncommitted changes (staged + unstaged + untracked).
@@ -487,9 +491,9 @@ def collect_result(
         f"git -C {qrp(worktree_path)} ls-files --others --exclude-standard"
     )
     diff_out = ssh_run(host, diff_cmd).stdout
-    files_changed = sorted(set(
-        line.strip() for line in diff_out.splitlines() if line.strip()
-    ))
+    files_changed = sorted(
+        set(line.strip() for line in diff_out.splitlines() if line.strip())
+    )
 
     cleanup_command = (
         f"python agent-remote.py cleanup "
@@ -525,7 +529,10 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     # Permission mode guardrail
     if args.permission_mode == "bypassPermissions":
-        if os.environ.get("REMOTE_AGENT_ALLOW_BYPASS") != "1" and os.environ.get("REMOTE_CLAUDE_ALLOW_BYPASS") != "1":
+        if (
+            os.environ.get("REMOTE_AGENT_ALLOW_BYPASS") != "1"
+            and os.environ.get("REMOTE_CLAUDE_ALLOW_BYPASS") != "1"
+        ):
             print(
                 "refused: --permission-mode bypassPermissions requires "
                 "REMOTE_AGENT_ALLOW_BYPASS=1 in the environment.",
@@ -536,12 +543,18 @@ def cmd_run(args: argparse.Namespace) -> int:
     # Auto-generate branch name if not provided
     branch = args.branch or f"agent-remote/auto-{int(time.time())}"
 
-    timeout_str = os.environ.get("REMOTE_AGENT_TIMEOUT") or os.environ.get("REMOTE_CLAUDE_TIMEOUT") or "3600"
+    timeout_str = (
+        os.environ.get("REMOTE_AGENT_TIMEOUT")
+        or os.environ.get("REMOTE_CLAUDE_TIMEOUT")
+        or "3600"
+    )
     timeout = float(timeout_str)
 
     try:
         worktree_path, parent_commit = ensure_worktree(
-            args.host, args.repo_path, branch,
+            args.host,
+            args.repo_path,
+            branch,
         )
 
         # Resolve agent
@@ -551,7 +564,10 @@ def cmd_run(args: argparse.Namespace) -> int:
                 agent = "agy"
             elif any(k.startswith("OPENCODE_") for k in os.environ.keys()):
                 agent = "opencode"
-            elif any(k.startswith("CLAUDE_CODE") for k in os.environ.keys()) or os.environ.get("CLAUDE_CODE_SUBPROCESS_ENV_SCRUB") == "1":
+            elif (
+                any(k.startswith("CLAUDE_CODE") for k in os.environ.keys())
+                or os.environ.get("CLAUDE_CODE_SUBPROCESS_ENV_SCRUB") == "1"
+            ):
                 agent = "claude"
             elif any(k.startswith("PI_") for k in os.environ.keys()):
                 agent = "pi"
@@ -578,33 +594,44 @@ def cmd_run(args: argparse.Namespace) -> int:
         )
 
         result = collect_result(
-            args.host, worktree_path, branch, parent_commit,
-            exit_code, stdout, stderr,
+            args.host,
+            worktree_path,
+            branch,
+            parent_commit,
+            exit_code,
+            stdout,
+            stderr,
         )
         print(result.to_json())
         return 0 if result.success else 1
 
     except subprocess.TimeoutExpired:
         print(
-            json.dumps({
-                "success": False,
-                "error": "timeout",
-                "host": args.host,
-                "branch": branch,
-                "timeout_seconds": timeout,
-            }, indent=2),
+            json.dumps(
+                {
+                    "success": False,
+                    "error": "timeout",
+                    "host": args.host,
+                    "branch": branch,
+                    "timeout_seconds": timeout,
+                },
+                indent=2,
+            ),
             file=sys.stdout,
         )
         return 3
     except Exception as e:
         print(
-            json.dumps({
-                "success": False,
-                "error": str(e),
-                "error_type": type(e).__name__,
-                "host": args.host,
-                "branch": branch,
-            }, indent=2),
+            json.dumps(
+                {
+                    "success": False,
+                    "error": str(e),
+                    "error_type": type(e).__name__,
+                    "host": args.host,
+                    "branch": branch,
+                },
+                indent=2,
+            ),
             file=sys.stdout,
         )
         return 4
@@ -631,19 +658,30 @@ def cmd_cleanup(args: argparse.Namespace) -> int:
             f"git -C {qrp(args.repo_path)} branch -D {shlex.quote(args.branch)}",
             error_context="remove worktree and branch",
         )
-        print(json.dumps({
-            "success": True,
-            "host": args.host,
-            "branch": args.branch,
-            "removed": worktree_path,
-        }, indent=2))
+        print(
+            json.dumps(
+                {
+                    "success": True,
+                    "host": args.host,
+                    "branch": args.branch,
+                    "removed": worktree_path,
+                },
+                indent=2,
+            )
+        )
         return 0
     except Exception as e:
-        print(json.dumps({
-            "success": False,
-            "error": str(e),
-            "error_type": type(e).__name__,
-        }, indent=2), file=sys.stdout)
+        print(
+            json.dumps(
+                {
+                    "success": False,
+                    "error": str(e),
+                    "error_type": type(e).__name__,
+                },
+                indent=2,
+            ),
+            file=sys.stdout,
+        )
         return 1
 
 
@@ -657,28 +695,33 @@ def cmd_probe(args: argparse.Namespace) -> int:
     try:
         probe_cmd = (
             "printf '{'; "
-            "printf '\"user\":\"%s\",' \"$(whoami)\"; "
-            "printf '\"hostname\":\"%s\",' \"$(hostnamectl --static 2>/dev/null || cat /etc/hostname)\"; "
-            "printf '\"uname\":\"%s\",' \"$(uname -srm)\"; "
+            'printf \'"user":"%s",\' "$(whoami)"; '
+            'printf \'"hostname":"%s",\' "$(hostnamectl --static 2>/dev/null || cat /etc/hostname)"; '
+            'printf \'"uname":"%s",\' "$(uname -srm)"; '
             f"printf '\"repo_path_exists\":%s,' "
-            f"\"$(test -d {qrp(args.repo_path)}/.git && echo true || echo false)\"; "
-            "printf '\"git\":\"%s\",' \"$(git --version 2>/dev/null || echo missing)\"; "
-            "printf '\"claude\":\"%s\",' \"$(claude --version 2>/dev/null || echo missing)\"; "
-            "printf '\"agy\":\"%s\",' \"$(agy --version 2>/dev/null || echo missing)\"; "
-            "printf '\"opencode\":\"%s\",' \"$(opencode --version 2>/dev/null || echo missing)\"; "
-            "printf '\"pi\":\"%s\",' \"$(pi --version 2>/dev/null || echo missing)\"; "
-            "printf '\"codex\":\"%s\",' \"$(codex --version 2>/dev/null || echo missing)\"; "
-            "printf '\"python\":\"%s\",' \"$(python3 --version 2>/dev/null || echo missing)\"; "
-            "printf '\"path\":\"%s\"' \"$PATH\"; "
+            f'"$(test -d {qrp(args.repo_path)}/.git && echo true || echo false)"; '
+            'printf \'"git":"%s",\' "$(git --version 2>/dev/null || echo missing)"; '
+            'printf \'"claude":"%s",\' "$(claude --version 2>/dev/null || echo missing)"; '
+            'printf \'"agy":"%s",\' "$(agy --version 2>/dev/null || echo missing)"; '
+            'printf \'"opencode":"%s",\' "$(opencode --version 2>/dev/null || echo missing)"; '
+            'printf \'"pi":"%s",\' "$(pi --version 2>/dev/null || echo missing)"; '
+            'printf \'"codex":"%s",\' "$(codex --version 2>/dev/null || echo missing)"; '
+            'printf \'"python":"%s",\' "$(python3 --version 2>/dev/null || echo missing)"; '
+            'printf \'"path":"%s"\' "$PATH"; '
             "printf '}\\n'"
         )
         result = ssh_run(args.host, probe_cmd)
         if result.returncode != 0:
-            print(json.dumps({
-                "success": False,
-                "error": "probe command failed",
-                "stderr": result.stderr,
-            }, indent=2))
+            print(
+                json.dumps(
+                    {
+                        "success": False,
+                        "error": "probe command failed",
+                        "stderr": result.stderr,
+                    },
+                    indent=2,
+                )
+            )
             return 1
         # Validate JSON, re-emit
         parsed = json.loads(result.stdout)
@@ -687,11 +730,16 @@ def cmd_probe(args: argparse.Namespace) -> int:
         print(json.dumps(parsed, indent=2))
         return 0
     except Exception as e:
-        print(json.dumps({
-            "success": False,
-            "error": str(e),
-            "error_type": type(e).__name__,
-        }, indent=2))
+        print(
+            json.dumps(
+                {
+                    "success": False,
+                    "error": str(e),
+                    "error_type": type(e).__name__,
+                },
+                indent=2,
+            )
+        )
         return 1
 
 
@@ -709,31 +757,51 @@ def build_parser() -> argparse.ArgumentParser:
 
     # run
     p_run = subparsers.add_parser(
-        "run", help="Run a prompt on a remote host in a fresh worktree.",
+        "run",
+        help="Run a prompt on a remote host in a fresh worktree.",
     )
-    p_run.add_argument("--host", required=True,
-                       help="user@hostname for ssh")
-    p_run.add_argument("--repo-path", required=True,
-                       help="path to the existing git repo on the remote")
-    p_run.add_argument("--prompt", required=True,
-                       help="prompt to pass to the remote agent session")
-    p_run.add_argument("--branch", default=None,
-                       help="branch name for the worktree (default: agent-remote/auto-<epoch>)")
-    p_run.add_argument("--permission-mode", default="acceptEdits",
-                       choices=["default", "acceptEdits", "bypassPermissions", "plan"],
-                       help="permission mode for the spawned agent")
-    p_run.add_argument("--extra-allow", action="append", default=[],
-                       help="additional permission rule(s) to add to the remote settings.local.json (only for claude)")
-    p_run.add_argument("--agent", default=None,
-                       choices=["claude", "opencode", "agy", "pi", "codex"],
-                       help="agent runner to spawn on the remote (defaults to auto-detection: agy if ANTIGRAVITY_AGENT=1, else opencode)")
-    p_run.add_argument("--model", "-m", default=None,
-                       help="model/provider to use for the agent session (e.g. ollama/qwen3.5-9b, only for agy/opencode/pi/codex)")
+    p_run.add_argument("--host", required=True, help="user@hostname for ssh")
+    p_run.add_argument(
+        "--repo-path", required=True, help="path to the existing git repo on the remote"
+    )
+    p_run.add_argument(
+        "--prompt", required=True, help="prompt to pass to the remote agent session"
+    )
+    p_run.add_argument(
+        "--branch",
+        default=None,
+        help="branch name for the worktree (default: agent-remote/auto-<epoch>)",
+    )
+    p_run.add_argument(
+        "--permission-mode",
+        default="acceptEdits",
+        choices=["default", "acceptEdits", "bypassPermissions", "plan"],
+        help="permission mode for the spawned agent",
+    )
+    p_run.add_argument(
+        "--extra-allow",
+        action="append",
+        default=[],
+        help="additional permission rule(s) to add to the remote settings.local.json (only for claude)",
+    )
+    p_run.add_argument(
+        "--agent",
+        default=None,
+        choices=["claude", "opencode", "agy", "pi", "codex"],
+        help="agent runner to spawn on the remote (defaults to auto-detection: agy if ANTIGRAVITY_AGENT=1, else opencode)",
+    )
+    p_run.add_argument(
+        "--model",
+        "-m",
+        default=None,
+        help="model/provider to use for the agent session (e.g. ollama/qwen3.5-9b, only for agy/opencode/pi/codex)",
+    )
     p_run.set_defaults(func=cmd_run)
 
     # cleanup
     p_cleanup = subparsers.add_parser(
-        "cleanup", help="Remove a worktree and its branch on the remote.",
+        "cleanup",
+        help="Remove a worktree and its branch on the remote.",
     )
     p_cleanup.add_argument("--host", required=True)
     p_cleanup.add_argument("--branch", required=True)
@@ -742,7 +810,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     # probe
     p_probe = subparsers.add_parser(
-        "probe", help="Sanity-check a remote host's environment.",
+        "probe",
+        help="Sanity-check a remote host's environment.",
     )
     p_probe.add_argument("--host", required=True)
     p_probe.add_argument("--repo-path", required=True)
@@ -751,7 +820,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: Optional[list[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)
