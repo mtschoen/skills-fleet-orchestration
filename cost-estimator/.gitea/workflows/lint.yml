@@ -24,7 +24,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install ruff mypy pytest
-      - run: ruff check scripts/
-      - run: mypy scripts/ --ignore-missing-imports
-      - run: pytest tests/
+      - run: pip install ruff mypy pytest pytest-cov
+      - run: ruff check scripts/ ci/ tests/
+      - run: mypy scripts/ ci/ --ignore-missing-imports
+      - name: Run tests with coverage
+        run: >-
+          pytest tests/ --cov=scripts --cov=ci --cov-report=term-missing
+          --cov-report=json:coverage.json
+      - name: Post coverage status
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python ci/post-coverage-status.py
