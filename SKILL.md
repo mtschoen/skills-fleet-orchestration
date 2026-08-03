@@ -164,7 +164,13 @@ Any brief that includes a run longer than one tool call (Unity batch suites, ful
 
 ## Pre-flight: check target repos for parallel sessions
 
-Before dispatching into any target repo, run these three commands and read the output:
+Start with a fleet-wide pass, then verify per repo before dispatching.
+
+**Fleet-wide**: `list_projects()` to enumerate the repos you can target, and `find_dirty()` to see which of them already have uncommitted changes before you touch anything. Without the MCP server, enumerate from `~/.project-tracker/projects.json` and compute dirtiness with `git -C <repo> status --porcelain` per repo.
+
+**Per target repo**, before dispatching into it: if the `project-lock` skill is installed, it is the authoritative check - run `python <project-lock script> check <repo>` and follow its check/acquire/advice protocol (wait, use a worktree, or proceed, per its own recommendation). It replaces guesswork with an actual advisory lock another agent would have taken.
+
+When `project-lock` isn't installed, fall back to these ad hoc heuristics - run these three commands and read the output:
 
 ```text
 git -C <repo> status
@@ -172,13 +178,15 @@ git -C <repo> worktree list
 git -C <repo> stash list
 ```
 
-Signs an active parallel session is using this repo: uncommitted changes you didn't make, worktrees under `.claude/worktrees/agent-*` (or any other non-main worktree), or named stashes from another session. If detected, **pre-bake an isolated worktree from HEAD** for your agent before dispatching:
+Signs an active parallel session is using this repo: uncommitted changes you didn't make, worktrees under `.claude/worktrees/agent-*` (or any other non-main worktree), or named stashes from another session.
+
+Either way, if a conflict is detected, **pre-bake an isolated worktree from HEAD** for your agent before dispatching:
 
 ```text
 git -C <repo> worktree add <repo>/.claude/worktrees/orchestrator-<task> -b claude/<task> HEAD
 ```
 
-Then pass that worktree path to the agent in the brief - and tell the agent to `cd` into it. Do NOT dispatch into the main worktree of a repo where another session is active. Even if your agent works on a different branch, the working tree itself is shared on disk; their uncommitted changes and yours collide on the same files.
+Then pass that worktree path to the agent in the brief - and tell the agent to `cd` into it and, if `project-lock` is installed, acquire the lock **in that worktree** (locks are per-worktree-root, so a pre-baked worktree needs its own lock, separate from the main checkout's) before writing. Do NOT dispatch into the main worktree of a repo where another session is active. Even if your agent works on a different branch, the working tree itself is shared on disk; their uncommitted changes and yours collide on the same files.
 
 Pre-baking is cheap (~100ms per repo). When in doubt, do it. Cleanup after merging: `git -C <repo> worktree remove <path>` and `git -C <repo> branch -d claude/<task>` (or `-D` if discarded).
 
@@ -290,7 +298,9 @@ Re-running 5 minutes later returns only `["site"]`. Cheap.
 ### Feature pass
 
 ```text
-1. Identify candidate tasks (read PLAN.md from N projects).
+1. Identify candidate tasks: list_projects() to enumerate the fleet
+   (or ~/.project-tracker/projects.json without the MCP server),
+   then read PLAN.md from each candidate project.
 2. Triage each (the four questions above). Drop reds, produce handoff prompts.
 3. Present green/yellow shortlist to the user. Wait for approval.
 4. For approved tasks: write rich briefs with pre-answered ambiguities.
