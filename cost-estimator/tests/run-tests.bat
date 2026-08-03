@@ -12,4 +12,6 @@ python test_stats_cache.py
 if errorlevel 1 exit /b %errorlevel%
 python test_cache_ttl.py
 if errorlevel 1 exit /b %errorlevel%
+python test_pricing.py
+if errorlevel 1 exit /b %errorlevel%
 echo All tests passed.

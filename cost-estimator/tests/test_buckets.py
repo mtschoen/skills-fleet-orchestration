@@ -9,6 +9,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 from trend_data import (  # noqa: E402
     auto_bucket, bucket_index, bucket_key, parse_last,
+    inclusive_month_bounds, inclusive_date_bounds,
 )
 
 
@@ -84,6 +85,31 @@ def test_parse_last_rejects_zero():
     raise AssertionError("expected ValueError for '0d'")
 
 
+def test_inclusive_month_bounds_is_naive_and_end_inclusive():
+    """Distinct contract from roots.month_bounds(): naive datetimes, end
+    inclusive at 23:59:59 of the last day of the month (not the tz-aware,
+    half-open [start, end) that roots.py uses)."""
+    start, end = inclusive_month_bounds("2026-04")
+    assert start == datetime(2026, 4, 1)
+    assert start.tzinfo is None
+    assert end == datetime(2026, 4, 30, 23, 59, 59)
+
+
+def test_inclusive_month_bounds_december_rolls_year():
+    start, end = inclusive_month_bounds("2026-12")
+    assert start == datetime(2026, 12, 1)
+    assert end == datetime(2026, 12, 31, 23, 59, 59)
+
+
+def test_inclusive_date_bounds_end_is_23_59_59_same_day():
+    """Distinct contract from roots.date_bounds(): naive, end bumped to
+    23:59:59 of the given end day (not exclusive next-day midnight)."""
+    start, end = inclusive_date_bounds("2026-04-01", "2026-04-30")
+    assert start == datetime(2026, 4, 1)
+    assert start.tzinfo is None
+    assert end == datetime(2026, 4, 30, 23, 59, 59)
+
+
 if __name__ == "__main__":
     test_day_bucket()
     test_month_bucket()
@@ -96,4 +122,7 @@ if __name__ == "__main__":
     test_parse_last_rejects_bad_suffix()
     test_parse_last_rejects_non_digit()
     test_parse_last_rejects_zero()
+    test_inclusive_month_bounds_is_naive_and_end_inclusive()
+    test_inclusive_month_bounds_december_rolls_year()
+    test_inclusive_date_bounds_end_is_23_59_59_same_day()
     print("OK")

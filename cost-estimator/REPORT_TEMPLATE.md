@@ -59,6 +59,14 @@ State plainly whether this report covers the full range or is a **floor**:
   be priced; name them and move on. Do **not** present the floor as the
   definitive total.
 
+Also check the "UNPRICED MODELS" section of `analyze-month.py` output — a
+different confidence gap than coverage. It flags model ids `pricing.py`
+doesn't recognize; those turns priced at **$0.00**, so the total
+undercounts by however many tokens are listed. If it fired, name the
+model id(s) and turn/token counts, and say the total is a floor for that
+reason too (on top of any coverage floor). If it's empty, one line
+("every model id in this range priced against a known family") is enough.
+
 ## Subscription leverage
 
 *Include this section only when the user supplied --paid.*
