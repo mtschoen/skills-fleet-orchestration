@@ -113,9 +113,11 @@ def inclusive_month_bounds(month_string: str) -> tuple[datetime, datetime]:
     NAIVE datetimes (no tzinfo) and END-INCLUSIVE -- the opposite
     convention from roots.month_bounds() (tz-aware UTC, half-open
     [start, end)). Same concept, different contract; don't mix the two.
-    Inclusive end is one second before the start of the next month so
-    that callers passing the pair into read_sessions_in_range() with an
-    inclusive comparison match every timestamp in the month.
+    Inclusive end is one microsecond before the start of the next month
+    (23:59:59.999999 of the last day) so that callers passing the pair
+    into read_sessions_in_range() with an inclusive `<=` comparison
+    match every timestamp in the month, including sub-second timestamps
+    late on the last day.
     """
     year, month = (int(part) for part in month_string.split("-"))
     start = datetime(year, month, 1)
@@ -123,7 +125,7 @@ def inclusive_month_bounds(month_string: str) -> tuple[datetime, datetime]:
         end_exclusive = datetime(year + 1, 1, 1)
     else:
         end_exclusive = datetime(year, month + 1, 1)
-    return start, end_exclusive - timedelta(seconds=1)
+    return start, end_exclusive - timedelta(microseconds=1)
 
 
 def inclusive_date_bounds(start_string: str, end_string: str) -> tuple[datetime, datetime]:
@@ -132,12 +134,13 @@ def inclusive_date_bounds(start_string: str, end_string: str) -> tuple[datetime,
     NAIVE datetimes (no tzinfo) and END-INCLUSIVE -- the opposite
     convention from roots.date_bounds() (tz-aware UTC, half-open
     [start, end)). Same concept, different contract; don't mix the two.
-    End is bumped to 23:59:59 of the end day so the inclusive comparison
-    in read_sessions_in_range() picks up sessions that started late on
-    that day.
+    End is bumped to 23:59:59.999999 of the end day so the inclusive
+    `<=` comparison in read_sessions_in_range() picks up sessions that
+    started late on that day, including sub-second timestamps.
     """
     start = datetime.fromisoformat(start_string)
-    end = datetime.fromisoformat(end_string).replace(hour=23, minute=59, second=59)
+    end = datetime.fromisoformat(end_string).replace(
+        hour=23, minute=59, second=59, microsecond=999999)
     return start, end
 
 

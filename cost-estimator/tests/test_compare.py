@@ -11,25 +11,29 @@ from trend_data import prior_window_for  # noqa: E402
 
 
 def test_prior_window_for_month():
-    """April -> March, end-inclusive at 23:59:59 of last day."""
+    """April -> March, end-inclusive at 23:59:59.999999 of last day.
+
+    Mode "month" delegates to inclusive_month_bounds(), so it inherits
+    that function's fully-inclusive (not just to-the-second) end.
+    """
     current_start = datetime(2026, 4, 1)
-    current_end = datetime(2026, 4, 30, 23, 59, 59)
+    current_end = datetime(2026, 4, 30, 23, 59, 59, 999999)
     prior_start, prior_end = prior_window_for(
         current_start, current_end, mode="month",
     )
     assert prior_start == datetime(2026, 3, 1)
-    assert prior_end == datetime(2026, 3, 31, 23, 59, 59)
+    assert prior_end == datetime(2026, 3, 31, 23, 59, 59, 999999)
 
 
 def test_prior_window_for_month_year_rollover():
     """January 2026 -> December 2025."""
     current_start = datetime(2026, 1, 1)
-    current_end = datetime(2026, 1, 31, 23, 59, 59)
+    current_end = datetime(2026, 1, 31, 23, 59, 59, 999999)
     prior_start, prior_end = prior_window_for(
         current_start, current_end, mode="month",
     )
     assert prior_start == datetime(2025, 12, 1)
-    assert prior_end == datetime(2025, 12, 31, 23, 59, 59)
+    assert prior_end == datetime(2025, 12, 31, 23, 59, 59, 999999)
 
 
 def test_prior_window_for_arbitrary_range():
