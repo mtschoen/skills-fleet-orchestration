@@ -79,7 +79,12 @@ def stats_file_for(projects_root):
 
 
 def month_bounds(month_string):
-    """Parse YYYY-MM into [start, end) UTC bounds (end exclusive)."""
+    """Parse YYYY-MM into [start, end) UTC bounds (end exclusive).
+
+    TZ-AWARE (UTC) and END-EXCLUSIVE -- distinct from trend_data's
+    inclusive_month_bounds() (naive, end-inclusive). Same concept,
+    different contract; don't mix the two.
+    """
     year, month = (int(part) for part in month_string.split("-"))
     start = datetime(year, month, 1, tzinfo=timezone.utc)
     next_month = month + 1
@@ -94,8 +99,11 @@ def month_bounds(month_string):
 def date_bounds(start_string, end_string):
     """Parse YYYY-MM-DD start (inclusive) and end (inclusive) into UTC bounds.
 
-    The returned end is exclusive, matching the half-open convention used
-    elsewhere: a session is in-range when start <= reference < end.
+    TZ-AWARE (UTC). The returned end is exclusive, matching the half-open
+    convention used elsewhere: a session is in-range when
+    start <= reference < end. Distinct from trend_data's
+    inclusive_date_bounds() (naive, end-inclusive) -- same concept,
+    different contract; don't mix the two.
     """
     start_year, start_month, start_day = (int(part) for part in start_string.split("-"))
     end_year, end_month, end_day = (int(part) for part in end_string.split("-"))

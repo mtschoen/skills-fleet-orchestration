@@ -41,6 +41,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from pricing import (  # noqa: E402  -- after sys.path manipulation
     cost_for_turn,
     parse_timestamp,
+    unpriced_usage,
     _loads,
 )
 from roots import (  # noqa: E402  -- after sys.path manipulation
@@ -73,6 +74,7 @@ class FileTotals:
     cache_read_tokens: int = 0
     cache_write_tokens: int = 0
     by_model: dict = field(default_factory=dict)
+    unpriced_models: dict = field(default_factory=dict)  # model_id -> [turns, tokens]
     tool_calls: Counter = field(default_factory=Counter)
     assistant_turns: int = 0
     user_turns: int = 0
@@ -225,6 +227,16 @@ def process_file(path, parent_session, is_subagent):
                                                  cache_write_tokens,
                                                  timestamp=entry.get("timestamp") or "")
 
+                gap = unpriced_usage(model_identifier, input_tokens, output_tokens,
+                                     cache_read_tokens, cache_write_tokens)
+                if gap is not None:
+                    turns, tokens = gap
+                    gap_entry = totals.unpriced_models.setdefault(
+                        model_identifier, [0, 0]
+                    )
+                    gap_entry[0] += turns
+                    gap_entry[1] += tokens
+
                 model_breakdown = totals.by_model.setdefault(
                     model_identifier, [0, 0, 0, 0]
                 )
@@ -370,6 +382,7 @@ def main():
             "cache_read_tokens": 0,
             "cache_write_tokens": 0,
             "by_model": defaultdict(lambda: [0, 0, 0, 0]),
+            "unpriced_models": defaultdict(lambda: [0, 0]),
             "tool_calls": Counter(),
             "assistant_turns": 0,
             "user_turns": 0,
@@ -410,6 +423,10 @@ def main():
             target = session["by_model"][model_identifier]
             for index in range(4):
                 target[index] += vals[index]
+        for model_identifier, vals in totals.unpriced_models.items():
+            gap_target = session["unpriced_models"][model_identifier]
+            gap_target[0] += vals[0]
+            gap_target[1] += vals[1]
         for tool_name, count in totals.tool_calls.items():
             session["tool_calls"][tool_name] += count
 
@@ -598,6 +615,32 @@ def main():
         print(f"  ${row['cost_usd']:>7.2f}  hit={row['cache_hit_pct']:>5.1f}%  "
               f"cw/in={cw_to_in_ratio:>6.1f}  "
               f"id={row['session_id'][:8]}  tools={row['top_tools'][:60]}")
+
+    # Unpriced-model guardrail. cost_for_turn() silently returns $0.00 for
+    # any model id pricing.py's model_family() doesn't recognize -- a new
+    # model family would otherwise undercount every turn it appears in
+    # with no signal anywhere in the pipeline (the COVERAGE check below
+    # reconciles token counts, not price coverage, so it would stay quiet).
+    unpriced_totals = defaultdict(lambda: [0, 0])
+    for session in selected_sessions:
+        for model_identifier, vals in session["unpriced_models"].items():
+            gap_target = unpriced_totals[model_identifier]
+            gap_target[0] += vals[0]
+            gap_target[1] += vals[1]
+
+    print("\n=== UNPRICED MODELS ===")
+    if unpriced_totals:
+        print(f"warning: {len(unpriced_totals)} model id(s) below have no "
+              f"entry in pricing.py's model_family() -- cost_for_turn() "
+              f"returned $0.00 for every one of these turns, so the totals "
+              f"above UNDERCOUNT this range.")
+        for model_identifier, (turns, tokens) in sorted(
+                unpriced_totals.items(), key=lambda item: -item[1][1]):
+            print(f"  UNPRICED MODEL: {model_identifier!r} "
+                  f"({turns} turns, {tokens:,} tokens) -- update pricing.py")
+    else:
+        print("No unrecognized model ids in this range -- every turn priced "
+              "against a known family.")
 
     # Coverage guardrail. The cost above prices only SURVIVING transcripts;
     # if transcripts were GC'd (old 30-day retention), the total undercounts.

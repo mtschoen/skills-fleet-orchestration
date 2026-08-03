@@ -33,7 +33,7 @@ from chart_runtime import chartjs_script_tags  # noqa: E402
 from roots import reports_directory  # noqa: E402
 from trend_data import (  # noqa: E402
     bucket_key, auto_bucket, read_sessions_in_range,
-    month_bounds, date_bounds,
+    inclusive_month_bounds, inclusive_date_bounds,
 )
 
 
@@ -262,7 +262,7 @@ def main():
 
     if arguments.month:
         try:
-            range_start, range_end = month_bounds(arguments.month)
+            range_start, range_end = inclusive_month_bounds(arguments.month)
         except ValueError:
             parser.error(f"--month must be YYYY-MM, got {arguments.month!r}")
         range_label = arguments.month
@@ -271,7 +271,7 @@ def main():
     else:
         if not arguments.end:
             parser.error("--start requires --end")
-        range_start, range_end = date_bounds(arguments.start, arguments.end)
+        range_start, range_end = inclusive_date_bounds(arguments.start, arguments.end)
         range_label = f"{arguments.start} → {arguments.end}"
         range_filename = f"{arguments.start}_{arguments.end}"
         span_days = (range_end - range_start).days + 1

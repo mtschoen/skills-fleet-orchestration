@@ -66,12 +66,20 @@ Most invocations need three things; ask only when not obvious:
    with `CLAUDE_COST_REPORTS_DIR`) - and prints
    a brief stderr summary. `sessions.csv` includes parent active time and
    separately reported subagent time. `commands.csv` attributes measured turns
-   to slash commands such as `/wrap`. It also prints a **"COVERAGE vs /stats"**
-   section: a guardrail that flags when surviving transcripts undercount
-   the range because old days were cache-cleared (transcripts
-   garbage-collected under the old 30-day retention). When it warns, the
-   dollar total is a **floor** - carry that into the report (step 4), and
-   drill in with `stats_cache.py` (step 8) for the per-day breakdown.
+   to slash commands such as `/wrap`. It also prints two guardrail sections:
+
+   - **"UNPRICED MODELS"** - flags model ids `pricing.py` doesn't
+     recognize. Those turns silently price at $0.00, so the dollar total
+     undercounts by however many tokens are listed. Treat a non-empty
+     list as a **floor** and add the family to `pricing.py`'s
+     `model_family()` before trusting the total.
+   - **"COVERAGE vs /stats"** - flags when surviving transcripts
+     undercount the range because old days were cache-cleared
+     (transcripts garbage-collected under the old 30-day retention).
+
+   When either warns, the dollar total is a **floor** - carry that into
+   the report (step 4), and drill in with `stats_cache.py` (step 8) for
+   the per-day coverage breakdown.
 3. Run the deeper summary:
 
    ```bash
@@ -93,11 +101,12 @@ Most invocations need three things; ask only when not obvious:
    in a one-line summary. A time-only report may omit unrelated cost sections.
    Pull each included section from the corresponding part
    of summarize.py's stdout - except the coverage section, which comes
-   from analyze-month.py's "COVERAGE vs /stats" output. Always label raw
-   vs prorated explicitly, and if coverage warned, label the total a
-   floor - never leave either ambiguous. For a time-only question, lead with
-   active time and the requested slash-command detail; retain cost sections
-   only when they help answer the request.
+   from analyze-month.py's "UNPRICED MODELS" and "COVERAGE vs /stats"
+   output. Always label raw vs prorated explicitly, and if either
+   guardrail warned, label the total a floor - never leave it ambiguous.
+   For a time-only question, lead with active time and the requested
+   slash-command detail; retain cost sections only when they help answer
+   the request.
 5. **Plot top spike sessions on demand.** When the report flags a
    top-N session that the user wants to investigate, render its
    per-turn trajectory:
@@ -320,7 +329,10 @@ was never present in the billed aggregate.
   bucketing logic stays in one place.
 - `scripts/chart_runtime.py` - shared Chart.js URL/version constants,
   download cache, and script-tag helper used by both plot scripts.
-- `reports/` - dev-only scratch for screenshot fixtures (see
-  `dev/regen-screenshots`); gitignored. Generated cost data (CSVs, charts,
-  saved reports) now lands in `~/.claude/cost-estimator/reports/`, outside
-  the installed skill, via `roots.reports_directory()`.
+
+All generated cost data (CSVs, charts, saved reports) lands in
+`~/.claude/cost-estimator/reports/`, outside the installed skill tree, via
+`roots.reports_directory()` (override with `CLAUDE_COST_REPORTS_DIR`) - a
+reinstall of this skill never touches it. This list covers everything an
+installed copy of this skill ships; see `README.md` in the source repo for
+dev-only files (screenshot regen tooling, test fixtures) that don't ship.

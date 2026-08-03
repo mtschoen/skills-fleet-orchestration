@@ -7,4 +7,5 @@ python test_roots.py
 python test_compare.py
 python test_stats_cache.py
 python test_cache_ttl.py
+python test_pricing.py
 echo "All tests passed."

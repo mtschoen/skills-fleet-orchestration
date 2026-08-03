@@ -28,8 +28,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from trend_data import (  # noqa: E402
-    auto_bucket, bucket_index, date_bounds, month_bounds, num_buckets,
-    parse_last, prior_window_for, read_sessions_in_range,
+    auto_bucket, bucket_index, inclusive_date_bounds, inclusive_month_bounds,
+    num_buckets, parse_last, prior_window_for, read_sessions_in_range,
 )
 from chart_runtime import chartjs_script_tags  # noqa: E402
 from roots import reports_directory  # noqa: E402
@@ -45,7 +45,7 @@ def _resolve_current_window(arguments, parser):
     """
     if arguments.month:
         try:
-            current_start, current_end = month_bounds(arguments.month)
+            current_start, current_end = inclusive_month_bounds(arguments.month)
         except ValueError:
             parser.error(f"--month must be YYYY-MM, got {arguments.month!r}")
         return (current_start, current_end, "month",
@@ -54,7 +54,7 @@ def _resolve_current_window(arguments, parser):
     if arguments.start:
         if not arguments.end:
             parser.error("--start requires --end")
-        current_start, current_end = date_bounds(arguments.start, arguments.end)
+        current_start, current_end = inclusive_date_bounds(arguments.start, arguments.end)
         return (current_start, current_end, "range",
                 f"{arguments.start} → {arguments.end}",
                 f"{arguments.start}_{arguments.end}",

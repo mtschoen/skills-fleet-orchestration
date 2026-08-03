@@ -107,9 +107,12 @@ def read_sessions_in_range(csv_path: Path, range_start: datetime,
     return rows, skipped
 
 
-def month_bounds(month_string: str) -> tuple[datetime, datetime]:
+def inclusive_month_bounds(month_string: str) -> tuple[datetime, datetime]:
     """Return (start, inclusive_end) for a YYYY-MM string.
 
+    NAIVE datetimes (no tzinfo) and END-INCLUSIVE -- the opposite
+    convention from roots.month_bounds() (tz-aware UTC, half-open
+    [start, end)). Same concept, different contract; don't mix the two.
     Inclusive end is one second before the start of the next month so
     that callers passing the pair into read_sessions_in_range() with an
     inclusive comparison match every timestamp in the month.
@@ -123,9 +126,12 @@ def month_bounds(month_string: str) -> tuple[datetime, datetime]:
     return start, end_exclusive - timedelta(seconds=1)
 
 
-def date_bounds(start_string: str, end_string: str) -> tuple[datetime, datetime]:
+def inclusive_date_bounds(start_string: str, end_string: str) -> tuple[datetime, datetime]:
     """Return (start, inclusive_end) for YYYY-MM-DD start + end strings.
 
+    NAIVE datetimes (no tzinfo) and END-INCLUSIVE -- the opposite
+    convention from roots.date_bounds() (tz-aware UTC, half-open
+    [start, end)). Same concept, different contract; don't mix the two.
     End is bumped to 23:59:59 of the end day so the inclusive comparison
     in read_sessions_in_range() picks up sessions that started late on
     that day.
@@ -144,7 +150,8 @@ def prior_window_for(
     Three modes, distinguished by their end-inclusivity convention:
 
     - "month":    prior is the calendar month before current_start
-                  (handles Dec -> Jan year rollover via month_bounds).
+                  (handles Dec -> Jan year rollover via
+                  inclusive_month_bounds).
     - "range":    inclusive end (--start/--end). prior duration =
                   current_end - current_start; prior_end is 1 second
                   before current_start.
@@ -157,7 +164,7 @@ def prior_window_for(
             prior_month_string = f"{current_start.year - 1:04d}-12"
         else:
             prior_month_string = f"{current_start.year:04d}-{current_start.month - 1:02d}"
-        return month_bounds(prior_month_string)
+        return inclusive_month_bounds(prior_month_string)
     if mode == "range":
         duration = current_end - current_start
         prior_start = current_start - duration - timedelta(seconds=1)
