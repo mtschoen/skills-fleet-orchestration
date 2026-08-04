@@ -15,6 +15,16 @@ import trend_data
 
 
 FIXTURES = Path(__file__).parent / "fixtures"
+ROOT = Path(__file__).parents[1]
+
+
+def test_skill_documents_retrospective_time_analysis():
+    skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
+    report_template = (ROOT / "REPORT_TEMPLATE.md").read_text(encoding="utf-8")
+
+    assert "turn_duration" in skill
+    assert "--command /wrap" in skill
+    assert "Slash command time" in report_template
 
 
 def test_trend_data_reads_ranges_and_rejects_unknown_options(workspace_directory: Path):
@@ -246,12 +256,13 @@ def test_plot_session_resolves_collects_renders_and_runs(
         plot_session.resolve_session("session-", [projects])
 
 
-def write_summary_csv(path: Path):
+def write_summary_csv(path: Path, cost_usd: str = "100"):
     fields = [
         "label", "session_date", "session_id", "cost_usd", "subagent_cost",
         "cache_hit_pct", "input_tokens", "output_tokens", "cache_read_tokens",
         "cache_write_tokens", "first_turn_input_tokens", "assistant_turns",
         "user_turns", "subagent_count", "top_tools",
+        "active_time_seconds", "subagent_time_seconds", "timed_turns",
     ]
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fields)
@@ -260,7 +271,7 @@ def write_summary_csv(path: Path):
             "label": "host-a",
             "session_date": "2026-03-01",
             "session_id": "session-a",
-            "cost_usd": "100",
+            "cost_usd": cost_usd,
             "subagent_cost": "10",
             "cache_hit_pct": "50",
             "input_tokens": "1000",
@@ -272,6 +283,9 @@ def write_summary_csv(path: Path):
             "user_turns": "2",
             "subagent_count": "1",
             "top_tools": "Read:1200,bad,Write:not-a-number",
+            "active_time_seconds": "2700",
+            "subagent_time_seconds": "300",
+            "timed_turns": "3",
         })
 
 
@@ -287,9 +301,72 @@ def test_summarize_reports_paid_and_unpaid_views(monkeypatch, capsys, workspace_
     assert "SUBSCRIPTION LEVERAGE" in paid_output
     assert "SKILL/MEMORY CANDIDATES" in paid_output
     assert "Read" in paid_output
+    assert "ACTIVE TIME" in paid_output
+    assert "45m 00s" in paid_output
 
     monkeypatch.setattr(sys, "argv", ["summarize.py", "--csv", str(csv_path)])
     summarize.main()
     unpaid_output = capsys.readouterr().out
     assert "Prorated" not in unpaid_output
     assert "DAILY TOTALS" in unpaid_output
+
+
+def test_summarize_accepts_timed_session_with_zero_cost(
+    monkeypatch,
+    capsys,
+    workspace_directory: Path,
+):
+    csv_path = workspace_directory / "sessions.csv"
+    write_summary_csv(csv_path, cost_usd="0")
+
+    monkeypatch.setattr(sys, "argv", ["summarize.py", "--csv", str(csv_path)])
+    summarize.main()
+
+    output = capsys.readouterr().out
+    assert "total $     0.00" in output
+    assert "Parent active time (user wait): 45m 00s" in output
+
+
+def test_summarize_reports_slash_command_time(
+    monkeypatch,
+    capsys,
+    workspace_directory: Path,
+):
+    csv_path = workspace_directory / "sessions.csv"
+    write_summary_csv(csv_path)
+    commands_path = workspace_directory / "commands.csv"
+    commands_path.write_text(
+        "label,session_date,session_id,command,invocations,active_seconds,parent_path\n"
+        "host-a,2026-03-01,session-a,/wrap,2,900,/tmp/session-a.jsonl\n"
+        "host-a,2026-03-01,session-a,/review,1,60,/tmp/session-a.jsonl\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(sys, "argv", [
+        "summarize.py",
+        "--csv", str(csv_path),
+        "--commands-csv", str(commands_path),
+        "--command", "wrap",
+    ])
+    summarize.main()
+
+    output = capsys.readouterr().out
+    assert "SLASH COMMAND TIME" in output
+    assert "/wrap" in output
+    assert "2 timed invocations" in output
+    assert "15m 00s" in output
+    assert "COMMAND DETAIL: /wrap" in output
+
+    assert summarize.normalize_command(" ") is None
+    assert summarize.format_duration(3_661) == "1h 01m 01s"
+
+    monkeypatch.setattr(sys, "argv", [
+        "summarize.py",
+        "--csv", str(csv_path),
+        "--commands-csv", str(commands_path),
+        "--command", "/missing",
+    ])
+    summarize.main()
+    missing_output = capsys.readouterr().out
+    assert "COMMAND DETAIL: /missing" in missing_output
+    assert "No timed invocations found." in missing_output

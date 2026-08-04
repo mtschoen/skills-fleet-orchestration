@@ -1,6 +1,8 @@
 {"type":"user","timestamp":"2026-03-01T09:59:00Z","message":{"role":"user"}}
+{"type":"system","subtype":"local_command","timestamp":"2026-03-01T09:59:01Z","content":"<command-name>/wrap</command-name>"}
 {"type":"assistant","timestamp":"2026-03-01T10:00:00Z","message":{"id":"a","model":"claude-opus-4-6","usage":{"input_tokens":20000,"output_tokens":5000,"cache_read_input_tokens":100000,"cache_creation_input_tokens":3000}}}
 {"type":"assistant","timestamp":"2026-03-01T10:00:00Z","message":{"id":"a","model":"claude-opus-4-6","usage":{"input_tokens":20000,"output_tokens":5000,"cache_read_input_tokens":100000,"cache_creation_input_tokens":3000}}}
+{"type":"system","subtype":"turn_duration","timestamp":"2026-03-01T10:00:01Z","uuid":"duration-a","durationMs":30000}
 {"type":"assistant","timestamp":"2026-03-01T11:00:00Z","message":{"id":"b","model":"claude-opus-4-6","usage":{"input_tokens":20000,"output_tokens":5000}}}
 {"type":"assistant","timestamp":"2026-03-02T09:00:00Z","message":{"id":"c","model":"claude-opus-4-6","usage":{"input_tokens":50000,"output_tokens":10000}}}
 {"type":"assistant","timestamp":"2026-03-03T09:00:00Z","message":{"id":"d","model":"claude-opus-4-6","usage":{"input_tokens":25000,"output_tokens":5000}}}

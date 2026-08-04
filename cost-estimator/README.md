@@ -1,14 +1,20 @@
 # cost-estimator
 
-A Claude Code skill that prices session JSONLs from local transcripts.
+A Claude Code skill that analyzes cost and active time from local session
+JSONLs.
 Two halves planned:
 
 - **Retrospective — built (2026-05-04).** "What did I spend over [date
   range]?" Walks `~/.claude/projects` (and equivalent on other hosts),
   dedupes assistant turns by `message.id`, prices each turn per the
   canonical Anthropic rate table, and reports per-session, daily, and
-  waste-pattern breakdowns. Skill body in `skill-draft/SKILL.md`,
+  waste-pattern breakdowns. Skill body in `SKILL.md`,
   scripts in `scripts/`.
+- **Retrospective time analysis (built 2026-08-03).** Sums Claude Code's
+  recorded per-turn wall clock for the same date ranges, reports parent wait
+  time separately from concurrent subagent processing, and attributes timed
+  slash-command turns so questions like "how long did I wait on `/wrap`?"
+  have a measured answer.
 - **Predictive — planned.** "How much will it cost to [some future
   task]?" Uses Anthropic's `count_tokens` API + heuristics + the
   retrospective dataset as a reference. Design notes below.
@@ -33,6 +39,26 @@ Output lands in `~/.claude/cost-estimator/reports/session-<id-prefix>.html`
 (override with `CLAUDE_COST_REPORTS_DIR`).
 Subagent costs are summarized in the page header but not overlaid on
 the timeline — that's a planned Phase 2.
+
+## Active time and slash commands
+
+`analyze-month.py` reads `system` records whose subtype is `turn_duration`.
+These are measured active turns, not timestamp-gap estimates, so idle time
+between prompts is excluded. Parent time represents user wait time. Subagent
+time is reported separately because concurrent subagents cannot be added
+without double-counting elapsed time.
+
+The analyzer writes `commands.csv` alongside `sessions.csv` and `daily.csv`.
+To inspect one slash command across the selected range:
+
+```bash
+python scripts/analyze-month.py ~/.claude/projects --month 2026-07
+python scripts/summarize.py --command /wrap
+```
+
+The command summary reports measured duration, invocation count, session count,
+and per-session detail. Older invocations without `turn_duration` records are
+left unestimated.
 
 ## Trend across sessions
 
@@ -108,8 +134,9 @@ default) or is leaking cost to 5m-TTL prefix expiry.
 - `scripts/chart_runtime.py` — shared Chart.js version constants,
   CDN/inline download cache, and `<script>` tag builder used by
   both plotters.
-- `scripts/analyze-month.py` — JSONL walker + per-turn pricer
-  (uses `pricing.py`); also prints the "COVERAGE vs /stats" guardrail.
+- `scripts/analyze-month.py` - JSONL walker, per-turn pricer, measured time
+  extractor, and `sessions.csv` / `daily.csv` / `commands.csv` writer. It also
+  prints the "COVERAGE vs /stats" guardrail.
 - `scripts/roots.py` — shared root resolution, date-bound parsers, and
   `stats_file_for()`. Imported by the analyzer, `stats_cache.py`, and
   `cache_ttl.py`.
@@ -117,7 +144,8 @@ default) or is leaking cost to 5m-TTL prefix expiry.
   per-machine `/stats` `stats-cache.json`; flags cache-cleared days and
   reports coverage %. Standalone CLI + helpers the analyzer imports.
 - `scripts/cache_ttl.py` — cache-write TTL (5m vs 1h) diagnostic.
-- `scripts/summarize.py` — CSV reader + waste-pattern report.
+- `scripts/summarize.py` - CSV reader plus cost, active-time, slash-command,
+  and waste-pattern report. Accepts `--command /name` for focused detail.
 - `scripts/plot-session.py` — render a single session's per-turn
   cost trajectory as an interactive HTML chart (Chart.js). Useful for
   investigating a session that `summarize.py` flagged as a top
@@ -147,9 +175,10 @@ default) or is leaking cost to 5m-TTL prefix expiry.
 
 ## Predictive companion (planned)
 
-**Scope: cost, not time.** Estimating how *long* a task will take is the
-`progress-beacon` skill's job (its calibrated ETA); this companion owns the
-*spend* question only. The two are complementary, not overlapping.
+**Scope: future cost, not future time.** The retrospective analyzer reports
+measured active time for work that already happened. Estimating how *long* a
+future task will take is the `progress-beacon` skill's job (its calibrated
+ETA); this predictive companion owns the future *spend* question only.
 
 The originating user goal: get a defensible cost estimate **before**
 invoking Claude on a task. Concrete shapes:

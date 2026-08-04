@@ -35,6 +35,18 @@ def transcript_lines(
             "message": {"role": "user"},
         }),
         json.dumps({
+            "type": "system",
+            "subtype": "local_command",
+            "timestamp": "2026-03-01T09:31:00Z",
+            "content": "<command-name>/wrap</command-name>",
+        }),
+        json.dumps({
+            "type": "system",
+            "subtype": "turn_duration",
+            "timestamp": "2026-03-01T09:31:01Z",
+            "durationMs": "invalid",
+        }),
+        json.dumps({
             "type": "assistant",
             "timestamp": "2026-03-01T10:00:00Z",
             "message": {
@@ -64,6 +76,30 @@ def transcript_lines(
             "message": {"id": f"{identifier_prefix}-1", "role": "assistant"},
         }),
         json.dumps({
+            "type": "system",
+            "subtype": "turn_duration",
+            "timestamp": "2026-03-01T10:00:01Z",
+            "uuid": f"{identifier_prefix}-duration-1",
+            "durationMs": 1_800_000,
+        }),
+        json.dumps({
+            "type": "system",
+            "subtype": "turn_duration",
+            "timestamp": "2026-03-01T10:00:01Z",
+            "uuid": f"{identifier_prefix}-duration-1",
+            "durationMs": 1_800_000,
+        }),
+        json.dumps({
+            "type": "user",
+            "timestamp": "2026-03-01T10:00:02Z",
+            "isMeta": True,
+            "message": {
+                "role": "user",
+                "content": "<command-message>review</command-message>"
+                           "<command-name>/review</command-name>",
+            },
+        }),
+        json.dumps({
             "type": "assistant",
             "timestamp": "2026-03-01T10:06:00Z",
             "message": {
@@ -79,6 +115,13 @@ def transcript_lines(
                 },
                 "content": "not a list",
             },
+        }),
+        json.dumps({
+            "type": "system",
+            "subtype": "turn_duration",
+            "timestamp": "2026-03-01T10:06:01Z",
+            "uuid": f"{identifier_prefix}-duration-2",
+            "durationMs": 360_000,
         }),
         json.dumps({
             "type": "assistant",
@@ -122,12 +165,28 @@ def test_analyze_process_file_and_discovery_cover_edge_cases(
     totals = analyze_month.process_file(parent, "session", False)
     assert totals is not None
     assert totals.assistant_turns == 2
-    assert totals.user_turns == 1
+    assert totals.user_turns == 2
     assert totals.had_compact is True
     assert totals.first_turn_input_tokens == 1_011_000
     assert totals.tool_calls == {"Read": 1, "?": 1}
     assert totals.cost_usd > 5
+    assert totals.active_time_ms == 2_160_000
+    assert totals.timed_turns == 2
+    assert totals.command_time_ms == {"/review": 360_000}
+    assert totals.command_invocations == {"/review": 1}
     assert analyze_month._worker((str(parent), "session", False)).assistant_turns == 2
+
+    assert analyze_month.command_name_from([
+        {"type": "text", "text": "<command-message>Wrap now</command-message>"},
+        {"type": "tool_result", "content": "ignored"},
+    ]) == "/wrap"
+    assert analyze_month.command_name_from("/REVIEW details") == "/review"
+    assert analyze_month.command_name_from({"text": "/ignored"}) is None
+    assert analyze_month.command_name_from(" ") is None
+    assert analyze_month._normalize_command(" ") is None
+    assert analyze_month._duration_ms(True) is None
+    assert analyze_month._duration_ms("invalid") is None
+    assert analyze_month._duration_ms(-1) is None
 
     empty = workspace_directory / "empty.jsonl"
     empty.write_text("not json\n", encoding="utf-8")
@@ -140,6 +199,46 @@ def test_analyze_process_file_and_discovery_cover_edge_cases(
         ("session.jsonl", False),
         ("agent-one.jsonl", True),
     }
+
+
+def test_analyze_process_file_clears_commands_for_skipped_durations(
+    workspace_directory: Path,
+    load_script,
+):
+    analyze_month = load_script("analyze-month.py")
+    transcript = workspace_directory / "skipped-durations.jsonl"
+    entries = [
+        {"type": "system", "subtype": "local_command", "content": "/invalid"},
+        {"type": "system", "subtype": "turn_duration", "durationMs": "invalid"},
+        {"type": "system", "subtype": "turn_duration", "uuid": "valid-1", "durationMs": 100},
+        {"type": "system", "subtype": "local_command", "content": "/missing"},
+        {"type": "system", "subtype": "turn_duration"},
+        {"type": "system", "subtype": "turn_duration", "uuid": "valid-2", "durationMs": 200},
+        {"type": "system", "subtype": "turn_duration", "uuid": "duplicate", "durationMs": 300},
+        {"type": "system", "subtype": "local_command", "content": "/duplicate"},
+        {"type": "system", "subtype": "turn_duration", "uuid": "duplicate", "durationMs": 300},
+        {"type": "system", "subtype": "turn_duration", "uuid": "valid-3", "durationMs": 400},
+        {"type": "system", "subtype": "local_command", "content": "/absent"},
+        {"type": "assistant", "message": {"role": "assistant"}},
+        {"type": "user", "message": {"role": "user", "content": "next turn"}},
+        {"type": "assistant", "message": {"role": "assistant"}},
+        {"type": "system", "subtype": "turn_duration", "uuid": "valid-4", "durationMs": 500},
+        {"type": "system", "subtype": "local_command", "content": "/tools"},
+        {"type": "user", "message": {"role": "user", "content": [{"type": "tool_result"}]}},
+        {"type": "system", "subtype": "turn_duration", "uuid": "valid-5", "durationMs": 600},
+    ]
+    transcript.write_text(
+        "\n".join(json.dumps(entry) for entry in entries) + "\n",
+        encoding="utf-8",
+    )
+
+    totals = analyze_month.process_file(transcript, "session", False)
+
+    assert totals is not None
+    assert totals.active_time_ms == 2_100
+    assert totals.timed_turns == 6
+    assert totals.command_time_ms == {"/tools": 600}
+    assert totals.command_invocations == {"/tools": 1}
 
 
 def test_analyze_main_writes_session_and_daily_reports(
@@ -184,7 +283,28 @@ def test_analyze_main_writes_session_and_daily_reports(
     assert rows[0]["session_id"] == "session"
     assert rows[0]["subagent_count"] == "1"
     assert rows[0]["had_compact"] == "True"
+    assert rows[0]["active_time_seconds"] == "2160.0"
+    assert rows[0]["subagent_time_seconds"] == "2160.0"
+    assert rows[0]["timed_turns"] == "2"
     assert (output_directory / "daily.csv").is_file()
+
+    with (output_directory / "commands.csv").open(newline="", encoding="utf-8") as handle:
+        command_rows = list(csv.DictReader(handle))
+    assert command_rows == [
+        {
+            "label": "local",
+            "session_date": "2026-03-01",
+            "session_id": "session",
+            "command": "/review",
+            "invocations": "1",
+            "active_seconds": "360.0",
+            "parent_path": str(parent),
+        },
+    ]
+
+    with (output_directory / "daily.csv").open(newline="", encoding="utf-8") as handle:
+        daily_rows = list(csv.DictReader(handle))
+    assert daily_rows[0]["active_seconds"] == "2160.0"
 
 
 def test_cache_ttl_parses_turns_and_prints_behavioral_report(

@@ -2,6 +2,7 @@
 
 Reports:
     - subagent vs parent-only cost (lets us reconcile against ccusage)
+    - measured parent, subagent, and slash-command active time
     - tool-call totals and "skill candidates" (high-frequency repeat queries)
     - first-turn input bloat ranking (MCP/skill loader overhead per session)
     - daily totals
@@ -9,6 +10,7 @@ Reports:
 
 Usage:
     python summarize.py [--csv <path>] [--paid <usd>]
+        [--commands-csv <path>] [--command /name]
 
 If --paid is supplied, reports leverage and prorated per-session costs;
 otherwise omits the prorated columns.
@@ -41,6 +43,24 @@ def parse_tools(serialized):
     return counts
 
 
+def normalize_command(command):
+    command = command.strip().split(maxsplit=1)[0] if command.strip() else ""
+    if not command:
+        return None
+    if not command.startswith("/"):
+        command = f"/{command}"
+    return command.lower()
+
+
+def format_duration(seconds):
+    total_seconds = max(0, int(round(seconds)))
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, remaining_seconds = divmod(remainder, 60)
+    if hours:
+        return f"{hours}h {minutes:02d}m {remaining_seconds:02d}s"
+    return f"{minutes}m {remaining_seconds:02d}s"
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--csv",
@@ -50,6 +70,11 @@ def main():
     parser.add_argument("--paid", type=float, default=None,
                         help="Actual USD paid for the period (Max plan + extras). "
                              "When provided, reports leverage and prorated columns.")
+    parser.add_argument("--commands-csv", default=None,
+                        help="commands.csv path produced by analyze-month.py "
+                             "(default: alongside --csv)")
+    parser.add_argument("--command", default=None,
+                        help="Show session detail for one slash command, such as /wrap")
     arguments = parser.parse_args()
 
     path = Path(arguments.csv)
@@ -63,6 +88,9 @@ def main():
                         "cache_write_tokens", "first_turn_input_tokens",
                         "assistant_turns", "user_turns", "subagent_count"):
                 row[key] = int(row[key] or 0)
+            for key in ("active_time_seconds", "subagent_time_seconds"):
+                row[key] = float(row.get(key) or 0)
+            row["timed_turns"] = int(row.get("timed_turns") or 0)
             rows.append(row)
 
     by_label = defaultdict(lambda: {"total": 0.0, "subagent": 0.0, "sessions": 0,
@@ -81,15 +109,76 @@ def main():
     grand_total = grand_parent = grand_sub = 0.0
     for label, bucket in by_label.items():
         parent_only = bucket["total"] - bucket["subagent"]
+        subagent_percent = (
+            bucket["subagent"] / bucket["total"] * 100
+            if bucket["total"] > 0 else 0.0
+        )
         grand_total += bucket["total"]
         grand_parent += parent_only
         grand_sub += bucket["subagent"]
         print(f"  {label:9}  total ${bucket['total']:>9.2f}  "
               f"parent-only ${parent_only:>9.2f}  "
               f"subagent ${bucket['subagent']:>8.2f} "
-              f"({bucket['subagent']/bucket['total']*100:5.1f}%)")
+              f"({subagent_percent:5.1f}%)")
     print(f"  {'TOTAL':9}  total ${grand_total:>9.2f}  "
           f"parent-only ${grand_parent:>9.2f}  subagent ${grand_sub:>8.2f}")
+
+    parent_active_seconds = sum(row["active_time_seconds"] for row in rows)
+    subagent_active_seconds = sum(row["subagent_time_seconds"] for row in rows)
+    timed_turns = sum(row["timed_turns"] for row in rows)
+    print("\n=== ACTIVE TIME (turn_duration wall clock) ===")
+    print(f"  Parent active time (user wait): {format_duration(parent_active_seconds)}")
+    print(f"  Timed parent turns: {timed_turns:,}")
+    print("  Subagent processing time (reported separately; may overlap): "
+          f"{format_duration(subagent_active_seconds)}")
+
+    commands_path = (
+        Path(arguments.commands_csv)
+        if arguments.commands_csv
+        else path.with_name("commands.csv")
+    )
+    command_rows = []
+    if commands_path.is_file():
+        with open(commands_path, newline="", encoding="utf-8") as handle:
+            reader = csv.DictReader(handle)
+            for command_row in reader:
+                command_row["invocations"] = int(command_row["invocations"] or 0)
+                command_row["active_seconds"] = float(command_row["active_seconds"] or 0)
+                command_rows.append(command_row)
+
+    print("\n=== SLASH COMMAND TIME ===")
+    command_totals = defaultdict(lambda: {"invocations": 0, "seconds": 0.0,
+                                          "sessions": set()})
+    for command_row in command_rows:
+        bucket = command_totals[command_row["command"]]
+        bucket["invocations"] += command_row["invocations"]
+        bucket["seconds"] += command_row["active_seconds"]
+        bucket["sessions"].add((command_row["label"], command_row["session_id"]))
+    if not command_totals:
+        print(f"  No timed slash commands found in {commands_path}.")
+    for command, bucket in sorted(
+        command_totals.items(), key=lambda item: -item[1]["seconds"],
+    ):
+        print(f"  {command:30} {format_duration(bucket['seconds']):>12}  "
+              f"{bucket['invocations']} timed invocations  "
+              f"{len(bucket['sessions'])} sessions")
+
+    requested_command = normalize_command(arguments.command) if arguments.command else None
+    if requested_command:
+        print(f"\n=== COMMAND DETAIL: {requested_command} ===")
+        matching_rows = [
+            command_row for command_row in command_rows
+            if command_row["command"].lower() == requested_command
+        ]
+        if not matching_rows:
+            print("  No timed invocations found.")
+        for command_row in sorted(
+            matching_rows, key=lambda item: -item["active_seconds"],
+        ):
+            print(f"  {command_row['session_date']}  "
+                  f"{format_duration(command_row['active_seconds']):>12}  "
+                  f"{command_row['invocations']} timed invocations  "
+                  f"id={command_row['session_id'][:8]}  {command_row['label']}")
 
     # Tool-call aggregation
     tool_totals = Counter()
