@@ -107,4 +107,4 @@ The Python helpers (importable from the maintenance scanner module):
 - `is_task_stale(project_path, task_name, *, state=None, head=None, now=None) -> bool`
 - `list_stale_tasks(project_path, task_names=None) -> list[str]`
 
-Runners should use `write_maintenance_state` rather than dumping JSON manually so the gitignore handling stays in one place.
+Runners should use `write_maintenance_state` rather than dumping JSON manually so the gitignore handling stays in one place. Both `write_maintenance_state` and the MCP tools require project-tracker to be installed - it's optional (see SKILL.md). Without it, write the JSON entry directly per the schema above and add `.maintenance.json` to `.gitignore` yourself; the staleness rules are unaffected either way, since they only depend on the file's contents.

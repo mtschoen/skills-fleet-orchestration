@@ -1,6 +1,6 @@
 ---
 name: fleet-orchestration
-description: "Use when dispatching subagents across multiple LOCAL PROJECT REPOSITORIES - feature implementation, maintenance sweeps, or fleet-wide investigation across the user's project directory. Triggers: 'spawn agents to fix X across all my projects', 'run a maintenance pass', 'work on tasks from several repos at once', use of project-tracker MCP tools (list_projects, find_dirty, find_stale_maintenance) to plan multi-repo work. Extends superpowers:dispatching-parallel-agents with cross-repo governance. project-tracker MCP tools are optional - without them, enumerate repos from ~/.project-tracker/projects.json and use git directly."
+description: "Use when dispatching subagents across multiple LOCAL PROJECT REPOSITORIES - feature implementation, maintenance sweeps, or fleet-wide investigation across the user's project directory. Triggers: 'spawn agents to fix X across all my projects', 'run a maintenance pass', 'work on tasks from several repos at once', use of project-tracker MCP tools (list_projects, find_dirty, find_stale_maintenance) to plan multi-repo work. Extends superpowers:dispatching-parallel-agents with cross-repo governance. project-tracker MCP tools are optional - without them, use the project-tracker CLI (project-tracker list --json), or on machines with no tracker install read the ~/.project-tracker/projects.json fallback registry."
 ---
 
 # Fleet Orchestration
@@ -164,7 +164,13 @@ Any brief that includes a run longer than one tool call (Unity batch suites, ful
 
 ## Pre-flight: check target repos for parallel sessions
 
-Before dispatching into any target repo, run these three commands and read the output:
+Start with a fleet-wide pass, then verify per repo before dispatching.
+
+**Fleet-wide**: `list_projects()` to enumerate the repos you can target, and `find_dirty()` to see which of them already have uncommitted changes before you touch anything. Without the MCP server, enumerate with `project-tracker list --json` (the tracker's registry is a SQLite database under `~/.project_tracker/`). On a machine with no project-tracker install at all, read `~/.project-tracker/projects.json` instead: the trackerless fallback registry, a JSON array of `{name, path, status, description}` entries. It may be absent if never created, and it is deliberately NOT synced with the tracker's database - it exists to close the gap for one-off setups, not to mirror the tracker. Either way, compute dirtiness with `git -C <repo> status --porcelain` per repo.
+
+**Per target repo**, before dispatching into it: if the `project-lock` skill is installed, it is the authoritative check - run project-lock's `check <repo>` command (its SKILL.md documents the script location and exact invocation) and follow its check/acquire/advice protocol (wait, use a worktree, or proceed, per its own recommendation). It replaces guesswork with an actual advisory lock another agent would have taken.
+
+When `project-lock` isn't installed, fall back to these ad hoc heuristics - run these three commands and read the output:
 
 ```text
 git -C <repo> status
@@ -172,13 +178,15 @@ git -C <repo> worktree list
 git -C <repo> stash list
 ```
 
-Signs an active parallel session is using this repo: uncommitted changes you didn't make, worktrees under `.claude/worktrees/agent-*` (or any other non-main worktree), or named stashes from another session. If detected, **pre-bake an isolated worktree from HEAD** for your agent before dispatching:
+Signs an active parallel session is using this repo: uncommitted changes you didn't make, worktrees under `.claude/worktrees/agent-*` (or any other non-main worktree), or named stashes from another session.
+
+Either way, if a conflict is detected, **pre-bake an isolated worktree from HEAD** for your agent before dispatching:
 
 ```text
 git -C <repo> worktree add <repo>/.claude/worktrees/orchestrator-<task> -b claude/<task> HEAD
 ```
 
-Then pass that worktree path to the agent in the brief - and tell the agent to `cd` into it. Do NOT dispatch into the main worktree of a repo where another session is active. Even if your agent works on a different branch, the working tree itself is shared on disk; their uncommitted changes and yours collide on the same files.
+Then pass that worktree path to the agent in the brief - and tell the agent to `cd` into it and, if `project-lock` is installed, acquire the lock **in that worktree** (locks are per-worktree-root, so a pre-baked worktree needs its own lock, separate from the main checkout's) before writing. Do NOT dispatch into the main worktree of a repo where another session is active. Even if your agent works on a different branch, the working tree itself is shared on disk; their uncommitted changes and yours collide on the same files.
 
 Pre-baking is cheap (~100ms per repo). When in doubt, do it. Cleanup after merging: `git -C <repo> worktree remove <path>` and `git -C <repo> branch -d claude/<task>` (or `-D` if discarded).
 
@@ -233,7 +241,7 @@ Maintenance state lives in each repo as `.maintenance.json` (gitignored). projec
 - `mcp__project-tracker__get_maintenance_state(name)` - read one project's breadcrumbs
 - `mcp__project-tracker__find_stale_maintenance(task_name?)` - find projects where a task is stale
 
-Without the MCP server, read each repo's `.maintenance.json` directly (enumerating repos from `~/.project-tracker/projects.json`) and compute staleness with git, e.g. `git rev-list <last_run_commit>..HEAD --count`.
+Without the MCP server, read each repo's `.maintenance.json` directly (enumerating repos with `project-tracker list --json`, or `~/.project-tracker/projects.json` on machines without any tracker install) and compute staleness with git, e.g. `git rev-list <last_run_commit>..HEAD --count`.
 
 Quick format reference (full schema in `references/maintenance-format.md`):
 
@@ -290,7 +298,9 @@ Re-running 5 minutes later returns only `["site"]`. Cheap.
 ### Feature pass
 
 ```text
-1. Identify candidate tasks (read PLAN.md from N projects).
+1. Identify candidate tasks: list_projects() to enumerate the fleet
+   (or `project-tracker list --json` without the MCP server, or `~/.project-tracker/projects.json` without any tracker install),
+   then read PLAN.md from each candidate project.
 2. Triage each (the four questions above). Drop reds, produce handoff prompts.
 3. Present green/yellow shortlist to the user. Wait for approval.
 4. For approved tasks: write rich briefs with pre-answered ambiguities.
