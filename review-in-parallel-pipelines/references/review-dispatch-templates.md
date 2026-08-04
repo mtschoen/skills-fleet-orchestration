@@ -2,10 +2,10 @@
 
 Copy-paste prompts for the reviewer agents the orchestrator dispatches at each
 checkpoint, plus the one-line awareness addition for implementer dispatches.
-Reviewers can run on a cheap model (sonnet) — the work is reading a diff against
+Reviewers can run on a cheap model (sonnet) - the work is reading a diff against
 a spec, not generating code.
 
-## Per-branch reviewer (checkpoint 1 — before merge)
+## Per-branch reviewer (checkpoint 1 - before merge)
 
 Dispatch one per returned branch, before merging it to main.
 
@@ -36,24 +36,24 @@ Check, and report findings concisely:
   changed-file list against the plan's expected file list.
 
 Return exactly one verdict:
-- APPROVED — clean, safe to merge.
-- CHANGES_REQUESTED — followed by a concrete, numbered list of required fixes.
-- ESCALATE — followed by what is too big for another round with the same agent
+- APPROVED - clean, safe to merge.
+- CHANGES_REQUESTED - followed by a concrete, numbered list of required fixes.
+- ESCALATE - followed by what is too big for another round with the same agent
   (scope change, spec gap, ambiguous requirement).
 ```
 
 Orchestrator action on the verdict:
 
-- `APPROVED` → merge the branch.
-- `CHANGES_REQUESTED` → re-dispatch the *same* implementer with the list. Do not
+- `APPROVED` -> merge the branch.
+- `CHANGES_REQUESTED` -> re-dispatch the *same* implementer with the list. Do not
   merge first.
-- `ESCALATE` → handle manually (revise spec, narrow scope, or surface to the
+- `ESCALATE` -> handle manually (revise spec, narrow scope, or surface to the
   user). Do not paper over it with another agent round.
 
-## Round-boundary reviewer (checkpoint 2 — after all merges)
+## Round-boundary reviewer (checkpoint 2 - after all merges)
 
 Dispatch once, after the round's branches have all landed on main. This is the
-checkpoint that catches what no per-branch review can — give the reviewer the
+checkpoint that catches what no per-branch review can - give the reviewer the
 *integrated* state and the across-branch comparison explicitly.
 
 ```text
@@ -67,14 +67,14 @@ Inputs:
   <the round's spec / plan>
   the current working tree
 
-Do NOT re-review branches in isolation — that already happened. Compare the
+Do NOT re-review branches in isolation - that already happened. Compare the
 branches AGAINST EACH OTHER and inspect the combined tree. Work the
 round-boundary checklist (see references/round-boundary-checklist.md):
 halo effects, architectural drift, open-thread carry-over, gate integrity.
 
 Return a refinement punch-list: a numbered list of concrete cleanup items, each
 with the file(s) involved and a one-line fix. If the integration is genuinely
-clean, return an empty list and say so — do not invent work.
+clean, return an empty list and say so - do not invent work.
 ```
 
 ## Implementer awareness (add to every parallel implementer dispatch)

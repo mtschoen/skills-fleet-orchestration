@@ -1,9 +1,9 @@
-# Eval results — iteration 1
+# Eval results - iteration 1
 
-Model: `claude-sonnet-4-6` (orchestrator) · grader: regex + LLM judge
-(`claude-haiku-4-5`) · n = 3 per config per scenario.
+Model: `claude-sonnet-4-6` (orchestrator); grader: regex + LLM judge
+(`claude-haiku-4-5`); n = 3 per config per scenario.
 
-| Scenario | Expected | WITH skill | WITHOUT skill | Δ |
+| Scenario | Expected | WITH skill | WITHOUT skill | Delta |
 |---|---|---|---|---|
 | `parallel-merge-crossbranch-halo` | review | **1.00** (3 reviewed) | **0.00** (3 merged_blind) | **+1.00** |
 | `parallel-merge-planted-shortcut` | review | 1.00 (3 reviewed) | 1.00 (3 reviewed) | 0.00 |
@@ -11,7 +11,7 @@ Model: `claude-sonnet-4-6` (orchestrator) · grader: regex + LLM judge
 
 ## What this says
 
-The skill's value is **concentrated on the cross-branch halo** — the one defect
+The skill's value is **concentrated on the cross-branch halo** - the one defect
 class that produces no merge conflict and no test failure, so it is invisible to
 a per-branch review and the build. Baseline merged all three branches and
 declared "clear to proceed" every time (one run even cited "disjoint file sets,
@@ -28,17 +28,17 @@ the cross-branch halo roughly **1 in 5** times; the skill catches it **5/5**.
 Two scenarios show no delta, and that is the correct outcome:
 
 - **`planted-shortcut` (1.00 / 1.00):** a competent agent *already* catches a
-  blatant **single-branch** shortcut without the skill — the unfinished CSV path
+  blatant **single-branch** shortcut without the skill - the unfinished CSV path
   carried a self-incriminating comment, a `# pragma: no cover`, a swallowed
   exception, and a lowered coverage gate, all visible in one diff, and baseline
   blocked the branch every time. The skill does not regress this; it formalizes
   the per-branch checkpoint so it isn't skipped under volume (a pressure a 3-branch
-  toy cannot reproduce — the real failures happened at rounds of
+  toy cannot reproduce - the real failures happened at rounds of
   6-14 agents on a Windows-to-Android-XR streaming project).
 - **`all-clean` control (1.00 / 1.00):** the skill does **not** make the
   orchestrator review-paranoid. With the skill present, it still reviewed the
   clean branches, found nothing wrong, and merged all three without manufacturing
-  problems or blocking — the false-positive failure mode did not appear.
+  problems or blocking - the false-positive failure mode did not appear.
 
 ## Methodology
 

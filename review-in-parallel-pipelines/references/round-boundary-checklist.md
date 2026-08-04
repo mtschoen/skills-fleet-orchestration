@@ -2,7 +2,7 @@
 
 The round-boundary review (checkpoint 2) runs once after all of a round's
 branches land on `main`. Its whole reason for existing is to catch the class of
-defect that produces **no merge conflict and no test failure** — invisible to
+defect that produces **no merge conflict and no test failure** - invisible to
 the merge tool and the build, visible only by comparing branches against each
 other and inspecting the integrated whole.
 
@@ -17,7 +17,7 @@ isolation, but interfere once combined.
 - **Duplicated logic.** Two branches independently implemented the same helper,
   validator, or constant. Symptom: the same function name/body defined in two
   modules; near-identical blocks in two files. Fix: consolidate to one home, have
-  the other import it. *(This is the canonical halo — disjoint files, clean
+  the other import it. *(This is the canonical halo - disjoint files, clean
   merge, green tests, duplicated logic.)*
 - **Shadowed / dead code.** Branch A added a real implementation of something
   branch B left as a stub, or two branches both touched a registry/dispatch
@@ -53,7 +53,7 @@ Deviations that individually were fine to defer but collectively need a decision
 - Multiple branches each left a "we'll clean this up later" / TODO / temporary
   shim. Individually deferrable; together they're a refinement round.
 - Multiple branches noted the same upstream gap (a missing fixture, an absent
-  abstraction). That gap is now confirmed by repetition — schedule it.
+  abstraction). That gap is now confirmed by repetition - schedule it.
 
 How to look: collect the deviations sections from every branch's report and the
 TODO/FIXME markers added this round; cluster them. Repetition across branches is
@@ -78,7 +78,7 @@ the round's diff for suppression markers.
 
 ## Output
 
-A numbered refinement punch-list — each item names the file(s) and a one-line
-fix — handed to checkpoint 3 (refinement round) and dispatched before the next
+A numbered refinement punch-list - each item names the file(s) and a one-line
+fix - handed to checkpoint 3 (refinement round) and dispatched before the next
 planned feature phase. An empty list is a valid, common result: say the
 integration is clean and proceed. Do not manufacture items to look thorough.
