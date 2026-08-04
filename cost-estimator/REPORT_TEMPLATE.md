@@ -1,4 +1,4 @@
-# Cost Analysis: {RANGE_LABEL}
+# Cost and Active-Time Analysis: {RANGE_LABEL}
 
 Generated {YYYY-MM-DD} from local JSONLs on {MACHINE_LIST}.
 
@@ -12,6 +12,26 @@ labelled prorated. {IF --paid SUPPLIED: "Prorated cost = raw × {DISCOUNT_FACTOR
 | {LABEL_1} | ${COST} | {N} | {HIT}% |
 | {LABEL_2} | ${COST} | {N} | {HIT}% |
 | **Total** | **${TOTAL}** | **{N}** | **{HIT}%** |
+
+| | Parent active time | Timed turns | Subagent processing time |
+|---|---|---|---|
+| **Total** | **{DURATION}** | **{N}** | **{DURATION}** |
+
+Parent active time is measured user wait time from `turn_duration`. Subagent
+processing time is reported separately because concurrent durations overlap.
+
+## Slash command time
+
+Source: `commands.csv` (or "SLASH COMMAND TIME" from summarize.py).
+
+| Command | Active time | Timed invocations | Sessions |
+|---|---|---|---|
+| `/wrap` | 1h 23m | 7 | 6 |
+| ... | | | |
+
+When the user asks about one command, run `summarize.py --command /name` and
+include its per-session detail. State that invocations without a surviving
+`turn_duration` record are not estimated.
 
 ## Coverage / confidence
 
@@ -163,5 +183,9 @@ specific dollar figures and session IDs.
   $5/$25, Sonnet $3/$15, Haiku $1/$5; cache read 0.1×, cache write
   1.25× input rate; the 1M tier bills at the flat rate, no surcharge).
 - Filters by first-entry timestamp into [start, end+1) UTC.
+- Sums `system/turn_duration.durationMs` for parent active time and reports
+  subagent time separately to avoid double-counting concurrent work.
+- Attributes slash commands from `system/local_command` or `<command-name>` to
+  the following measured turn and writes `commands.csv`.
 - Re-runnable: `python scripts/analyze-month.py <projects> --month YYYY-MM`
-  then `python scripts/summarize.py [--paid <usd>]`.
+  then `python scripts/summarize.py [--paid <usd>] [--command /name]`.

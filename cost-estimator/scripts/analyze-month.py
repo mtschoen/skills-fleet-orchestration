@@ -1,4 +1,6 @@
-"""Retrospective Claude Code session cost analyzer.
+"""Retrospective Claude Code session cost and active-time analyzer.
+
+This cohesive CLI stays in one file because parsing, aggregation, and CSV output share one schema.
 
 Walks all session JSONLs (parents + subagents) under one or more
 .claude/projects roots, dedupes assistant turns by message.id, and prices
@@ -6,9 +8,8 @@ each turn per the canonical formula (Opus / Sonnet / Haiku rates, flat
 across the 1M-context tier, cache read 0.1x, cache write 1.25x).
 
 Backs the retrospective half of the cost-estimator skill. Answers "what
-did I spend?" with per-session, daily, and waste-pattern detail —
-crossing the gap that `/cost` (current session only) and `ccusage` (no
-per-machine grouping, no waste-pattern flags) leave open.
+did I spend?" and "how much active time did I wait?" with per-session,
+daily, slash-command, and waste-pattern detail.
 
 Usage:
     python analyze-month.py <projects_root> [<projects_root> ...]
@@ -17,9 +18,10 @@ Usage:
         [--out <directory>]
         [--workers N]
 
-Outputs CSVs in --out (default: alongside this script):
+Outputs CSVs in --out (default: ~/.claude/cost-estimator/reports/):
     sessions.csv  - one row per logical session (parent + its subagents)
     daily.csv     - daily totals
+    commands.csv  - measured slash-command time per logical session
 """
 
 from __future__ import annotations
@@ -27,6 +29,7 @@ from __future__ import annotations
 import argparse
 import csv
 import os
+import re
 import sys
 from collections import Counter, defaultdict
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -49,6 +52,14 @@ from roots import (  # noqa: E402  -- after sys.path manipulation
 import stats_cache  # noqa: E402  -- after sys.path manipulation
 
 
+COMMAND_NAME_PATTERN = re.compile(
+    r"<command-name>\s*([^<]+?)\s*</command-name>", re.IGNORECASE,
+)
+COMMAND_MESSAGE_PATTERN = re.compile(
+    r"<command-message>\s*([^<]+?)\s*</command-message>", re.IGNORECASE,
+)
+
+
 @dataclass
 class FileTotals:
     path: str
@@ -67,6 +78,52 @@ class FileTotals:
     user_turns: int = 0
     had_compact: bool = False
     first_turn_input_tokens: int = 0  # initial system-prompt size proxy
+    active_time_ms: int = 0
+    timed_turns: int = 0
+    command_time_ms: Counter = field(default_factory=Counter)
+    command_invocations: Counter = field(default_factory=Counter)
+
+
+def _content_text(content):
+    if isinstance(content, str):
+        return content
+    if not isinstance(content, list):
+        return ""
+    return "\n".join(
+        block.get("text", "")
+        for block in content
+        if isinstance(block, dict) and isinstance(block.get("text"), str)
+    )
+
+
+def _normalize_command(command):
+    command = command.strip().split(maxsplit=1)[0] if command.strip() else ""
+    if not command:
+        return None
+    if not command.startswith("/"):
+        command = f"/{command}"
+    return command.lower()
+
+
+def command_name_from(content):
+    text = _content_text(content)
+    for pattern in (COMMAND_NAME_PATTERN, COMMAND_MESSAGE_PATTERN):
+        match = pattern.search(text)
+        if match:
+            return _normalize_command(match.group(1))
+    if text.strip().startswith("/"):
+        return _normalize_command(text)
+    return None
+
+
+def _duration_ms(value):
+    if isinstance(value, bool):
+        return None
+    try:
+        duration = int(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return duration if duration >= 0 else None
 
 
 def process_file(path, parent_session, is_subagent):
@@ -75,6 +132,8 @@ def process_file(path, parent_session, is_subagent):
     seen_ids = set()
     saw_any = False
     first_turn_recorded = False
+    seen_duration_ids = set()
+    pending_command = None
 
     try:
         with open(path, "rb") as handle:
@@ -98,10 +157,40 @@ def process_file(path, parent_session, is_subagent):
                         totals.last_timestamp = timestamp
 
                 entry_type = entry.get("type")
+                if entry_type == "system" and entry.get("subtype") == "local_command":
+                    pending_command = command_name_from(entry.get("content"))
+                    continue
+
+                if entry_type == "system" and entry.get("subtype") == "turn_duration":
+                    command_for_duration = pending_command
+                    pending_command = None
+                    duration_identifier = entry.get("uuid")
+                    if duration_identifier:
+                        if duration_identifier in seen_duration_ids:
+                            continue
+                        seen_duration_ids.add(duration_identifier)
+                    duration = _duration_ms(entry.get("durationMs"))
+                    if duration is None:
+                        continue
+                    totals.active_time_ms += duration
+                    totals.timed_turns += 1
+                    if command_for_duration:
+                        totals.command_time_ms[command_for_duration] += duration
+                        totals.command_invocations[command_for_duration] += 1
+                    continue
+
                 if entry_type == "user":
                     totals.user_turns += 1
                     if entry.get("isCompactSummary"):
                         totals.had_compact = True
+                    message = entry.get("message") or {}
+                    content = message.get("content")
+                    command = command_name_from(content)
+                    has_user_text = isinstance(content, str) or bool(
+                        _content_text(content).strip()
+                    )
+                    if command or has_user_text or entry.get("isCompactSummary"):
+                        pending_command = command
                     continue
 
                 if entry_type != "assistant":
@@ -288,13 +377,25 @@ def main():
             "subagent_cost": 0.0,
             "had_compact": False,
             "first_turn_input_tokens": 0,
+            "active_time_ms": 0,
+            "subagent_time_ms": 0,
+            "timed_turns": 0,
+            "subagent_timed_turns": 0,
+            "command_time_ms": Counter(),
+            "command_invocations": Counter(),
         })
         if not totals.is_subagent:
             session["parent_path"] = totals.path
             session["first_turn_input_tokens"] = totals.first_turn_input_tokens
+            session["active_time_ms"] += totals.active_time_ms
+            session["timed_turns"] += totals.timed_turns
+            session["command_time_ms"].update(totals.command_time_ms)
+            session["command_invocations"].update(totals.command_invocations)
         else:
             session["subagent_count"] += 1
             session["subagent_cost"] += totals.cost_usd
+            session["subagent_time_ms"] += totals.active_time_ms
+            session["subagent_timed_turns"] += totals.timed_turns
 
         session["cost_usd"] += totals.cost_usd
         session["input_tokens"] += totals.input_tokens
@@ -349,6 +450,8 @@ def main():
         "cache_hit_pct", "first_turn_input_tokens",
         "assistant_turns", "user_turns",
         "subagent_count", "subagent_cost",
+        "active_time_seconds", "subagent_time_seconds",
+        "timed_turns", "subagent_timed_turns",
         "had_compact",
         "models", "top_tools", "parent_path",
     ]
@@ -385,6 +488,10 @@ def main():
             "user_turns": session["user_turns"],
             "subagent_count": session["subagent_count"],
             "subagent_cost": round(session["subagent_cost"], 4),
+            "active_time_seconds": round(session["active_time_ms"] / 1000, 3),
+            "subagent_time_seconds": round(session["subagent_time_ms"] / 1000, 3),
+            "timed_turns": session["timed_turns"],
+            "subagent_timed_turns": session["subagent_timed_turns"],
             "had_compact": session["had_compact"],
             "models": models_label,
             "top_tools": top_tools_label,
@@ -398,10 +505,33 @@ def main():
         writer.writerows(rows)
     print(f"Wrote {sessions_csv} ({len(rows)} rows)", file=sys.stderr)
 
+    commands_csv = output_directory / "commands.csv"
+    command_fields = [
+        "label", "session_date", "session_id", "command",
+        "invocations", "active_seconds", "parent_path",
+    ]
+    command_rows = []
+    for session in selected_sessions:
+        for command in sorted(session["command_invocations"]):
+            command_rows.append({
+                "label": session["label"],
+                "session_date": session.get("session_date", ""),
+                "session_id": session["session_id"],
+                "command": command,
+                "invocations": session["command_invocations"][command],
+                "active_seconds": round(session["command_time_ms"][command] / 1000, 3),
+                "parent_path": session["parent_path"],
+            })
+    with open(commands_csv, "w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=command_fields)
+        writer.writeheader()
+        writer.writerows(command_rows)
+    print(f"Wrote {commands_csv} ({len(command_rows)} rows)", file=sys.stderr)
+
     by_day = defaultdict(lambda: {"sessions": 0, "cost": 0.0,
                                   "input": 0, "output": 0,
                                   "cache_read": 0, "cache_write": 0,
-                                  "subagents": 0})
+                                  "subagents": 0, "active_seconds": 0.0})
     for row in rows:
         bucket_key = row["session_date"] or "unknown"
         bucket = by_day[bucket_key]
@@ -412,18 +542,21 @@ def main():
         bucket["cache_read"] += row["cache_read_tokens"]
         bucket["cache_write"] += row["cache_write_tokens"]
         bucket["subagents"] += row["subagent_count"]
+        bucket["active_seconds"] += row["active_time_seconds"]
     daily_csv = output_directory / "daily.csv"
     with open(daily_csv, "w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
         writer.writerow(["date", "sessions", "cost_usd", "input", "output",
-                         "cache_read", "cache_write", "subagents"])
+                         "cache_read", "cache_write", "subagents",
+                         "active_seconds"])
         for date_string in sorted(by_day):
             bucket = by_day[date_string]
             writer.writerow([date_string, bucket["sessions"],
                              round(bucket["cost"], 4),
                              bucket["input"], bucket["output"],
                              bucket["cache_read"], bucket["cache_write"],
-                             bucket["subagents"]])
+                             bucket["subagents"],
+                             round(bucket["active_seconds"], 3)])
     print(f"Wrote {daily_csv}", file=sys.stderr)
 
     total_cost = sum(row["cost_usd"] for row in rows)
@@ -437,6 +570,8 @@ def main():
     print(f"\n=== {range_label.upper()} SUMMARY ===")
     print(f"Sessions: {len(rows)}")
     print(f"Total raw cost: ${total_cost:,.2f}")
+    total_active_seconds = sum(row["active_time_seconds"] for row in rows)
+    print(f"Active turn time: {total_active_seconds:,.1f} seconds")
     print(f"Tokens: input {total_input:,}  output {total_output:,}  "
           f"cache_read {total_cache_read:,}  cache_write {total_cache_write:,}")
     print(f"Overall cache hit: {overall_hit:.1f}%")

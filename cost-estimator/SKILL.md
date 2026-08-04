@@ -1,14 +1,19 @@
 ---
 name: cost-estimator
-description: Use when the user asks for a retrospective Claude Code spend analysis over a date range - what they spent, top sessions, cache discipline, waste patterns, subscription leverage. Triggers include "/cost estimate", "what did I spend", "how much did last month cost", "cost breakdown", "where did my Claude budget go", "analyze my Claude spending", "audit my Claude usage". Predictive cost estimation ("how much will this plan cost") is not yet built.
+description: Use when the user asks for retrospective Claude Code cost or active-time analysis over a date range, including spend, top sessions, cache discipline, subscription leverage, time spent waiting, or time spent on slash commands such as /wrap. Predictive cost or time estimation for future work is not built.
 ---
 
 # cost-estimator (retrospective)
 
 This skill answers "what did I spend on Claude Code over [some date range]?"
-It walks the local session transcripts and produces a defensible cost
-breakdown that goes beyond `/cost` (current session only) and `ccusage`
-(no per-machine grouping, no waste-pattern flags).
+and "how much active time did Claude Code spend over that range?"
+It walks the local session transcripts and produces defensible cost and active
+time breakdowns. The cost analysis goes beyond `/cost` (current session only)
+and `ccusage` (no per-machine grouping, no waste-pattern flags).
+
+For timing questions, active time means measured `turn_duration` wall clock
+from the transcript. It is not inferred from gaps between timestamps, so idle
+time between prompts is excluded.
 
 ## When to invoke
 
@@ -55,11 +60,13 @@ Most invocations need three things; ask only when not obvious:
        --label <name-1> [--label <name-2> ...]
    ```
 
-   This writes `sessions.csv` and `daily.csv` to
+   This writes `sessions.csv`, `daily.csv`, and `commands.csv` to
    `~/.claude/cost-estimator/reports/` - outside the installed skill tree,
    so a skill reinstall never deletes generated data (override the location
    with `CLAUDE_COST_REPORTS_DIR`) - and prints
-   a brief stderr summary. It also prints a **"COVERAGE vs /stats"**
+   a brief stderr summary. `sessions.csv` includes parent active time and
+   separately reported subagent time. `commands.csv` attributes measured turns
+   to slash commands such as `/wrap`. It also prints a **"COVERAGE vs /stats"**
    section: a guardrail that flags when surviving transcripts undercount
    the range because old days were cache-cleared (transcripts
    garbage-collected under the old 30-day retention). When it warns, the
@@ -68,11 +75,13 @@ Most invocations need three things; ask only when not obvious:
 3. Run the deeper summary:
 
    ```bash
-   python <skill-root>/scripts/summarize.py [--paid <usd>]
+   python <skill-root>/scripts/summarize.py [--paid <usd>] [--command /wrap]
    ```
 
-   Pass `--paid` only if the user supplied an actually-paid amount. The
-   summary prints subagent-vs-parent reconciliation, top tool calls,
+   Pass `--paid` only if the user supplied an actually-paid amount. Use
+   `--command` when the user asks about one slash command. The summary prints
+   parent active time, separately reported subagent time, slash-command totals
+   and detail, subagent-vs-parent cost reconciliation, top tool calls,
    first-turn input bloat, top-N sessions, daily totals, and (when
    `--paid` is set) leverage and prorated columns.
 4. **Synthesize a markdown report** for the user. Follow
@@ -80,12 +89,15 @@ Most invocations need three things; ask only when not obvious:
    (headline, coverage/confidence, leverage, top sessions, top tool
    calls, first-turn bloat, daily totals, things-to-avoid walkthrough,
    methodology). Don't drop sections to save space; the value of the
-   report is precisely that it surfaces patterns the user wouldn't see
-   in a one-line summary. Pull each section from the corresponding part
+   cost report is precisely that it surfaces patterns the user wouldn't see
+   in a one-line summary. A time-only report may omit unrelated cost sections.
+   Pull each included section from the corresponding part
    of summarize.py's stdout - except the coverage section, which comes
    from analyze-month.py's "COVERAGE vs /stats" output. Always label raw
    vs prorated explicitly, and if coverage warned, label the total a
-   floor - never leave either ambiguous.
+   floor - never leave either ambiguous. For a time-only question, lead with
+   active time and the requested slash-command detail; retain cost sections
+   only when they help answer the request.
 5. **Plot top spike sessions on demand.** When the report flags a
    top-N session that the user wants to investigate, render its
    per-turn trajectory:
@@ -172,6 +184,21 @@ Most invocations need three things; ask only when not obvious:
        > ~/.claude/cost-estimator/reports/summary.txt
    ```
 
+## Interpreting time totals
+
+- **Parent active time is user wait time.** Sum `turn_duration` only from the
+  parent transcript. This excludes idle gaps between prompts.
+- **Subagent time is separate.** Subagents can run concurrently with the parent
+  and each other, so never add subagent time to parent time and call the result
+  elapsed time.
+- **Slash-command time is measured turn time.** `commands.csv` associates a
+  `system/local_command` record (or the older `<command-name>` wrapper) with
+  the following `turn_duration`. Invocations without a duration record are not
+  estimated.
+- **Older transcripts may lack timing.** Report the number of timed turns and
+  describe the total as coverage of surviving `turn_duration` records, not a
+  complete estimate when records are absent.
+
 ## What "things to avoid" looks like in this skill's output
 
 The data lets you flag four classes of waste. Walk through each in the
@@ -229,7 +256,7 @@ was never present in the billed aggregate.
 
 ## What this skill does not do (yet)
 
-- Predict cost for a future task. A predictive companion is in design
+- Predict cost or duration for a future task. A predictive cost companion is in design
   (uses `count_tokens` API + heuristics + the historical
   `sessions.csv` as a reference dataset).
 - Subagent timeline overlays. `plot-session.py` plots the parent
@@ -260,6 +287,9 @@ was never present in the billed aggregate.
 - `scripts/analyze-month.py` - JSONL walker and per-turn pricer
   (uses `pricing.py`). Default `--out` is `~/.claude/cost-estimator/reports/`
   (override `CLAUDE_COST_REPORTS_DIR`).
+  Also extracts measured `turn_duration` values and writes per-session,
+  per-day, and per-command active-time fields without adding concurrent
+  subagent time to parent wait time.
   Also prints the "COVERAGE vs /stats" guardrail (uses `stats_cache.py`).
 - `scripts/roots.py` - shared root resolution (`CLAUDE_COST_ROOTS` /
   positional roots), date-bound parsers, and `stats_file_for()`.
@@ -273,8 +303,11 @@ was never present in the billed aggregate.
   guardrail, plus a standalone per-day reconciliation CLI.
 - `scripts/cache_ttl.py` - diagnostic for cache-write TTL (5m vs 1h
   split) and an inter-turn-gap behavioral table.
-- `scripts/summarize.py` - CSV reader and waste-pattern report.
+- `scripts/summarize.py` - CSV reader and cost, active-time,
+  slash-command, and waste-pattern report.
   Default `--csv` is `~/.claude/cost-estimator/reports/sessions.csv`.
+  Reads the sibling `commands.csv` and accepts `--command /name` for focused
+  slash-command timing detail.
 - `scripts/plot-session.py` - per-session HTML cost trajectory chart
   (uses `pricing.py`).
 - `scripts/plot-trend.py` - aggregate trend chart across sessions.csv
