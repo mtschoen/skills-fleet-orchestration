@@ -7,6 +7,14 @@ top of the superpowers plugin's `subagent-driven-development` skill (per-task
 review for one agent) and adds the layer it lacks: review *across many concurrent
 agents per phase*.
 
+**Fork note:** this skill targets the superpowers fork at
+<https://github.com/mtschoen/superpowers>. Official superpowers 6.2.0 has no
+parallel-implementer mode - it says "Never dispatch multiple implementation
+subagents in parallel." On official superpowers, this skill's trigger arises
+only through `dispatching-parallel-agents` fan-out or fleet-orchestration, not
+through `subagent-driven-development`, whose parallel mode is a fork-only
+addition.
+
 ## What it does
 
 Parallelism is an execution pattern; review is orthogonal to it. When the
@@ -34,10 +42,10 @@ is right.
 
 ## Provenance
 
-The checkpoints and the cross-branch failure catalogue come from a real
-WindowStream session (Windows → Android-XR window streaming) that ran rounds of
-2, 3, 6, and 14 parallel agents in isolated worktrees, merged on green, and did
-*not* dispatch reviewers. Silent-weird issues reached `main` and were caught only
+The checkpoints and the cross-branch failure catalogue come from a real session
+on a Windows-to-Android-XR streaming project that ran rounds of 2, 3, 6, and 14
+parallel agents in isolated worktrees, merged on green, and did *not* dispatch
+reviewers. Silent-weird issues reached `main` and were caught only
 after the fact: an OBS DLL dependency, a throw-stub hidden behind a coverage
 exclusion, adapters left in a test project, missing NAL start codes. Each would
 have been findable by a reviewer agent looking at `git diff main..branch` with a

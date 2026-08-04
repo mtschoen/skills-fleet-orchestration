@@ -33,8 +33,8 @@ Two scenarios show no delta, and that is the correct outcome:
   exception, and a lowered coverage gate, all visible in one diff, and baseline
   blocked the branch every time. The skill does not regress this; it formalizes
   the per-branch checkpoint so it isn't skipped under volume (a pressure a 3-branch
-  toy cannot reproduce — the real WindowStream failures happened at rounds of
-  6–14 agents).
+  toy cannot reproduce — the real failures happened at rounds of
+  6-14 agents on a Windows-to-Android-XR streaming project).
 - **`all-clean` control (1.00 / 1.00):** the skill does **not** make the
   orchestrator review-paranoid. With the skill present, it still reviewed the
   clean branches, found nothing wrong, and merged all three without manufacturing

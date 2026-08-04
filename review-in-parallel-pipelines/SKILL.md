@@ -25,6 +25,8 @@ Fires for any execution pattern with **≥2 concurrent implementer agents** land
 
 Does **not** add value when only one agent runs at a time - `subagent-driven-development`'s existing two-stage review is sufficient. If you're not merging the output of concurrent agents, skip this.
 
+**Fork note:** the `subagent-driven-development` parallel mode listed above assumes the superpowers fork at https://github.com/mtschoen/superpowers. Official superpowers 6.2.0 has no parallel-implementer mode - it says "Never dispatch multiple implementation subagents in parallel." On official superpowers, this skill's trigger comes only from `dispatching-parallel-agents` fan-out or `fleet-orchestration`, not from `subagent-driven-development`.
+
 ## The trap: a clean merge is not a clean integration
 
 This is the core discipline. Internalize it before anything else.
@@ -67,7 +69,7 @@ Add one line to every parallel implementer dispatch: *a reviewer agent will exam
 
 ## Cost
 
-~N per-branch reviewer runs plus ~1 round-boundary run per round; sonnet keeps each modest. Break-even is one caught cross-branch issue per round - and empirically (the WindowStream session, rounds of 3–14 agents) every round produced at least one. Strongly positive ROI.
+~N per-branch reviewer runs plus ~1 round-boundary run per round; sonnet keeps each modest. Break-even is one caught cross-branch issue per round - and empirically (a Windows-to-Android-XR streaming project's sessions, rounds of 3-14 agents) every round produced at least one. Strongly positive ROI.
 
 ## Red flags - you are about to skip review
 
