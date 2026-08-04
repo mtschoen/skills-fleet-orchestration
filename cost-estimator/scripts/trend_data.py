@@ -156,8 +156,10 @@ def prior_window_for(
                   (handles Dec -> Jan year rollover via
                   inclusive_month_bounds).
     - "range":    inclusive end (--start/--end). prior duration =
-                  current_end - current_start; prior_end is 1 second
-                  before current_start.
+                  current_end - current_start; prior_end is 1 microsecond
+                  before current_start, matching the microsecond-inclusive
+                  convention used by inclusive_date_bounds() /
+                  inclusive_month_bounds() for the current window.
     - "duration": half-open end (--last). prior duration is the same;
                   prior_end equals current_start exactly.
     """
@@ -170,8 +172,8 @@ def prior_window_for(
         return inclusive_month_bounds(prior_month_string)
     if mode == "range":
         duration = current_end - current_start
-        prior_start = current_start - duration - timedelta(seconds=1)
-        prior_end = current_start - timedelta(seconds=1)
+        prior_start = current_start - duration - timedelta(microseconds=1)
+        prior_end = current_start - timedelta(microseconds=1)
         return prior_start, prior_end
     if mode == "duration":
         duration = current_end - current_start

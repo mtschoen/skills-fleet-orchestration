@@ -42,6 +42,23 @@ def test_unpriced_usage_ignores_missing_model_id():
     assert pricing.unpriced_usage(None, 100, 50, 0, 0) is None
 
 
+def test_unpriced_usage_ignores_zero_usage_synthetic_entry():
+    """Real Claude Code transcripts carry "<synthetic>" entries with an
+    unrecognized model id but all-zero token usage. Without the
+    zero-volume exclusion, every real report would falsely raise the
+    UNPRICED MODELS warning even though nothing was actually
+    undercounted -- flagging a turn that moved zero tokens is noise,
+    not a gap."""
+    assert pricing.unpriced_usage("<synthetic>", 0, 0, 0, 0) is None
+
+
+def test_unpriced_usage_still_flags_nonzero_unknown_model():
+    """The zero-volume exclusion must not swallow a real gap: a genuine
+    unrecognized model id with nonzero usage still flags."""
+    result = pricing.unpriced_usage("<synthetic>", 5, 0, 0, 0)
+    assert result == (1, 5)
+
+
 def test_unpriced_usage_matches_cost_for_turn_zero_dollar_case():
     """Whenever cost_for_turn() would silently return 0.0 for a real model
     id, unpriced_usage() must flag it -- that's the exact gap it exists
@@ -57,5 +74,7 @@ if __name__ == "__main__":
     test_unpriced_usage_flags_unrecognized_model()
     test_unpriced_usage_tokens_sum_all_four_buckets()
     test_unpriced_usage_ignores_missing_model_id()
+    test_unpriced_usage_ignores_zero_usage_synthetic_entry()
+    test_unpriced_usage_still_flags_nonzero_unknown_model()
     test_unpriced_usage_matches_cost_for_turn_zero_dollar_case()
     print("OK")

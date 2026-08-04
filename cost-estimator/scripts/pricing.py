@@ -94,7 +94,12 @@ def unpriced_usage(model_identifier, input_tokens, output_tokens,
     Returns (turns=1, tokens) when `model_identifier` is a real (non-empty)
     id that model_family() doesn't recognize -- the exact condition that
     makes cost_for_turn() return 0.0 above. Returns None for a known
-    family or for a missing/empty model id (a different, unrelated gap).
+    family, a missing/empty model id (a different, unrelated gap), or a
+    turn with zero total token volume. The zero-volume exclusion covers
+    "<synthetic>" transcript entries generically: Claude Code emits them
+    with an unrecognized model id but all-zero usage, so without this
+    check every real report would falsely raise the UNPRICED MODELS
+    warning even though nothing was actually undercounted.
     `tokens` is this turn's full volume (input + output + cache read +
     cache write), so callers can judge how much a silent gap matters.
 
@@ -106,6 +111,8 @@ def unpriced_usage(model_identifier, input_tokens, output_tokens,
     if not model_identifier or model_family(model_identifier) is not None:
         return None
     tokens = input_tokens + output_tokens + cache_read_tokens + cache_write_tokens
+    if tokens == 0:
+        return None
     return 1, tokens
 
 
