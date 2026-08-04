@@ -249,9 +249,10 @@ when rates change.
 |---|---|---|
 | Fable 5 / Mythos     | $10 | $50 |
 | Opus 4.5 - 4.8       | $5  | $25 |
-| Sonnet 5 (intro rate through 2026-08-31; $3/$15 after) | $2 | $10 |
-| Sonnet 4.5 / 4.6     | $3  | $15 |
+| Sonnet 4.5 - 5       | $3  | $15 |
 | Haiku 4.5            | $1  | $5  |
+
+One flat rate per model for all time -- no time-windowed pricing.
 
 Cache multipliers (relative to base input rate, all models): cache read
 **0.1x**, cache write **1.25x** (empirical for both 5m and 1h TTLs as of

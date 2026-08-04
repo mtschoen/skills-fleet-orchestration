@@ -224,8 +224,7 @@ def process_file(path, parent_session, is_subagent):
                 model_identifier = message.get("model") or ""
                 totals.cost_usd += cost_for_turn(model_identifier, input_tokens,
                                                  output_tokens, cache_read_tokens,
-                                                 cache_write_tokens,
-                                                 timestamp=entry.get("timestamp") or "")
+                                                 cache_write_tokens)
 
                 gap = unpriced_usage(model_identifier, input_tokens, output_tokens,
                                      cache_read_tokens, cache_write_tokens)

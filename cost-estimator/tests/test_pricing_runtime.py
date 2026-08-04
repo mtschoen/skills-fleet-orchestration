@@ -9,7 +9,7 @@ import chart_runtime
 import pricing
 
 
-def test_pricing_helpers_cover_model_families_and_date_aware_rates():
+def test_pricing_helpers_cover_model_families_and_flat_rates():
     assert pricing.model_family(None) is None
     assert pricing.model_family("CLAUDE-MYTHOS") == "fable"
     assert pricing.model_family("claude-opus-4-7[1m]") == "opus"
@@ -18,8 +18,9 @@ def test_pricing_helpers_cover_model_families_and_date_aware_rates():
     assert pricing.model_family("claude-haiku-4-5") == "haiku"
     assert pricing.model_family("unknown") is None
 
-    assert pricing.rates_for("sonnet5", "2026-08-31T23:59:59Z") == (2.0, 10.0)
-    assert pricing.rates_for("sonnet5", "2026-09-01T00:00:00Z") == (3.0, 15.0)
+    # One flat rate per model for all time -- no time-windowed pricing.
+    assert pricing.rates_for("sonnet5") == (3.0, 15.0)
+    assert pricing.rates_for("sonnet") == (3.0, 15.0)
     assert pricing.parse_timestamp(None) is None
     assert pricing.parse_timestamp("not-a-date") is None
     assert pricing.parse_timestamp("2026-03-01T10:00:00Z").year == 2026
@@ -28,7 +29,6 @@ def test_pricing_helpers_cover_model_families_and_date_aware_rates():
     assert pricing.cost_for_turn("claude-opus-4-7", 1_000_000, 0, 0, 0) == 5.0
     assert pricing.cost_for_turn(
         "claude-sonnet-5", 1_000_000, 1_000_000, 1_000_000, 1_000_000,
-        timestamp="2026-09-01T00:00:00Z",
     ) == 22.05
 
 

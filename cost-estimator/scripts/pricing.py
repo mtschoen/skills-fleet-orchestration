@@ -17,31 +17,23 @@ from datetime import datetime
 
 # Per-MTok rates (verified 2026-04 against Anthropic docs; fable/sonnet5
 # rows added 2026-07-16, verified against the live pricing page same day).
+# One flat rate per model for all time -- no time-windowed pricing. An
+# earlier revision modeled a temporary Sonnet 5 introductory rate that
+# would go stale on a fixed end date; that concept was removed in favor
+# of this simplifying assumption.
 PRICES = {
     "fable":   (10.0, 50.0),
-    # Sonnet 5 introductory pricing, in effect through 2026-08-31. Turns
-    # timestamped 2026-09-01 or later bill at the standard sonnet card --
-    # see rates_for(). Callers that omit the timestamp get intro rates.
-    "sonnet5": (2.0, 10.0),
+    "sonnet5": (3.0, 15.0),
     "opus":    (5.0, 25.0),
     "sonnet":  (3.0, 15.0),
     "haiku":   (1.0, 5.0),
 }
-SONNET5_STANDARD = (3.0, 15.0)
-SONNET5_INTRO_END = "2026-09-01"  # first day standard rates apply
 CACHE_WRITE_MULTIPLIER = 1.25
 CACHE_READ_MULTIPLIER = 0.10
 
 
-def rates_for(family, timestamp=None):
-    """Per-MTok (input, output) rates, date-aware where a family needs it.
-
-    `timestamp` is the turn's ISO-8601 string; the date prefix compares
-    lexicographically, so no parsing is needed.
-    """
-    if (family == "sonnet5" and timestamp
-            and timestamp[:10] >= SONNET5_INTRO_END):
-        return SONNET5_STANDARD
+def rates_for(family):
+    """Per-MTok (input, output) rates for a model family."""
     return PRICES[family]
 
 
@@ -73,11 +65,11 @@ def parse_timestamp(value):
 
 
 def cost_for_turn(model_identifier, input_tokens, output_tokens,
-                  cache_read_tokens, cache_write_tokens, timestamp=None):
+                  cache_read_tokens, cache_write_tokens):
     family = model_family(model_identifier)
     if family is None:
         return 0.0
-    input_rate, output_rate = rates_for(family, timestamp)
+    input_rate, output_rate = rates_for(family)
     # The 1M-context tier (`[1m]` model ids) bills at the SAME flat per-token
     # rate -- no surcharge above 200K, verified 2026-06 against ~/.claude.json
     # billing across 28 Opus[1m] sessions and current Anthropic docs.
@@ -194,7 +186,6 @@ def iter_assistant_turns(jsonl_path):
                 "cache_write_tokens": cache_write_tokens,
                 "cost_usd": cost_for_turn(model_identifier, input_tokens,
                                           output_tokens, cache_read_tokens,
-                                          cache_write_tokens,
-                                          timestamp=entry.get("timestamp") or ""),
+                                          cache_write_tokens),
                 "top_tools": tools_seen,
             }
