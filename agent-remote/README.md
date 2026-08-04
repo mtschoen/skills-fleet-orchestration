@@ -1,7 +1,7 @@
 # agent-remote
 
 A skill (and supporting wrapper script) that lets an agent orchestrator
-delegate work to an agent session (claude, opencode, or agy) running on a remote machine, inside an
+delegate work to an agent session (claude, opencode, agy, pi, or codex) running on a remote machine, inside an
 isolated git worktree, returning structured results.
 
 ## Why

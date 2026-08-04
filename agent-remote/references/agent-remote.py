@@ -697,7 +697,8 @@ def cmd_probe(args: argparse.Namespace) -> int:
     """
     Sanity-check the remote environment. Prints a JSON object with:
     user, hostname, uname, repo-path-exists, git-version, claude-version,
-    agy-version, opencode-version, python-version, PATH.
+    agy-version, opencode-version, pi-version, codex-version, python-version,
+    PATH.
     """
     args.repo_path = unmangle_msys_path(args.repo_path)
     try:

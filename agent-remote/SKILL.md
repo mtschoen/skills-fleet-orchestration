@@ -7,7 +7,7 @@ description: Use when delegating work to a different machine because of hardware
 
 ## Overview
 
-Give an agent the **"open a terminal"** affordance for remote work, instead of forcing it to pipe each command over ssh. The wrapper spawns an agent session (claude, opencode, or agy) on the remote host, in an isolated git worktree, with a warm shell where iteration is natural and state persists across commands. Returns a structured JSON result.
+Give an agent the **"open a terminal"** affordance for remote work, instead of forcing it to pipe each command over ssh. The wrapper spawns an agent session (claude, opencode, agy, pi (https://pi.dev/), or codex) on the remote host, in an isolated git worktree, with a warm shell where iteration is natural and state persists across commands. Returns a structured JSON result.
 
 **The pattern raw ssh produces:**
 
@@ -27,7 +27,7 @@ One call. The remote agent works in a normal shell with full context until done.
 
 ## Choosing an Agent Harness and Model
 
-By default, the script attempts to auto-detect your current agent platform using active environment variables (e.g., defaulting to `agy` if running in an Antigravity session, or `opencode` if running in an Opencode session). If it cannot detect the environment, it defaults to `opencode` to minimize API token costs.
+By default, the script attempts to auto-detect your current agent platform using active environment variables (e.g., defaulting to `agy` if running in an Antigravity session, or `opencode` if running in an opencode session). If it cannot detect the environment, it defaults to `opencode` to minimize API token costs.
 
 However, **you are not restricted to the hosting environment's default.** You can cross-delegate to other agents or models using the CLI arguments:
 
@@ -146,7 +146,7 @@ The `run` output is JSON on stdout: `{success, branch, worktree_path, parent_com
 
 **Remote (per host you'll target):**
 
-1. **Target agent CLI must be installed.** E.g., `claude`, `opencode`, or `agy`. The wrapper's `probe` subcommand reports their presence.
+1. **Target agent CLI must be installed.** E.g., `claude`, `opencode`, `agy`, `pi`, or `codex`. The wrapper's `probe` subcommand reports their presence.
 2. **An ssh key authorized for passwordless login.** `ssh-copy-id user@host` once.
 3. **An existing checkout of the repo** at a known path on the remote. The wrapper creates a *sibling* worktree under `<parent-of-repo>/agent-remote-worktrees/`; it does not modify the existing checkout.
 
