@@ -201,11 +201,15 @@ The orchestrator can then `git fetch && git merge agent-remote/nvbw-2026-04-07` 
 ## Permission modes
 
 Default: `acceptEdits`.
-When using `claude`, the wrapper seeds a narrow allowlist into the worktree's `.claude/settings.local.json` so the remote session can use Bash/Edit/Write/Read/Glob/Grep without prompts. If a task needs additional permissions (e.g. `sudo` for system installs), pass `--extra-allow "Bash(sudo apt install *)"` to widen the allowlist for that specific run.
+When using `claude`, the wrapper seeds an allowlist into the worktree's `.claude/settings.local.json` so the remote session can use Bash, Edit, Write, Read, Glob, Grep, WebFetch, and WebSearch without prompts. The allowlist is narrow in tool count, not in power (see the caveat below). If a task needs additional permissions (e.g. `sudo` for system installs), pass `--extra-allow "Bash(sudo apt install *)"` to widen the allowlist for that specific run.
 
 When using `opencode` or `agy`, permission requests are auto-approved via `--auto` or `--dangerously-skip-permissions` for default/acceptEdits/bypassPermissions modes.
 
 `bypassPermissions` is supported but **refused unless the env var `REMOTE_AGENT_ALLOW_BYPASS=1` or `REMOTE_CLAUDE_ALLOW_BYPASS=1` is set on the orchestrator host.**
+
+**Honest caveat:** the default allowlist grants unrestricted `Bash`, not a set of scoped `Bash(cmd *)` patterns. A git worktree isolates the checkout/branch; it does not sandbox the filesystem or the OS. So on the default allowlist, `acceptEdits` gives the remote session nearly the same reach as `bypassPermissions` would: it can read `~/.ssh`, exfiltrate data, or `rm -rf` anything the ssh user can reach, gated only by the env-var check above for the `bypassPermissions` *mode itself*, not for what an unrestricted `Bash` entry can already do under `acceptEdits`. Treat `host` as a machine you already trust with full shell access: this wrapper does not add a security boundary on top of that trust.
+
+To tighten it: there's no CLI flag that narrows the allowlist (`--extra-allow` only widens it). Edit `DEFAULT_REMOTE_ALLOWLIST` in `references/agent-remote.py` directly, e.g. replace the bare `"Bash"` entry with the specific `Bash(cmd *)` patterns your tasks actually need. Narrowing the shipped default is a separate decision (it needs real-world testing against the tasks this wrapper is used for); this note just documents the knob.
 
 ## Known limitations
 

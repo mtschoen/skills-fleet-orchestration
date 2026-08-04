@@ -65,13 +65,21 @@ from dataclasses import dataclass, field
 # before launching `claude -p`. This is what gives the spawned session its
 # permissions without needing --permission-mode bypassPermissions.
 #
-# Keep this narrow. Anything the remote session needs that isn't here will
-# still prompt — but claude -p is non-interactive, so prompts become denials.
+# Narrow by tool *count*, not by what "Bash" can do (see the per-entry note
+# below): anything the remote session needs that isn't in this list will
+# still prompt, but claude -p is non-interactive, so prompts become denials.
 # If a task needs something unusual (sudo, network tools, etc.), the CALLER
 # should widen this via --extra-allow "Bash(sudo *)" etc.
 # --------------------------------------------------------------------------
 DEFAULT_REMOTE_ALLOWLIST: list[str] = [
-    "Bash",  # full Bash — the remote session is already sandboxed by the worktree
+    "Bash",  # full Bash - trust model assumes `host` is the user's own
+    # machine. The worktree isolates the checkout/branch, not the OS: it does
+    # not sandbox the filesystem, so this Bash entry can still read ~/.ssh,
+    # exfiltrate data, or rm -rf anything the ssh user can reach. Don't point
+    # this at a host you don't already trust with full shell access. To
+    # narrow it, edit this list (e.g. swap "Bash" for specific
+    # `Bash(cmd *)` patterns) - there's no CLI flag to shrink it, only
+    # --extra-allow to widen it.
     "Read",
     "Edit",
     "Write",
