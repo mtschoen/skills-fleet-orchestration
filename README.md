@@ -4,7 +4,7 @@ A Claude Code skill for dispatching subagents across **multiple local project re
 
 ## When it fires
 
-Multi-repo subagent work: "spawn agents to fix X across all my projects", "run a maintenance pass", "work on tasks from several repos at once", or any use of projdash MCP tools (`list_projects`, `find_dirty`, `find_stale_maintenance`) to plan multi-repo work.
+Multi-repo subagent work: "spawn agents to fix X across all my projects", "run a maintenance pass", "work on tasks from several repos at once", or any use of project-tracker MCP tools (`list_projects`, `find_dirty`, `find_stale_maintenance`) to plan multi-repo work.
 
 For fixing several bugs in **one** repo, use the parent skill alone.
 

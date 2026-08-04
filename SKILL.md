@@ -1,6 +1,6 @@
 ---
 name: fleet-orchestration
-description: "Use when dispatching subagents across multiple LOCAL PROJECT REPOSITORIES - feature implementation, maintenance sweeps, or fleet-wide investigation across the user's project directory. Triggers: 'spawn agents to fix X across all my projects', 'run a maintenance pass', 'work on tasks from several repos at once', use of project-tracker MCP tools (list_projects, find_dirty, find_stale_maintenance) to plan multi-repo work. Extends superpowers:dispatching-parallel-agents with cross-repo governance. project-tracker MCP tools are optional - without them, use the project-tracker CLI (project-tracker list --json), or on machines with no tracker install read the ~/.project-tracker/projects.json fallback registry."
+description: "Use when dispatching subagents across multiple LOCAL PROJECT REPOSITORIES - feature implementation, maintenance sweeps, or fleet-wide investigation across the user's project directory. Triggers: 'spawn agents to fix X across all my projects', 'run a maintenance pass', 'work on tasks from several repos at once', use of project-tracker MCP tools (list_projects, find_dirty, find_stale_maintenance) to plan multi-repo work. Extends superpowers:dispatching-parallel-agents with cross-repo governance. project-tracker MCP tools are optional - without them, use the project-tracker CLI (project-tracker list --json), or on machines with no tracker install read the ~/.project-tracker/projects.json fallback registry. Requires the superpowers plugin (dispatching-parallel-agents)."
 ---
 
 # Fleet Orchestration
@@ -26,6 +26,12 @@ This skill adds the layer that's specific to working **across multiple repositor
 | Worktree isolation is intra-repo only | - | ✅ |
 
 If you're fixing 3 unrelated test failures in **one** project, use the parent skill alone. If you're picking tasks from PLAN.md files across **N** projects, use both.
+
+## Requirements
+
+This skill has a hard dependency on the superpowers plugin's [`dispatching-parallel-agents`](https://github.com/mtschoen/superpowers) skill - see "Relationship" above. Install superpowers before using this skill; there is no standalone fallback.
+
+These skills are designed against the superpowers fork at https://github.com/mtschoen/superpowers, which changes upstream's rules around parallel subagent dispatch and plan/spec file handling. Notably, official superpowers 6.2.0 forbids dispatching implementation subagents in parallel; the fork's subagent-driven-development adds Parallel Dispatch (Worktree Isolation). Skills that describe parallel SDD assume the fork.
 
 ## Overview
 
@@ -99,7 +105,7 @@ About to dispatch N agents in parallel. Approve?
 
   # | Project    | Task                                | Risk
   --|------------|-------------------------------------|------
-  1 | projdash   | Search/filter (PLAN.md:55)          | green
+  1 | webapp     | Search/filter (PLAN.md:55)          | green
   2 | myrepo   | Edit model filename (PLAN.md:676)   | yellow
   3 | cstb       | Graceful shutdown (PLAN.md:48)      | green
 
@@ -166,7 +172,7 @@ Any brief that includes a run longer than one tool call (Unity batch suites, ful
 
 Start with a fleet-wide pass, then verify per repo before dispatching.
 
-**Fleet-wide**: `list_projects()` to enumerate the repos you can target, and `find_dirty()` to see which of them already have uncommitted changes before you touch anything. Without the MCP server, enumerate with `project-tracker list --json` (the tracker's registry is a SQLite database under `~/.project_tracker/`). On a machine with no project-tracker install at all, read `~/.project-tracker/projects.json` instead: the trackerless fallback registry, a JSON array of `{name, path, status, description}` entries. It may be absent if never created, and it is deliberately NOT synced with the tracker's database - it exists to close the gap for one-off setups, not to mirror the tracker. Either way, compute dirtiness with `git -C <repo> status --porcelain` per repo.
+**Fleet-wide**: `mcp__project-tracker__list_projects()` to enumerate the repos you can target, and `mcp__project-tracker__find_dirty()` to see which of them already have uncommitted changes before you touch anything. Without the MCP server, enumerate with `project-tracker list --json` (the tracker's registry is a SQLite database under `~/.project_tracker/`). On a machine with no project-tracker install at all, read `~/.project-tracker/projects.json` instead: the trackerless fallback registry, a JSON array of `{name, path, status, description}` entries. It may be absent if never created, and it is deliberately NOT synced with the tracker's database - it exists to close the gap for one-off setups, not to mirror the tracker. Either way, compute dirtiness with `git -C <repo> status --porcelain` per repo.
 
 **Per target repo**, before dispatching into it: if the `project-lock` skill is installed, it is the authoritative check - run project-lock's `check <repo>` command (its SKILL.md documents the script location and exact invocation) and follow its check/acquire/advice protocol (wait, use a worktree, or proceed, per its own recommendation). It replaces guesswork with an actual advisory lock another agent would have taken.
 
@@ -273,7 +279,7 @@ Quick format reference (full schema in `references/maintenance-format.md`):
 
 **Runner contract:**
 
-1. Read current state with `get_maintenance_state` or directly from disk.
+1. Read current state with `mcp__project-tracker__get_maintenance_state(name)` or directly from disk.
 2. Skip if `is_task_stale` returns False.
 3. Do the work.
 4. Write a new entry with `status` and either `last_run_commit` (per-commit) or `last_run` (time-based). Use `project_tracker.scanner.maintenance.write_maintenance_state` so `.gitignore` gets updated automatically (or, without project-tracker installed, write the JSON entry directly and add `.maintenance.json` to `.gitignore` yourself).
@@ -284,7 +290,7 @@ Quick format reference (full schema in `references/maintenance-format.md`):
 ### Maintenance pass
 
 ```text
-1. find_stale_maintenance(task_name="push-latest")
+1. mcp__project-tracker__find_stale_maintenance(task_name="push-latest")
    → ["myrepo", "site"]                  # other repos clean, skipped
 2. For each stale project:
    - cd into repo
@@ -298,7 +304,7 @@ Re-running 5 minutes later returns only `["site"]`. Cheap.
 ### Feature pass
 
 ```text
-1. Identify candidate tasks: list_projects() to enumerate the fleet
+1. Identify candidate tasks: mcp__project-tracker__list_projects() to enumerate the fleet
    (or `project-tracker list --json` without the MCP server, or `~/.project-tracker/projects.json` without any tracker install),
    then read PLAN.md from each candidate project.
 2. Triage each (the four questions above). Drop reds, produce handoff prompts.
