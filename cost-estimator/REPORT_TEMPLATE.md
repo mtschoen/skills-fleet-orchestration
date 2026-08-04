@@ -188,7 +188,8 @@ specific dollar figures and session IDs.
 - Dedupes assistant turns by `message.id` to avoid the snapshot
   double-count gotcha.
 - Prices each turn per the canonical Anthropic rate table (Opus
-  $5/$25, Sonnet $3/$15, Haiku $1/$5; cache read 0.1×, cache write
+  $5/$25, Sonnet 5 $2/$10 intro rate through 2026-08-31 ($3/$15 after),
+  Sonnet 4.5/4.6 $3/$15, Haiku $1/$5; cache read 0.1×, cache write
   1.25× input rate; the 1M tier bills at the flat rate, no surcharge).
 - Filters by first-entry timestamp into [start, end+1) UTC.
 - Sums `system/turn_duration.durationMs` for parent active time and reports
