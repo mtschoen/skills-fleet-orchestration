@@ -7,7 +7,7 @@ description: Use when delegating work to a different machine because of hardware
 
 ## Overview
 
-Give an agent the **"open a terminal"** affordance for remote work, instead of forcing it to pipe each command over ssh. The wrapper spawns an agent session (claude, opencode, agy, pi (https://pi.dev/), or codex) on the remote host, in an isolated git worktree, with a warm shell where iteration is natural and state persists across commands. Returns a structured JSON result.
+Give an agent the **"open a terminal"** affordance for remote work, instead of forcing it to pipe each command over ssh. The wrapper spawns an agent session (claude, opencode, agy, pi, or codex) on the remote host, in an isolated git worktree, with a warm shell where iteration is natural and state persists across commands. Returns a structured JSON result.
 
 **The pattern raw ssh produces:**
 

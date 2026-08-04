@@ -17,6 +17,14 @@ This skill replaces that pattern with: "spawn an agent on the remote
 host, give it the task, let it work in its own git worktree, collect its
 report."
 
+## Supported agent CLIs
+
+- [Claude Code](https://claude.com/claude-code)
+- [opencode](https://opencode.ai/docs/skills)
+- [Antigravity](https://antigravity.google/docs) (`agy`)
+- [pi](https://pi.dev/)
+- [Codex](https://developers.openai.com/codex/skills)
+
 ## Layout
 
 ```text
