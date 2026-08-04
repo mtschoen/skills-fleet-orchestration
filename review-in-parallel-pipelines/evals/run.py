@@ -235,7 +235,7 @@ def main():
             status = outcome.get("status", "?").upper()
             extra = ""
             if outcome.get("error"):
-                extra = f" — {outcome['error'][:120]}"
+                extra = f" - {outcome['error'][:120]}"
             print(f"  [{status}] {eval_entry['name']}/{config}/{run_dir.name}{extra}", file=sys.stderr)
 
     print("\nDone.", file=sys.stderr)

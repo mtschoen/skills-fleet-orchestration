@@ -13,17 +13,19 @@ Running N agents concurrently is an *execution* pattern. Review is *orthogonal* 
 
 **The failure mode this skill must NOT create:** a paranoid orchestrator that blocks clean merges, manufactures problems, or treats review as a pipeline-stalling ritual. Most branches approve and most rounds need no refinement - the value is the check, not the friction.
 
-This is **orchestrator → branches** review. It sits on top of `superpowers:subagent-driven-development` (which covers per-task review for one agent at a time) and adds the layer that pattern lacks: review across *many concurrent* agents per phase.
+This is **orchestrator -> branches** review. It sits on top of `superpowers:subagent-driven-development` (which covers per-task review for one agent at a time) and adds the layer that pattern lacks: review across *many concurrent* agents per phase.
 
 ## When this fires / when not
 
-Fires for any execution pattern with **≥2 concurrent implementer agents** landing into isolated branches/worktrees:
+Fires for any execution pattern with **>=2 concurrent implementer agents** landing into isolated branches/worktrees:
 
 - `superpowers:subagent-driven-development` run in parallel mode
 - `superpowers:dispatching-parallel-agents` fan-out
 - `fleet-orchestration` when per-repo work has similar review needs
 
 Does **not** add value when only one agent runs at a time - `subagent-driven-development`'s existing two-stage review is sufficient. If you're not merging the output of concurrent agents, skip this.
+
+**Fork note:** the `subagent-driven-development` parallel mode listed above assumes the superpowers fork at https://github.com/mtschoen/superpowers. Official superpowers 6.2.0 has no parallel-implementer mode - it says "Never dispatch multiple implementation subagents in parallel." On official superpowers, this skill's trigger comes only from `dispatching-parallel-agents` fan-out or `fleet-orchestration`, not from `subagent-driven-development`.
 
 ## The trap: a clean merge is not a clean integration
 
@@ -45,15 +47,15 @@ A clean octopus merge with green CI is the **most** dangerous moment, not the sa
 
 | Checkpoint | When | Looks at | Output |
 |---|---|---|---|
-| **1. Per-branch** | before each merge | that one branch's `git diff <merge-base>..<branch>` vs. its assigned spec | `APPROVED` → merge · `CHANGES_REQUESTED` (list) → re-dispatch · `ESCALATE` → handle manually |
+| **1. Per-branch** | before each merge | that one branch's `git diff <merge-base>..<branch>` vs. its assigned spec | `APPROVED` -> merge; `CHANGES_REQUESTED` (list) -> re-dispatch; `ESCALATE` -> handle manually |
 | **2. Round-boundary** | after *all* merges in a round | the **integrated** tree, branches compared against each other | a refinement punch-list (possibly empty) |
 | **3. Refinement** | before the next planned phase | the punch-list from (2) | scheduled cleanup tasks |
 
 **Checkpoint 1 - per-branch.** Dispatch a cheap reviewer agent (sonnet) per returned branch with its diff, its spec section, its assigned tasks, and its final report. Check spec compliance, `escalate-over-shortcut` red-flag shapes, cross-boundary smell (test code in prod paths or vice-versa), and **hidden deviations** the report didn't disclose. A competent agent often does this instinctively for *blatant* single-branch smells - formalize it anyway so it isn't skipped under volume.
 
-**Checkpoint 2 - round-boundary (the one per-branch review cannot do).** After the round's branches all land, review the integrated state by **comparing branches against each other** - this is the only checkpoint that catches the cross-branch class above, because no single branch's diff reveals a halo it co-created. This is where the "clean merge ≠ clean integration" discipline cashes out.
+**Checkpoint 2 - round-boundary (the one per-branch review cannot do).** After the round's branches all land, review the integrated state by **comparing branches against each other** - this is the only checkpoint that catches the cross-branch class above, because no single branch's diff reveals a halo it co-created. This is where the "clean merge != clean integration" discipline cashes out.
 
-**Checkpoint 3 - refinement as a scheduled phase.** Treat the punch-list as the next round's work, dispatched *before* the next planned feature phase. Refinement is first-class, not an afterthought. These rounds are usually small (1–3 tasks) and often serial; don't let them compete with feature phases.
+**Checkpoint 3 - refinement as a scheduled phase.** Treat the punch-list as the next round's work, dispatched *before* the next planned feature phase. Refinement is first-class, not an afterthought. These rounds are usually small (1-3 tasks) and often serial; don't let them compete with feature phases.
 
 Reviewer dispatch templates and the full round-boundary checklist live in `references/`.
 
@@ -67,13 +69,13 @@ Add one line to every parallel implementer dispatch: *a reviewer agent will exam
 
 ## Cost
 
-~N per-branch reviewer runs plus ~1 round-boundary run per round; sonnet keeps each modest. Break-even is one caught cross-branch issue per round - and empirically (the WindowStream session, rounds of 3–14 agents) every round produced at least one. Strongly positive ROI.
+~N per-branch reviewer runs plus ~1 round-boundary run per round; sonnet keeps each modest. Break-even is one caught cross-branch issue per round - and empirically (a Windows-to-Android-XR streaming project's sessions, rounds of 3-14 agents) every round produced at least one. Strongly positive ROI.
 
 ## Red flags - you are about to skip review
 
 | Thought | Reality |
 |---|---|
-| "Merged with zero conflicts - clear to proceed." | No conflict ≠ correct integration. Cross-branch halos never conflict. |
+| "Merged with zero conflicts - clear to proceed." | No conflict != correct integration. Cross-branch halos never conflict. |
 | "Disjoint file sets, nothing to review." | Disjoint files routinely duplicate logic or shadow each other. That *is* the halo. |
 | "Build's green, all tests pass." | Green proves each branch works alone; silent on cross-branch duplication, drift, or a quietly-lowered gate. |
 | "We're behind, N branches to land." | More branches = more halo surface. Review scales with parallelism. |
@@ -93,5 +95,5 @@ If a round-boundary issue exists: **schedule a refinement round before the next 
 ## What this is NOT
 
 - **Not a replacement for `subagent-driven-development`'s per-task review.** That covers one agent at a time; this is the multi-agent-per-phase layer on top.
-- **Not `pushback`** (Claude → user) and **not `escalate-over-shortcut`** (agent → self, on the agent's own draft). This is orchestrator → branches, on *other* agents' returned work. The reviewer agents you dispatch enforce `escalate-over-shortcut`'s red-flag list.
+- **Not `pushback`** (Claude -> user) and **not `escalate-over-shortcut`** (agent -> self, on the agent's own draft). This is orchestrator -> branches, on *other* agents' returned work. The reviewer agents you dispatch enforce `escalate-over-shortcut`'s red-flag list.
 - **Not paranoia.** Rubber-stamping clean branches and catching the occasional halo is the skill working correctly. Manufacturing problems or blocking clean merges is the failure mode the control guards against.
