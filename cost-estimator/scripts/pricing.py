@@ -15,15 +15,16 @@ from __future__ import annotations
 from datetime import datetime
 
 
-# Per-MTok rates (verified 2026-04 against Anthropic docs; fable/sonnet5
-# rows added 2026-07-16, verified against the live pricing page same day).
-# One flat rate per model for all time -- no time-windowed pricing. An
-# earlier revision modeled a temporary Sonnet 5 introductory rate that
-# would go stale on a fixed end date; that concept was removed in favor
-# of this simplifying assumption.
+# Per-MTok rates (verified 2026-04 against Anthropic docs; fable row
+# added 2026-07-16, verified against the live pricing page same day).
+# One flat rate per model FAMILY for all time -- no time-windowed
+# pricing and no per-version rows. An earlier revision modeled a
+# temporary Sonnet 5 introductory rate (and, before that, a separate
+# "sonnet5" price row distinct from generic "sonnet"); both were
+# removed since model versions within a family price identically --
+# version-keyed rows just added noise, not signal.
 PRICES = {
     "fable":   (10.0, 50.0),
-    "sonnet5": (3.0, 15.0),
     "opus":    (5.0, 25.0),
     "sonnet":  (3.0, 15.0),
     "haiku":   (1.0, 5.0),
@@ -45,9 +46,9 @@ def model_family(model_identifier):
         return "fable"
     if "opus" in name:
         return "opus"
-    # sonnet-5 before the generic sonnet match: distinct intro rate card.
-    if "sonnet-5" in name:
-        return "sonnet5"
+    # Any "sonnet-N" raw model id (sonnet-5, sonnet-4-6, ...) classifies
+    # as the single "sonnet" family -- versions don't get their own
+    # PRICES row, they all bill at the same family rate.
     if "sonnet" in name:
         return "sonnet"
     if "haiku" in name:

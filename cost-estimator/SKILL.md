@@ -247,12 +247,14 @@ when rates change.
 
 | Family | Input | Output |
 |---|---|---|
-| Fable 5 / Mythos     | $10 | $50 |
-| Opus 4.5 - 4.8       | $5  | $25 |
-| Sonnet 4.5 - 5       | $3  | $15 |
-| Haiku 4.5            | $1  | $5  |
+| Fable / Mythos | $10 | $50 |
+| Opus           | $5  | $25 |
+| Sonnet         | $3  | $15 |
+| Haiku          | $1  | $5  |
 
-One flat rate per model for all time -- no time-windowed pricing.
+One flat rate per model family for all time -- no time-windowed
+pricing and no version-specific rows; model versions within a family
+bill identically.
 
 Cache multipliers (relative to base input rate, all models): cache read
 **0.1x**, cache write **1.25x** (empirical for both 5m and 1h TTLs as of
