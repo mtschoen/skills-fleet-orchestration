@@ -48,13 +48,13 @@ def test_trend_data_reads_ranges_and_rejects_unknown_options(workspace_directory
     assert rows[0]["_parsed_timestamp"].tzinfo is None
     assert skipped == 2
 
-    assert trend_data.month_bounds("2026-12") == (
+    assert trend_data.inclusive_month_bounds("2026-12") == (
         datetime(2026, 12, 1),
-        datetime(2026, 12, 31, 23, 59, 59),
+        datetime(2026, 12, 31, 23, 59, 59, 999999),
     )
-    assert trend_data.date_bounds("2026-03-01", "2026-03-02") == (
+    assert trend_data.inclusive_date_bounds("2026-03-01", "2026-03-02") == (
         datetime(2026, 3, 1),
-        datetime(2026, 3, 2, 23, 59, 59),
+        datetime(2026, 3, 2, 23, 59, 59, 999999),
     )
     assert trend_data.bucket_index(datetime(2026, 2, 1), datetime(2026, 1, 1), "month") == 1
     assert trend_data.num_buckets(0, "day") == 1
@@ -130,7 +130,7 @@ def test_plot_compare_helpers_cover_windows_buckets_and_rendering(load_script):
     start, end, mode, label, filename, span = plot_compare._resolve_current_window(month, parser)
     assert (mode, label, filename, span) == ("month", "2026-03", "2026-03", 31)
     assert start == datetime(2026, 3, 1)
-    assert end == datetime(2026, 3, 31, 23, 59, 59)
+    assert end == datetime(2026, 3, 31, 23, 59, 59, 999999)
 
     date_range = SimpleNamespace(month=None, start="2026-03-01", end="2026-03-02", last=None)
     assert plot_compare._resolve_current_window(date_range, parser)[2] == "range"
