@@ -87,6 +87,35 @@ def cost_for_turn(model_identifier, input_tokens, output_tokens,
             + cache_write_tokens * input_rate * CACHE_WRITE_MULTIPLIER) / 1_000_000
 
 
+def unpriced_usage(model_identifier, input_tokens, output_tokens,
+                   cache_read_tokens, cache_write_tokens):
+    """Flag a turn that cost_for_turn() silently priced at $0.00.
+
+    Returns (turns=1, tokens) when `model_identifier` is a real (non-empty)
+    id that model_family() doesn't recognize -- the exact condition that
+    makes cost_for_turn() return 0.0 above. Returns None for a known
+    family, a missing/empty model id (a different, unrelated gap), or a
+    turn with zero total token volume. The zero-volume exclusion covers
+    "<synthetic>" transcript entries generically: Claude Code emits them
+    with an unrecognized model id but all-zero usage, so without this
+    check every real report would falsely raise the UNPRICED MODELS
+    warning even though nothing was actually undercounted.
+    `tokens` is this turn's full volume (input + output + cache read +
+    cache write), so callers can judge how much a silent gap matters.
+
+    Callers accumulate this per model id into a running {turns, tokens}
+    tally and surface it loudly -- a new model family priced at $0.00
+    would otherwise undercount every retrospective report without any
+    warning.
+    """
+    if not model_identifier or model_family(model_identifier) is not None:
+        return None
+    tokens = input_tokens + output_tokens + cache_read_tokens + cache_write_tokens
+    if tokens == 0:
+        return None
+    return 1, tokens
+
+
 try:
     from orjson import loads as _loads
 except ImportError:

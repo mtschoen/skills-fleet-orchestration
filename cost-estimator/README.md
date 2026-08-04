@@ -160,6 +160,10 @@ default) or is leaking cost to 5m-TTL prefix expiry.
 - `scripts/trend_data.py` — shared bucket math, CSV reader, and
   range parsers (month / range / duration). Imported by both
   `plot-trend.py` and `plot-compare.py`.
+- `reports/` - dev-only scratch for screenshot fixtures (see
+  `dev/regen-screenshots` below); gitignored, not shipped to installed
+  copies of the skill. Generated cost data for real usage lands in
+  `~/.claude/cost-estimator/reports/` instead (see `SKILL.md`).
 - `dev/capture-screenshot.py` — headless Chrome wrapper used by
   the screenshot regen scripts. Dev-only (excluded from `install-skills`).
 - `dev/regen-screenshots.{sh,bat}` — orchestrator that regenerates
