@@ -29,7 +29,7 @@ If you're fixing 3 unrelated test failures in **one** project, use the parent sk
 
 ## Requirements
 
-This skill has a hard dependency on the superpowers plugin's [`dispatching-parallel-agents`](https://github.com/mtschoen/superpowers) skill - see "Relationship" above. Install superpowers before using this skill; there is no standalone fallback.
+This skill has a hard dependency on the superpowers plugin's [`superpowers:dispatching-parallel-agents`](https://github.com/mtschoen/superpowers) skill - see "Relationship" above. Install superpowers before using this skill; there is no standalone fallback.
 
 These skills are designed against the superpowers fork at https://github.com/mtschoen/superpowers, which changes upstream's rules around parallel subagent dispatch and plan/spec file handling. Notably, official superpowers 6.2.0 forbids dispatching implementation subagents in parallel; the fork's subagent-driven-development adds Parallel Dispatch (Worktree Isolation). Skills that describe parallel SDD assume the fork.
 
@@ -172,7 +172,7 @@ Any brief that includes a run longer than one tool call (Unity batch suites, ful
 
 Start with a fleet-wide pass, then verify per repo before dispatching.
 
-**Fleet-wide**: `mcp__project-tracker__list_projects()` to enumerate the repos you can target, and `mcp__project-tracker__find_dirty()` to see which of them already have uncommitted changes before you touch anything. Without the MCP server, enumerate with `project-tracker list --json` (the tracker's registry is a SQLite database under `~/.project_tracker/`). On a machine with no project-tracker install at all, read `~/.project-tracker/projects.json` instead: the trackerless fallback registry, a JSON array of `{name, path, status, description}` entries. It may be absent if never created, and it is deliberately NOT synced with the tracker's database - it exists to close the gap for one-off setups, not to mirror the tracker. Either way, compute dirtiness with `git -C <repo> status --porcelain` per repo.
+**Fleet-wide**: `mcp__project-tracker__list_projects()` to enumerate the repos you can target, and `mcp__project-tracker__find_dirty()` to see which of them already have uncommitted changes before you touch anything. Without the MCP server, enumerate with `project-tracker list --json` (the tracker's registry is a SQLite database under `~/.project_tracker/`). On a machine with no project-tracker install at all, read `~/.project-tracker/projects.json` instead: the trackerless fallback registry, a JSON array of `{name, path, status, description}` entries. Note the naming: `~/.project_tracker/` (underscore) is the tracker's own database directory, while `~/.project-tracker/projects.json` (hyphen) is the separate trackerless fallback - two different locations by design. It may be absent if never created, and it is deliberately NOT synced with the tracker's database - it exists to close the gap for one-off setups, not to mirror the tracker. Either way, compute dirtiness with `git -C <repo> status --porcelain` per repo.
 
 **Per target repo**, before dispatching into it: if the `project-lock` skill is installed, it is the authoritative check - run project-lock's `check <repo>` command (its SKILL.md documents the script location and exact invocation) and follow its check/acquire/advice protocol (wait, use a worktree, or proceed, per its own recommendation). It replaces guesswork with an actual advisory lock another agent would have taken.
 
