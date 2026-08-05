@@ -6,7 +6,7 @@
 
 ## Key data points
 
-- **One `remote-claude run` invocation** for the entire Linux verification half. Replaces the 10-15 raw-ssh calls that would have been needed for: git worktree add, scp/edit file, python -c one-liner, dd workload, sampler, diff, git add/commit.
+- **One `agent-remote run` invocation** for the entire Linux verification half. Replaces the 10-15 raw-ssh calls that would have been needed for: git worktree add, scp/edit file, python -c one-liner, dd workload, sampler, diff, git add/commit.
 - **Real verification on real data:** the remote session pasted real `/proc/diskstats` output AND ran a real `dd if=/dev/zero of=/home/user/disktest bs=1M count=200 conv=fdatasync` workload AND confirmed sector math: 200.1 MB writes detected vs 200 MB target. Discovered and corrected a tmpfs gotcha along the way.
 - **Tool-call count:** ~20 total (research + edits + smoke test + 1 run + polling + cleanup + report). Roughly **1 of those was the wrapper run** that did the work of 10-15 ssh calls.
 - **`new_commit` and `files_changed` populated correctly this time:** `aef9f7a4445857f2da7c29e65ac0c927238f3967` + `["src/myrepo/core/disk_io.py"]`. So the gpu-bandwidth `new_commit:null` bug is NOT universal — it's tied to specific remote agent behavior (probably nested skills).
