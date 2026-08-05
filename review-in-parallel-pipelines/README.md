@@ -64,7 +64,7 @@ install-skills.bat -y review-in-parallel-pipelines
 ```
 
 Installs to `~/.agents/skills/review-in-parallel-pipelines/` (or wherever your
-agent harness reads skills - e.g. `~/.claude/skills/` for Claude Code). The installer ships
+agent harness reads skills from). The installer ships
 `SKILL.md` + `references/` and excludes development-only files (this `README.md`,
 `LICENSE`, `evals/`). The agent loads `SKILL.md` from the install
 location; this README is for human readers browsing the repo.
