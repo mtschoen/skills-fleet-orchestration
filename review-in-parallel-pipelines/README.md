@@ -1,6 +1,6 @@
 # review-in-parallel-pipelines
 
-A Claude Code skill that teaches an **orchestrator** running multiple implementer
+A skill that teaches an **orchestrator** running multiple implementer
 agents in parallel to keep review as a first-class phase of execution - instead
 of merging each branch the moment its report says "green" and moving on. Sits on
 top of the superpowers plugin's `subagent-driven-development` skill (per-task
@@ -63,7 +63,8 @@ Via the [skills-dev](https://github.com/mtschoen/skills-dev) installer:
 install-skills.bat -y review-in-parallel-pipelines
 ```
 
-Installs to `~/.claude/skills/review-in-parallel-pipelines/`. The installer ships
+Installs to `~/.agents/skills/review-in-parallel-pipelines/` (or wherever your
+agent harness reads skills from). The installer ships
 `SKILL.md` + `references/` and excludes development-only files (this `README.md`,
 `LICENSE`, `evals/`). The agent loads `SKILL.md` from the install
 location; this README is for human readers browsing the repo.
@@ -90,7 +91,7 @@ review-in-parallel-pipelines/
 - `subagent-driven-development` (superpowers plugin) - the base. Covers per-task review for one agent at a time; this skill adds the multi-agent-per-phase layer.
 - `dispatching-parallel-agents` (superpowers plugin) and [`fleet-orchestration`](https://github.com/mtschoen/skills-fleet-orchestration) - the execution patterns this skill gates.
 - [`escalate-over-shortcut`](https://github.com/mtschoen/skills-escalate-over-shortcut) - the implementer-side discipline the per-branch reviewers enforce (agent -> self on its own draft). This skill is orchestrator -> branches.
-- [`pushback`](https://github.com/mtschoen/skills-pushback) - sibling axis. Pushback is Claude -> user; this is orchestrator -> other agents' returned work.
+- [`pushback`](https://github.com/mtschoen/skills-pushback) - sibling axis. Pushback is agent -> user; this is orchestrator -> other agents' returned work.
 - [`maintaining-full-coverage`](https://github.com/mtschoen/skills-maintaining-full-coverage) - adjacent. The round-boundary "gate integrity" check looks for the threshold-lowering this skill enforces against.
 
 ## Eval design
