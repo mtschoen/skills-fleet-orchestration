@@ -95,5 +95,5 @@ If a round-boundary issue exists: **schedule a refinement round before the next 
 ## What this is NOT
 
 - **Not a replacement for `subagent-driven-development`'s per-task review.** That covers one agent at a time; this is the multi-agent-per-phase layer on top.
-- **Not `pushback`** (Claude -> user) and **not `escalate-over-shortcut`** (agent -> self, on the agent's own draft). This is orchestrator -> branches, on *other* agents' returned work. The reviewer agents you dispatch enforce `escalate-over-shortcut`'s red-flag list.
+- **Not `pushback`** (agent -> user) and **not `escalate-over-shortcut`** (agent -> self, on the agent's own draft). This is orchestrator -> branches, on *other* agents' returned work. The reviewer agents you dispatch enforce `escalate-over-shortcut`'s red-flag list.
 - **Not paranoia.** Rubber-stamping clean branches and catching the occasional halo is the skill working correctly. Manufacturing problems or blocking clean merges is the failure mode the control guards against.

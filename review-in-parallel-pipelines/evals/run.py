@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """Run review-in-parallel-pipelines eval scenarios.
 
+This harness is deliberately Claude Code-specific: it drives real `claude -p`
+subprocesses as the eval subject (see AGENT_PROMPT_TEMPLATE below). The skill
+itself is agent-agnostic; porting this harness to another agent CLI means
+swapping the subprocess invocation and prompt framing.
+
 Each scenario puts the agent in the ORCHESTRATOR seat at a parallel-execution
 merge point: N implementer branches have returned (all reporting green) and the
 agent is asked to integrate them. One branch usually carries a hidden shortcut.
