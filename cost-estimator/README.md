@@ -1,7 +1,7 @@
 # cost-estimator
 
-A Claude Code skill that analyzes cost and active time from local session
-JSONLs.
+An agent skill that analyzes cost and active time from local Claude Code
+session transcript JSONLs.
 Two halves planned:
 
 - **Retrospective — built (2026-05-04).** "What did I spend over [date
