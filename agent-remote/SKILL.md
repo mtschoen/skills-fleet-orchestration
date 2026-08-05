@@ -128,7 +128,7 @@ python agent-remote.py run \
 python agent-remote.py cleanup --host user@host --repo-path /path/to/repo --branch agent-remote/my-task
 ```
 
-The `run` output is JSON on stdout: `{success, branch, worktree_path, parent_commit, new_commit, files_changed, agent_exit_code, claude_exit_code, stdout_tail, stderr_tail, cleanup_command}`. Parse it.
+The `run` output is JSON on stdout: `{success, branch, worktree_path, parent_commit, new_commit, files_changed, agent_exit_code, stdout_tail, stderr_tail, cleanup_command}`. Parse it.
 
 ## Install
 
@@ -205,7 +205,7 @@ When using `claude`, the wrapper seeds an allowlist into the worktree's `.claude
 
 When using `opencode` or `agy`, permission requests are auto-approved via `--auto` or `--dangerously-skip-permissions` for default/acceptEdits/bypassPermissions modes.
 
-`bypassPermissions` is supported but **refused unless the env var `REMOTE_AGENT_ALLOW_BYPASS=1` or `REMOTE_CLAUDE_ALLOW_BYPASS=1` is set on the orchestrator host.**
+`bypassPermissions` is supported but **refused unless the env var `REMOTE_AGENT_ALLOW_BYPASS=1` is set on the orchestrator host.**
 
 **Honest caveat:** the default allowlist grants unrestricted `Bash`, not a set of scoped `Bash(cmd *)` patterns. A git worktree isolates the checkout/branch; it does not sandbox the filesystem or the OS. So on the default allowlist, `acceptEdits` gives the remote session nearly the same reach as `bypassPermissions` would: it can read `~/.ssh`, exfiltrate data, or `rm -rf` anything the ssh user can reach, gated only by the env-var check above for the `bypassPermissions` *mode itself*, not for what an unrestricted `Bash` entry can already do under `acceptEdits`. Treat `host` as a machine you already trust with full shell access: this wrapper does not add a security boundary on top of that trust.
 

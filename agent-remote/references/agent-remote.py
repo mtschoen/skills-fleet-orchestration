@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-agent-remote.py — spawn an agent session (claude, opencode, or agy) on a remote host
+agent-remote.py — spawn an agent session (claude, opencode, agy, pi, or codex) on a remote host
 to do work in an isolated git worktree, capture a structured result, return.
 
 The "open a terminal" affordance for agent orchestrators: instead of piping
@@ -28,7 +28,7 @@ Usage:
 
 `run` returns a JSON result on stdout with:
     host, branch, worktree_path, parent_commit, new_commit (or null),
-    files_changed, agent_exit_code, claude_exit_code, stdout_tail, stderr_tail,
+    files_changed, agent_exit_code, stdout_tail, stderr_tail,
     cleanup_command
 
 Environment variables:
@@ -117,7 +117,6 @@ class RunResult:
             "new_commit": self.new_commit,
             "files_changed": self.files_changed,
             "agent_exit_code": self.agent_exit_code,
-            "claude_exit_code": self.agent_exit_code,  # backwards compatibility
             "stdout_tail": self.stdout_tail,
             "stderr_tail": self.stderr_tail,
             "cleanup_command": self.cleanup_command,
@@ -302,9 +301,6 @@ def compute_worktree_path(repo_path: str, branch: str) -> str:
     """
     parent = os.path.dirname(repo_path.rstrip("/"))
     safe_branch = branch.replace("/", "_")
-    # Backwards compatibility check
-    if branch.startswith("remote-claude"):
-        return f"{parent}/remote-claude-worktrees/{safe_branch}"
     return f"{parent}/agent-remote-worktrees/{safe_branch}"
 
 
@@ -537,10 +533,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     # Permission mode guardrail
     if args.permission_mode == "bypassPermissions":
-        if (
-            os.environ.get("REMOTE_AGENT_ALLOW_BYPASS") != "1"
-            and os.environ.get("REMOTE_CLAUDE_ALLOW_BYPASS") != "1"
-        ):
+        if os.environ.get("REMOTE_AGENT_ALLOW_BYPASS") != "1":
             print(
                 "refused: --permission-mode bypassPermissions requires "
                 "REMOTE_AGENT_ALLOW_BYPASS=1 in the environment.",
@@ -551,11 +544,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     # Auto-generate branch name if not provided
     branch = args.branch or f"agent-remote/auto-{int(time.time())}"
 
-    timeout_str = (
-        os.environ.get("REMOTE_AGENT_TIMEOUT")
-        or os.environ.get("REMOTE_CLAUDE_TIMEOUT")
-        or "3600"
-    )
+    timeout_str = os.environ.get("REMOTE_AGENT_TIMEOUT") or "3600"
     timeout = float(timeout_str)
 
     try:

@@ -180,7 +180,7 @@ class RunCommandTests(unittest.TestCase):
                 self.assertEqual(exit_code, 0)
                 self.assertEqual(run_agent.call_args.kwargs["agent"], expected_agent)
 
-    def test_generates_branch_and_uses_legacy_timeout(self) -> None:
+    def test_generates_branch_and_uses_configured_timeout(self) -> None:
         arguments = run_arguments(branch=None)
         result = agent_remote.RunResult(
             "host", "branch", "/worktree", "parent", None, [], 0, "", "", "cleanup"
@@ -195,7 +195,7 @@ class RunCommandTests(unittest.TestCase):
             ) as run_agent,
             patch.object(agent_remote, "collect_result", return_value=result),
             patch.dict(
-                agent_remote.os.environ, {"REMOTE_CLAUDE_TIMEOUT": "42"}, clear=True
+                agent_remote.os.environ, {"REMOTE_AGENT_TIMEOUT": "42"}, clear=True
             ),
             redirect_stdout(StringIO()),
         ):

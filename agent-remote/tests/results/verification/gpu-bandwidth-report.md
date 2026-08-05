@@ -6,7 +6,7 @@
 
 ## Key data points
 
-- **Actually built nvbandwidth from source on remote-host** inside ONE `remote-claude run` call. cmake + boost + CUDA dep loop, build, run, parse, commit — all in a single session. Local agent never touched apt-get or build errors. **This is the iteration-scaling value prop concretely demonstrated.**
+- **Actually built nvbandwidth from source on remote-host** inside ONE `agent-remote run` call. cmake + boost + CUDA dep loop, build, run, parse, commit — all in a single session. Local agent never touched apt-get or build errors. **This is the iteration-scaling value prop concretely demonstrated.**
 - **Real bandwidth matrix from remote-host:**
 
   ```text
@@ -16,7 +16,7 @@
   d2d: waived (consumer GPUs, no NVLink, PCIe P2P disabled)
   ```
 
-- **Tool-call count:** 3 `remote-claude run` + 3 `remote-claude cleanup` + ~10 local Read/Edit/Write. Equivalent raw-ssh estimate from the agent: "significantly worse — cmake/cuda/boost dependency installation alone is usually 5-15 trial-and-error round trips."
+- **Tool-call count:** 3 `agent-remote run` + 3 `agent-remote cleanup` + ~10 local Read/Edit/Write. Equivalent raw-ssh estimate from the agent: "significantly worse — cmake/cuda/boost dependency installation alone is usually 5-15 trial-and-error round trips."
 - **Friction the wrapper hid:** ssh quoting/heredocs, MSYS path mangling, login-shell PATH for cmake/nvcc, worktree creation, permission seeding, working-directory state. None of it surfaced.
 
 ## Wrapper rough edges encountered
@@ -30,6 +30,6 @@
 ## What was implemented where
 
 - **Local (live myrepo tree):** `nvbandwidth.py` runner+parser, `db.py` table additions + 4 helpers, `hardware.py` route additions, `hardware.html` UI card. **Polluted the live tree** because the verification agent worked from `cwd=myrepo` not from a worktree.
-- **Remote (remote-host via wrapper):** Built nvbandwidth from source, ran all three benchmark passes against the 4 GPUs, wrote a server-side `nvbandwidth.py`, committed it as `7df5d26` on `remote-claude/gpu-bandwidth-verify`. Branch was cleaned up via the wrapper's cleanup subcommand.
+- **Remote (remote-host via wrapper):** Built nvbandwidth from source, ran all three benchmark passes against the 4 GPUs, wrote a server-side `nvbandwidth.py`, committed it as `7df5d26` on `agent-remote/gpu-bandwidth-verify`. Branch was cleaned up via the wrapper's cleanup subcommand.
 
 **Two parallel implementations of `nvbandwidth.py` existed momentarily**, one local and one remote, both based on the same prompt spec, never merged. The remote one was thrown away with the worktree.

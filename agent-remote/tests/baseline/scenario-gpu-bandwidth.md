@@ -1,6 +1,6 @@
 # Baseline scenario: multi-GPU bandwidth benchmark
 
-**Phase:** RED (no remote-claude skill loaded)
+**Phase:** RED (no agent-remote skill loaded)
 **Worktree:** `C:\Users\user\skills-dev\test-sandbox\worktrees\gpu-bandwidth-baseline\`
 
 ## Prompt to give the subagent
