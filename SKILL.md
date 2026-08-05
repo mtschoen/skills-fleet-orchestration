@@ -138,7 +138,7 @@ The parent skill's prompt structure applies. On top of it, every fleet brief mus
 
 - **Sync before starting**: agent must run `git pull --ff-only` and `git push` (if upstream exists and local is ahead) **before touching code**. Stops divergence between fleet sweeps and prevents work on a stale tree. If pull is non-fast-forward or push is rejected, STOP and report - do not force, rebase, or merge without orchestrator instruction.
 - **Absolute repo path** (`C:\Users\user\<project>`) - agents inherit cwd from the orchestrator, not from the task.
-- **One-sentence project description**, or "read AGENTS.md (or CLAUDE.md) in this directory before starting."
+- **One-sentence project description**, or "read AGENTS.md in this directory before starting."
 - **Verbatim PLAN.md line + line number** they're implementing.
 - **Specific file paths you've already identified** as relevant (the triage reading was not wasted - pass it to the agent).
 - **Pre-answered ambiguity** - if triage flagged a yellow concern, the brief must say what to do if the agent hits it. Don't make the agent re-derive your judgment.
