@@ -31,7 +31,7 @@ If you're fixing 3 unrelated test failures in **one** project, use the parent sk
 
 This skill has a hard dependency on the superpowers plugin's [`superpowers:dispatching-parallel-agents`](https://github.com/mtschoen/superpowers) skill - see "Relationship" above. Install superpowers before using this skill; there is no standalone fallback.
 
-These skills are designed against the superpowers fork at https://github.com/mtschoen/superpowers, which changes upstream's rules around parallel subagent dispatch and plan/spec file handling. Notably, official superpowers 6.2.0 forbids dispatching implementation subagents in parallel; the fork's subagent-driven-development adds Parallel Dispatch (Worktree Isolation). Skills that describe parallel SDD assume the fork.
+These skills are designed against the superpowers fork at <https://github.com/mtschoen/superpowers>, which changes upstream's rules around parallel subagent dispatch and plan/spec file handling. Notably, official superpowers 6.2.0 forbids dispatching implementation subagents in parallel; the fork's subagent-driven-development adds Parallel Dispatch (Worktree Isolation). Skills that describe parallel SDD assume the fork.
 
 ## Overview
 
