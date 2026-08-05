@@ -18,7 +18,7 @@ Usage:
         [--out <directory>]
         [--workers N]
 
-Outputs CSVs in --out (default: ~/.claude/cost-estimator/reports/):
+Outputs CSVs in --out (default: ~/.agents/cost-estimator/reports/):
     sessions.csv  - one row per logical session (parent + its subagents)
     daily.csv     - daily totals
     commands.csv  - measured slash-command time per logical session
@@ -305,8 +305,8 @@ def main():
     parser.add_argument("--out",
                         default=str(reports_directory()),
                         help="Output directory for CSVs "
-                             "(default: ~/.claude/cost-estimator/reports/, "
-                             "override dir via CLAUDE_COST_REPORTS_DIR)")
+                             "(default: ~/.agents/cost-estimator/reports/, "
+                             "override dir via AGENTS_COST_REPORTS_DIR)")
     parser.add_argument("--workers", type=int,
                         default=max(1, (os.cpu_count() or 4) // 2))
     arguments = parser.parse_args()
@@ -329,7 +329,7 @@ def main():
     resolved_roots = _resolve_roots(
         cli_roots=arguments.roots,
         cli_labels=arguments.label,
-        env_value=os.environ.get("CLAUDE_COST_ROOTS"),
+        env_value=os.environ.get("AGENTS_COST_ROOTS"),
     )
     # Validate paths exist before kicking off workers
     for label, path in resolved_roots:

@@ -13,7 +13,7 @@ Two readouts over parent session transcripts:
 On the account this probe was built against, 98.7% of cache-write tokens were
 1h-TTL; re-run the probe to measure the current account rather than assuming
 that split. Paths are parameterized via roots.py
-(CLI roots or CLAUDE_COST_ROOTS) -- no hard-coded machine paths.
+(CLI roots or AGENTS_COST_ROOTS) -- no hard-coded machine paths.
 """
 
 from __future__ import annotations
@@ -103,7 +103,7 @@ def main():
     resolved_roots = _resolve_roots(
         cli_roots=arguments.roots,
         cli_labels=arguments.label,
-        env_value=os.environ.get("CLAUDE_COST_ROOTS"),
+        env_value=os.environ.get("AGENTS_COST_ROOTS"),
     )
 
     aggregate = {name: {"n": 0, "read": 0, "create": 0, "miss": 0}
