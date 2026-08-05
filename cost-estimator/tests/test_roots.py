@@ -87,7 +87,7 @@ def test_date_bounds_end_is_exclusive_next_day():
 def test_reports_directory_default_is_outside_skill_tree(monkeypatch):
     monkeypatch.delenv("AGENTS_COST_REPORTS_DIR", raising=False)
     result = roots.reports_directory()
-    assert result == Path.home() / ".claude" / "cost-estimator" / "reports"
+    assert result == Path.home() / ".agents" / "cost-estimator" / "reports"
 
 
 def test_reports_directory_environment_override(monkeypatch):
