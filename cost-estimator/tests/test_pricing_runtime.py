@@ -18,8 +18,6 @@ def test_pricing_helpers_cover_model_families_and_flat_rates():
     assert pricing.model_family("claude-haiku-4-5") == "haiku"
     assert pricing.model_family("unknown") is None
 
-    # One flat rate per model family for all time -- no time-windowed
-    # pricing, no version-specific PRICES rows.
     assert pricing.rates_for("sonnet") == (3.0, 15.0)
     assert pricing.parse_timestamp(None) is None
     assert pricing.parse_timestamp("not-a-date") is None

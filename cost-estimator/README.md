@@ -1,7 +1,7 @@
 # cost-estimator
 
-An agent skill that analyzes cost and active time from local Claude Code
-session transcript JSONLs.
+An agent skill that analyzes cost and active time from local transcripts.
+Today, it can only analyze Claude Code sessions. Support for more agent harnesses is planned.
 Two halves planned:
 
 - **Retrospective — built (2026-05-04).** "What did I spend over [date
@@ -163,7 +163,7 @@ default) or is leaking cost to 5m-TTL prefix expiry.
 - `reports/` - dev-only scratch for screenshot fixtures (see
   `dev/regen-screenshots` below); gitignored, not shipped to installed
   copies of the skill. Generated cost data for real usage lands in
-  `~/.claude/cost-estimator/reports/` instead (see `SKILL.md`).
+  `~/.agents/cost-estimator/reports/` instead (see `SKILL.md`).
 - `dev/capture-screenshot.py` — headless Chrome wrapper used by
   the screenshot regen scripts. Dev-only (excluded from `install-skills`).
 - `dev/regen-screenshots.{sh,bat}` — orchestrator that regenerates

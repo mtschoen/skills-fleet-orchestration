@@ -18,11 +18,9 @@ from datetime import datetime
 # Per-MTok rates (verified 2026-04 against Anthropic docs; fable row
 # added 2026-07-16, verified against the live pricing page same day).
 # One flat rate per model FAMILY for all time -- no time-windowed
-# pricing and no per-version rows. An earlier revision modeled a
-# temporary Sonnet 5 introductory rate (and, before that, a separate
-# "sonnet5" price row distinct from generic "sonnet"); both were
-# removed since model versions within a family price identically --
-# version-keyed rows just added noise, not signal.
+# pricing and no per-version rows. If prices change, adjust them here.
+# Accept that historical data will drift as prices change--these are
+# relative quantities we're tracking, not an invoice of real money spend.
 PRICES = {
     "fable":   (10.0, 50.0),
     "opus":    (5.0, 25.0),
@@ -71,9 +69,6 @@ def cost_for_turn(model_identifier, input_tokens, output_tokens,
     if family is None:
         return 0.0
     input_rate, output_rate = rates_for(family)
-    # The 1M-context tier (`[1m]` model ids) bills at the SAME flat per-token
-    # rate -- no surcharge above 200K, verified 2026-06 against ~/.claude.json
-    # billing across 28 Opus[1m] sessions and current Anthropic docs.
     return (input_tokens * input_rate
             + output_tokens * output_rate
             + cache_read_tokens * input_rate * CACHE_READ_MULTIPLIER
