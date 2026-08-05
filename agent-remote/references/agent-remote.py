@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-agent-remote.py — spawn an agent session (claude, opencode, or agy) on a remote host
+agent-remote.py — spawn an agent session (claude, opencode, agy, pi, or codex) on a remote host
 to do work in an isolated git worktree, capture a structured result, return.
 
 The "open a terminal" affordance for agent orchestrators: instead of piping
