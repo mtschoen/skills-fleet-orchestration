@@ -15,7 +15,7 @@ Usage:
         [--projects <root> ...]    # default: ~/.claude/projects
         [--x {turn,time}]           # default: turn
         [--inline-js]               # embed Chart.js into the HTML
-        [--out <path>]              # default: ~/.claude/cost-estimator/reports/session-<id-prefix>.html
+        [--out <path>]              # default: ~/.agents/cost-estimator/reports/session-<id-prefix>.html
         [--open]                    # open the resulting HTML in default browser
 """
 
@@ -259,7 +259,7 @@ def main():
                         help="Embed Chart.js into the HTML rather than CDN-load")
     parser.add_argument("--out", default=None,
                         help="Output HTML path "
-                             "(default: ~/.claude/cost-estimator/reports/session-<prefix>.html)")
+                             "(default: ~/.agents/cost-estimator/reports/session-<prefix>.html)")
     parser.add_argument("--open", dest="open_browser", action="store_true",
                         help="Open the resulting HTML in the default browser")
     arguments = parser.parse_args()

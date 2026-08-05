@@ -21,7 +21,8 @@ def test_unpriced_usage_none_for_known_family():
 
 
 def test_unpriced_usage_none_for_sonnet5_variant():
-    # sonnet-5 has its own family entry distinct from generic "sonnet".
+    # sonnet-5 is a version of the generic "sonnet" family, not its own
+    # PRICES row -- model_family() must still recognize it.
     assert pricing.unpriced_usage("claude-sonnet-5-20260101", 1, 1, 0, 0) is None
 
 

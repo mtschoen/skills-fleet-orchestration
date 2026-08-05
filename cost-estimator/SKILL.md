@@ -1,6 +1,6 @@
 ---
 name: cost-estimator
-description: Use when the user asks for retrospective Claude Code cost or active-time analysis over a date range, including spend, top sessions, cache discipline, subscription leverage, time spent waiting, or time spent on slash commands such as /wrap. Predictive cost or time estimation for future work is not built.
+description: Use when the user asks for retrospective Claude Code cost or active-time analysis over a date range, including spend, top sessions, cache discipline, subscription leverage, time spent waiting, or time spent on slash commands such as /wrap.
 ---
 
 # cost-estimator (retrospective)
@@ -34,10 +34,10 @@ Most invocations need three things; ask only when not obvious:
 2. **Projects roots.** Default to `~/.claude/projects` on the current
    host. If the user works across multiple machines, ask whether to
    include other roots - typically a network-mounted path to another
-   host's `~/.claude/projects`. The user's AGENTS.md (or CLAUDE.md) often documents
+   host's `~/.claude/projects`. The user's AGENTS.md often documents
    the cross-machine convention; consult it before guessing.
 
-   Multi-machine setups can set the `CLAUDE_COST_ROOTS` env var once
+   Multi-machine setups can set the `AGENTS_COST_ROOTS` env var once
    (format: `"label1:path1,label2:path2"`) - analyze-month.py picks it
    up automatically when no positional roots are given. CLI args
    always win when both are present.
@@ -61,9 +61,9 @@ Most invocations need three things; ask only when not obvious:
    ```
 
    This writes `sessions.csv`, `daily.csv`, and `commands.csv` to
-   `~/.claude/cost-estimator/reports/` - outside the installed skill tree,
+   `~/.agents/cost-estimator/reports/` - outside the installed skill tree,
    so a skill reinstall never deletes generated data (override the location
-   with `CLAUDE_COST_REPORTS_DIR`) - and prints
+   with `AGENTS_COST_REPORTS_DIR`) - and prints
    a brief stderr summary. `sessions.csv` includes parent active time and
    separately reported subagent time. `commands.csv` attributes measured turns
    to slash commands such as `/wrap`. It also prints two guardrail sections:
@@ -116,7 +116,7 @@ Most invocations need three things; ask only when not obvious:
    ```
 
    This produces an HTML chart (per-turn bars + cumulative line +
-   hover tooltips) at `~/.claude/cost-estimator/reports/session-<prefix>.html`,
+   hover tooltips) at `~/.agents/cost-estimator/reports/session-<prefix>.html`,
    helping the user see *where* in the session the spike happened.
    Pass `--inline-js` for an offline-viewable file. Pass `--x time`
    to render the x-axis as wall-clock time instead of turn number -
@@ -132,7 +132,7 @@ Most invocations need three things; ask only when not obvious:
        [--bucket {day,week,month}] [--inline-js] [--open]
    ```
 
-   Produces an HTML chart at `~/.claude/cost-estimator/reports/trend-<range>.html`.
+   Produces an HTML chart at `~/.agents/cost-estimator/reports/trend-<range>.html`.
    Bars stack per-machine cost in each bucket; right-axis line shows
    the cumulative total. Bucket size auto-picks from range length
    (≤14d→day, ≤90d→week, >90d→month) or override with `--bucket`.
@@ -149,7 +149,7 @@ Most invocations need three things; ask only when not obvious:
    The prior window is auto-derived as the same-length window
    immediately before the current one. Bucket-index (Day/Week/Month N)
    makes paired bars apples-to-apples wall-clock-relative slices, not
-   calendar-aligned. Output lands in `~/.claude/cost-estimator/reports/compare-<range>.html`.
+   calendar-aligned. Output lands in `~/.agents/cost-estimator/reports/compare-<range>.html`.
 8. **Reconcile against /stats on demand.** When the coverage warning
    fires (or the user asks "why doesn't this match /stats?"), run the
    full per-day reconciliation:
@@ -170,7 +170,7 @@ Most invocations need three things; ask only when not obvious:
    days), so a fully-present range reads ~100%. Use this to *explain* the
    gap, not to "fix" the dollar total - cleared days genuinely cannot be
    priced. Roots/stats files are resolved exactly like analyze-month.py
-   (`CLAUDE_COST_ROOTS` or positional roots; the stats file is the
+   (`AGENTS_COST_ROOTS` or positional roots; the stats file is the
    sibling `stats-cache.json` of each projects root).
 9. **Probe cache TTL on demand.** If the user asks whether their cache is
    1h- or 5m-TTL, or why cache-write cost looks high:
@@ -184,13 +184,13 @@ Most invocations need three things; ask only when not obvious:
    5–60m buckets would betray a 5m TTL letting prefixes expire).
    Subscription accounts write 1h-TTL by default.
 10. **Offer to save.** If the analysis was substantive, save the report
-   to `~/.claude/cost-estimator/reports/<range>.md`. That directory lives
+   to `~/.agents/cost-estimator/reports/<range>.md`. That directory lives
    outside the installed skill and survives reinstalls. Capture the
    summary.txt alongside via shell redirect:
 
    ```bash
    python <skill-root>/scripts/summarize.py [--paid <usd>] \
-       > ~/.claude/cost-estimator/reports/summary.txt
+       > ~/.agents/cost-estimator/reports/summary.txt
    ```
 
 ## Interpreting time totals
@@ -247,11 +247,14 @@ when rates change.
 
 | Family | Input | Output |
 |---|---|---|
-| Fable 5 / Mythos     | $10 | $50 |
-| Opus 4.5 - 4.8       | $5  | $25 |
-| Sonnet 5 (intro rate through 2026-08-31; $3/$15 after) | $2 | $10 |
-| Sonnet 4.5 / 4.6     | $3  | $15 |
-| Haiku 4.5            | $1  | $5  |
+| Fable / Mythos | $10 | $50 |
+| Opus           | $5  | $25 |
+| Sonnet         | $3  | $15 |
+| Haiku          | $1  | $5  |
+
+One flat rate per model family for all time -- no time-windowed
+pricing and no version-specific rows; model versions within a family
+bill identically.
 
 Cache multipliers (relative to base input rate, all models): cache read
 **0.1x**, cache write **1.25x** (empirical for both 5m and 1h TTLs as of
@@ -294,13 +297,13 @@ was never present in the billed aggregate.
   Both retrospective and per-session scripts import from here so the
   formula does not drift.
 - `scripts/analyze-month.py` - JSONL walker and per-turn pricer
-  (uses `pricing.py`). Default `--out` is `~/.claude/cost-estimator/reports/`
-  (override `CLAUDE_COST_REPORTS_DIR`).
+  (uses `pricing.py`). Default `--out` is `~/.agents/cost-estimator/reports/`
+  (override `AGENTS_COST_REPORTS_DIR`).
   Also extracts measured `turn_duration` values and writes per-session,
   per-day, and per-command active-time fields without adding concurrent
   subagent time to parent wait time.
   Also prints the "COVERAGE vs /stats" guardrail (uses `stats_cache.py`).
-- `scripts/roots.py` - shared root resolution (`CLAUDE_COST_ROOTS` /
+- `scripts/roots.py` - shared root resolution (`AGENTS_COST_ROOTS` /
   positional roots), date-bound parsers, and `stats_file_for()`.
   Imported by `analyze-month.py`, `stats_cache.py`, and `cache_ttl.py`
   so path/range logic stays in one place.
@@ -314,7 +317,7 @@ was never present in the billed aggregate.
   split) and an inter-turn-gap behavioral table.
 - `scripts/summarize.py` - CSV reader and cost, active-time,
   slash-command, and waste-pattern report.
-  Default `--csv` is `~/.claude/cost-estimator/reports/sessions.csv`.
+  Default `--csv` is `~/.agents/cost-estimator/reports/sessions.csv`.
   Reads the sibling `commands.csv` and accepts `--command /name` for focused
   slash-command timing detail.
 - `scripts/plot-session.py` - per-session HTML cost trajectory chart
@@ -331,8 +334,8 @@ was never present in the billed aggregate.
   download cache, and script-tag helper used by both plot scripts.
 
 All generated cost data (CSVs, charts, saved reports) lands in
-`~/.claude/cost-estimator/reports/`, outside the installed skill tree, via
-`roots.reports_directory()` (override with `CLAUDE_COST_REPORTS_DIR`) - a
+`~/.agents/cost-estimator/reports/`, outside the installed skill tree, via
+`roots.reports_directory()` (override with `AGENTS_COST_REPORTS_DIR`) - a
 reinstall of this skill never touches it. This list covers everything an
 installed copy of this skill ships; see `README.md` in the source repo for
 dev-only files (screenshot regen tooling, test fixtures) that don't ship.

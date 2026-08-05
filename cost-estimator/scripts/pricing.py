@@ -15,33 +15,24 @@ from __future__ import annotations
 from datetime import datetime
 
 
-# Per-MTok rates (verified 2026-04 against Anthropic docs; fable/sonnet5
-# rows added 2026-07-16, verified against the live pricing page same day).
+# Per-MTok rates (verified 2026-04 against Anthropic docs; fable row
+# added 2026-07-16, verified against the live pricing page same day).
+# One flat rate per model FAMILY for all time -- no time-windowed
+# pricing and no per-version rows. If prices change, adjust them here.
+# Accept that historical data will drift as prices change--these are
+# relative quantities we're tracking, not an invoice of real money spend.
 PRICES = {
     "fable":   (10.0, 50.0),
-    # Sonnet 5 introductory pricing, in effect through 2026-08-31. Turns
-    # timestamped 2026-09-01 or later bill at the standard sonnet card --
-    # see rates_for(). Callers that omit the timestamp get intro rates.
-    "sonnet5": (2.0, 10.0),
     "opus":    (5.0, 25.0),
     "sonnet":  (3.0, 15.0),
     "haiku":   (1.0, 5.0),
 }
-SONNET5_STANDARD = (3.0, 15.0)
-SONNET5_INTRO_END = "2026-09-01"  # first day standard rates apply
 CACHE_WRITE_MULTIPLIER = 1.25
 CACHE_READ_MULTIPLIER = 0.10
 
 
-def rates_for(family, timestamp=None):
-    """Per-MTok (input, output) rates, date-aware where a family needs it.
-
-    `timestamp` is the turn's ISO-8601 string; the date prefix compares
-    lexicographically, so no parsing is needed.
-    """
-    if (family == "sonnet5" and timestamp
-            and timestamp[:10] >= SONNET5_INTRO_END):
-        return SONNET5_STANDARD
+def rates_for(family):
+    """Per-MTok (input, output) rates for a model family."""
     return PRICES[family]
 
 
@@ -53,9 +44,9 @@ def model_family(model_identifier):
         return "fable"
     if "opus" in name:
         return "opus"
-    # sonnet-5 before the generic sonnet match: distinct intro rate card.
-    if "sonnet-5" in name:
-        return "sonnet5"
+    # Any "sonnet-N" raw model id (sonnet-5, sonnet-4-6, ...) classifies
+    # as the single "sonnet" family -- versions don't get their own
+    # PRICES row, they all bill at the same family rate.
     if "sonnet" in name:
         return "sonnet"
     if "haiku" in name:
@@ -73,14 +64,11 @@ def parse_timestamp(value):
 
 
 def cost_for_turn(model_identifier, input_tokens, output_tokens,
-                  cache_read_tokens, cache_write_tokens, timestamp=None):
+                  cache_read_tokens, cache_write_tokens):
     family = model_family(model_identifier)
     if family is None:
         return 0.0
-    input_rate, output_rate = rates_for(family, timestamp)
-    # The 1M-context tier (`[1m]` model ids) bills at the SAME flat per-token
-    # rate -- no surcharge above 200K, verified 2026-06 against ~/.claude.json
-    # billing across 28 Opus[1m] sessions and current Anthropic docs.
+    input_rate, output_rate = rates_for(family)
     return (input_tokens * input_rate
             + output_tokens * output_rate
             + cache_read_tokens * input_rate * CACHE_READ_MULTIPLIER
@@ -194,7 +182,6 @@ def iter_assistant_turns(jsonl_path):
                 "cache_write_tokens": cache_write_tokens,
                 "cost_usd": cost_for_turn(model_identifier, input_tokens,
                                           output_tokens, cache_read_tokens,
-                                          cache_write_tokens,
-                                          timestamp=entry.get("timestamp") or ""),
+                                          cache_write_tokens),
                 "top_tools": tools_seen,
             }

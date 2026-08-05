@@ -306,7 +306,7 @@ def main():
     resolved_roots = _resolve_roots(
         cli_roots=arguments.roots,
         cli_labels=arguments.label,
-        env_value=os.environ.get("CLAUDE_COST_ROOTS"),
+        env_value=os.environ.get("AGENTS_COST_ROOTS"),
     )
 
     combined, per_root = coverage_for_roots(resolved_roots, start, end)

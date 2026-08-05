@@ -66,7 +66,7 @@ def main():
     parser.add_argument("--csv",
                         default=str(reports_directory() / "sessions.csv"),
                         help="sessions.csv path produced by analyze-month.py "
-                             "(default: ~/.claude/cost-estimator/reports/sessions.csv)")
+                             "(default: ~/.agents/cost-estimator/reports/sessions.csv)")
     parser.add_argument("--paid", type=float, default=None,
                         help="Actual USD paid for the period (Max plan + extras). "
                              "When provided, reports leverage and prorated columns.")

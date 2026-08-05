@@ -18,16 +18,16 @@ def reports_directory() -> Path:
     """Stable output directory for CSVs, HTML charts, and saved reports.
 
     Lives OUTSIDE the installed skill tree so skill reinstalls can never
-    delete generated data. Override with CLAUDE_COST_REPORTS_DIR.
+    delete generated data. Override with AGENTS_COST_REPORTS_DIR.
     """
-    override = os.environ.get("CLAUDE_COST_REPORTS_DIR")
+    override = os.environ.get("AGENTS_COST_REPORTS_DIR")
     if override:
         return Path(override).expanduser()
-    return Path.home() / ".claude" / "cost-estimator" / "reports"
+    return Path.home() / ".agents" / "cost-estimator" / "reports"
 
 
 def _resolve_roots(cli_roots, cli_labels, env_value):
-    """Resolve (label, path) pairs from CLI args + CLAUDE_COST_ROOTS env var.
+    """Resolve (label, path) pairs from CLI args + AGENTS_COST_ROOTS env var.
 
     Precedence:
       1. CLI roots present  -> use those, ignore env var (print note if env set)
@@ -40,7 +40,7 @@ def _resolve_roots(cli_roots, cli_labels, env_value):
     """
     if cli_roots:
         if env_value:
-            print("note: CLAUDE_COST_ROOTS set but CLI roots given; using CLI",
+            print("note: AGENTS_COST_ROOTS set but CLI roots given; using CLI",
                   file=sys.stderr)
         labels = list(cli_labels or [])
         while len(labels) < len(cli_roots):
@@ -54,13 +54,13 @@ def _resolve_roots(cli_roots, cli_labels, env_value):
             if not entry:
                 continue
             if ":" not in entry:
-                sys.exit(f"error: CLAUDE_COST_ROOTS malformed near '{entry}' "
+                sys.exit(f"error: AGENTS_COST_ROOTS malformed near '{entry}' "
                          f"(expected 'label:path')")
             label, _, path = entry.partition(":")
             label = label.strip()
             path = path.strip()
             if not label or not path:
-                sys.exit(f"error: CLAUDE_COST_ROOTS malformed near '{entry}' "
+                sys.exit(f"error: AGENTS_COST_ROOTS malformed near '{entry}' "
                          f"(expected 'label:path')")
             pairs.append((label, Path(path)))
         return pairs
