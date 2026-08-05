@@ -11,7 +11,7 @@ from tests.agent_remote_test_support import agent_remote, completed_process
 
 
 class RunResultTests(unittest.TestCase):
-    def test_serializes_success_and_legacy_exit_code(self) -> None:
+    def test_serializes_success(self) -> None:
         result = agent_remote.RunResult(
             host="worker@example",
             branch="agent-remote/task",
@@ -29,7 +29,6 @@ class RunResultTests(unittest.TestCase):
 
         self.assertTrue(result.success)
         self.assertEqual(payload["agent_exit_code"], 0)
-        self.assertEqual(payload["claude_exit_code"], 0)
         self.assertEqual(payload["new_commit"], "child")
 
     def test_nonzero_exit_is_unsuccessful(self) -> None:
@@ -76,16 +75,12 @@ class PathTests(unittest.TestCase):
                 "C:/Program Files/Git/home/user",
             )
 
-    def test_computes_current_and_legacy_worktree_paths(self) -> None:
+    def test_computes_worktree_path(self) -> None:
         self.assertEqual(
             agent_remote.compute_worktree_path(
                 "/srv/project/", "agent-remote/topic/branch"
             ),
             "/srv/agent-remote-worktrees/agent-remote_topic_branch",
-        )
-        self.assertEqual(
-            agent_remote.compute_worktree_path("/srv/project", "remote-claude/topic"),
-            "/srv/remote-claude-worktrees/remote-claude_topic",
         )
 
 
