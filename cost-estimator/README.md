@@ -1,6 +1,6 @@
 # cost-estimator
 
-An agent skill that analyzes cost and active time from local transcripts.
+A skill that analyzes cost and active time from local transcripts.
 Today, it can only analyze Claude Code sessions. Support for more agent
 harnesses is planned.
 
