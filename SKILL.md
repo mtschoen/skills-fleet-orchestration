@@ -82,7 +82,7 @@ When refusing to dispatch, give the user a paste-ready way to start a new sessio
 This task needs supervised work in a fresh session. Try:
 
   cd <absolute path to repo>
-  claude
+  <start a fresh agent session, e.g. `claude` for Claude Code>
 
 Then paste:
 
@@ -184,17 +184,17 @@ git -C <repo> worktree list
 git -C <repo> stash list
 ```
 
-Signs an active parallel session is using this repo: uncommitted changes you didn't make, worktrees under `.claude/worktrees/agent-*` (or any other non-main worktree), or named stashes from another session.
+Signs an active parallel session is using this repo: uncommitted changes you didn't make, worktrees under `.claude/worktrees/agent-*` (Claude Code's own agent-isolation path - other harnesses land auto-isolated worktrees elsewhere, check yours) (or any other non-main worktree), or named stashes from another session.
 
 Either way, if a conflict is detected, **pre-bake an isolated worktree from HEAD** for your agent before dispatching:
 
 ```text
-git -C <repo> worktree add <repo>/.claude/worktrees/orchestrator-<task> -b claude/<task> HEAD
+git -C <repo> worktree add <repo>/.claude/worktrees/orchestrator-<task> -b agent/<task> HEAD
 ```
 
 Then pass that worktree path to the agent in the brief - and tell the agent to `cd` into it and, if `project-lock` is installed, acquire the lock **in that worktree** (locks are per-worktree-root, so a pre-baked worktree needs its own lock, separate from the main checkout's) before writing. Do NOT dispatch into the main worktree of a repo where another session is active. Even if your agent works on a different branch, the working tree itself is shared on disk; their uncommitted changes and yours collide on the same files.
 
-Pre-baking is cheap (~100ms per repo). When in doubt, do it. Cleanup after merging: `git -C <repo> worktree remove <path>` and `git -C <repo> branch -d claude/<task>` (or `-D` if discarded).
+Pre-baking is cheap (~100ms per repo). When in doubt, do it. Cleanup after merging: `git -C <repo> worktree remove <path>` and `git -C <repo> branch -d agent/<task>` (or `-D` if discarded).
 
 **Symptom you missed this check**: your agent reports an Edit denial on a file that was modified by another agent in a different worktree, OR your post-dispatch `git status` in the target repo shows a mix of files you don't recognize alongside your agent's edits.
 
@@ -205,7 +205,7 @@ Pre-baking is cheap (~100ms per repo). When in doubt, do it. Cleanup after mergi
 Before ANY worktree fan-out:
 
 1. **Hygiene pass.** `git worktree list` + `git worktree prune`. Leftover `agent-*` / task worktrees from dead sessions get removed (check `git -C <wt> status` for uncommitted work first). `git fetch` so remote-tracking refs - including the base auto-isolation will use - are current.
-2. **Choose the base explicitly.** If the work builds on anything other than fresh origin/main (a feature branch, unpushed commits, a pinned SHA), do NOT rely on `isolation: "worktree"`. Pre-bake: `git worktree add .claude/worktrees/<task> -b <branch> <sha>`, then dispatch WITHOUT the isolation option and pass the worktree path in the brief.
+2. **Choose the base explicitly.** If the work builds on anything other than fresh origin/main (a feature branch, unpushed commits, a pinned SHA), do NOT rely on `isolation: "worktree"`. Pre-bake: `git worktree add .claude/worktrees/<task> -b <branch> <sha>` (path shown matches Claude Code's auto-isolation convention; adjust for your harness), then dispatch WITHOUT the isolation option and pass the worktree path in the brief.
 3. **Verify base after creation, before work starts.** Every worktree, auto or pre-baked: `git rev-parse HEAD` must equal the intended base SHA. For auto-created worktrees you can't inspect pre-dispatch, put it in the brief verbatim: "FIRST ACTION: confirm `git rev-parse HEAD` prints `<full sha>`; on mismatch STOP and report. Do not merge, rebase, or reset to self-correct."
 
 **Symptom you missed this check**: agents report that files or functions named in the brief "don't exist in this checkout", or a returned diff re-implements work that already exists on the real base.
@@ -321,7 +321,7 @@ Re-running 5 minutes later returns only `["site"]`. Cheap.
 
 - Subagents inherit this session's directory permissions, not the orchestrator's cwd.
 - If a sibling repo isn't in the allowed list, the agent will hit Edit/Write denials. Tell the agent in the brief to STOP on denial, not work around.
-- The user can preemptively grant access with `/add-dir <path>` or by listing repos in `~/.claude/settings.json` under `permissions.additionalDirectories`.
+- The user can preemptively grant access with `/add-dir <path>` or by listing repos in `~/.claude/settings.json` under `permissions.additionalDirectories` (Claude Code-specific; other harnesses expose an equivalent directory-permission setting under their own config).
 - **Bash commands run with full user privileges regardless of `--add-dir`** - the directory sandbox only affects file tools, not shell.
 - Empirically, sibling-repo file access often *just works* without `/add-dir` if the user's settings allow a parent directory. Don't assume - but don't over-engineer either. If denials happen, surface them; if they don't, proceed.
 
@@ -334,7 +334,7 @@ Re-running 5 minutes later returns only `["site"]`. Cheap.
 - Forwarding agent open questions to the user verbatim instead of investigating them yourself.
 - Mixing maintenance and feature tasks in one pass.
 - Using `isolation: "worktree"` for cross-repo parallelism (it doesn't work that way - different repos are already isolated).
-- Dispatching into a target repo without checking `git worktree list` and `git status` first. Other Claude sessions may already be working there; the worktree-list output will show it.
+- Dispatching into a target repo without checking `git worktree list` and `git status` first. Other agent sessions may already be working there; the worktree-list output will show it.
 - Letting an agent commit/push without orchestrator review.
 - Trusting "all tests pass" as proof of correctness for semantic changes.
 - Re-running maintenance tasks on projects that haven't changed since their last clean run.
