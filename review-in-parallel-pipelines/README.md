@@ -1,6 +1,6 @@
 # review-in-parallel-pipelines
 
-An agent skill that teaches an **orchestrator** running multiple implementer
+A skill that teaches an **orchestrator** running multiple implementer
 agents in parallel to keep review as a first-class phase of execution - instead
 of merging each branch the moment its report says "green" and moving on. Sits on
 top of the superpowers plugin's `subagent-driven-development` skill (per-task
