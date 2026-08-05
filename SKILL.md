@@ -184,12 +184,12 @@ git -C <repo> worktree list
 git -C <repo> stash list
 ```
 
-Signs an active parallel session is using this repo: uncommitted changes you didn't make, worktrees under an auto-isolated path your harness created (or any other non-main worktree), or named stashes from another session.
+Signs an active parallel session is using this repo: uncommitted changes you didn't make, worktrees under `.worktrees/` (or any other non-main worktree), or named stashes from another session.
 
 Either way, if a conflict is detected, **pre-bake an isolated worktree from HEAD** for your agent before dispatching:
 
 ```text
-git -C <repo> worktree add <repo>/.agents/worktrees/orchestrator-<task> -b agent/<task> HEAD
+git -C <repo> worktree add <repo>/.worktrees/orchestrator-<task> -b agent/<task> HEAD
 ```
 
 Then pass that worktree path to the agent in the brief - and tell the agent to `cd` into it and, if `project-lock` is installed, acquire the lock **in that worktree** (locks are per-worktree-root, so a pre-baked worktree needs its own lock, separate from the main checkout's) before writing. Do NOT dispatch into the main worktree of a repo where another session is active. Even if your agent works on a different branch, the working tree itself is shared on disk; their uncommitted changes and yours collide on the same files.
@@ -205,7 +205,7 @@ Pre-baking is cheap (~100ms per repo). When in doubt, do it. Cleanup after mergi
 Before ANY worktree fan-out:
 
 1. **Hygiene pass.** `git worktree list` + `git worktree prune`. Leftover `agent-*` / task worktrees from dead sessions get removed (check `git -C <wt> status` for uncommitted work first). `git fetch` so remote-tracking refs - including the base auto-isolation will use - are current.
-2. **Choose the base explicitly.** If the work builds on anything other than fresh origin/main (a feature branch, unpushed commits, a pinned SHA), do NOT rely on `isolation: "worktree"`. Pre-bake: `git worktree add .agents/worktrees/<task> -b <branch> <sha>` (adjust the path for your harness's convention), then dispatch WITHOUT the isolation option and pass the worktree path in the brief.
+2. **Choose the base explicitly.** If the work builds on anything other than fresh origin/main (a feature branch, unpushed commits, a pinned SHA), do NOT rely on `isolation: "worktree"`. Pre-bake: `git worktree add .worktrees/<task> -b <branch> <sha>` (adjust the path for your harness's convention), then dispatch WITHOUT the isolation option and pass the worktree path in the brief.
 3. **Verify base after creation, before work starts.** Every worktree, auto or pre-baked: `git rev-parse HEAD` must equal the intended base SHA. For auto-created worktrees you can't inspect pre-dispatch, put it in the brief verbatim: "FIRST ACTION: confirm `git rev-parse HEAD` prints `<full sha>`; on mismatch STOP and report. Do not merge, rebase, or reset to self-correct."
 
 **Symptom you missed this check**: agents report that files or functions named in the brief "don't exist in this checkout", or a returned diff re-implements work that already exists on the real base.

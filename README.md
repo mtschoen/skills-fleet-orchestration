@@ -1,6 +1,6 @@
 # fleet-orchestration
 
-An agent skill for dispatching subagents across **multiple local project repositories** - feature implementation, maintenance sweeps, or fleet-wide investigation. Extends `superpowers:dispatching-parallel-agents` with the cross-repo governance that skill's single-codebase assumption doesn't cover.
+A skill for dispatching subagents across **multiple local project repositories** - feature implementation, maintenance sweeps, or fleet-wide investigation. Extends `superpowers:dispatching-parallel-agents` with the cross-repo governance that skill's single-codebase assumption doesn't cover.
 
 ## When it fires
 
