@@ -128,7 +128,7 @@ python agent-remote.py run \
 python agent-remote.py cleanup --host user@host --repo-path /path/to/repo --branch agent-remote/my-task
 ```
 
-The `run` output is JSON on stdout: `{success, branch, worktree_path, parent_commit, new_commit, files_changed, agent_exit_code, claude_exit_code, stdout_tail, stderr_tail, cleanup_command}`. Parse it.
+The `run` output is JSON on stdout: `{success, branch, worktree_path, parent_commit, new_commit, files_changed, agent_exit_code, claude_exit_code, stdout_tail, stderr_tail, cleanup_command}` (`claude_exit_code` is a backwards-compatibility alias for `agent_exit_code`). Parse it.
 
 ## Install
 
