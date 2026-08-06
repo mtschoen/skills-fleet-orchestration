@@ -45,7 +45,7 @@ making verification non-negotiable and naming silent drift explicitly.
   resist drift when drift is named as the failure mode. Skill should
   adopt this framing pattern explicitly.
 - **Secondary:** confirms hardware-gating alone isn't what prevents
-  drift — framing is. A hardware-gated task WITHOUT the explicit
+  drift - framing is. A hardware-gated task WITHOUT the explicit
   "don't fake verification" framing might still drift. The skill
   should provide the framing regardless of task shape.
 - **Does NOT demonstrate:** any of the remote-build friction the scenario

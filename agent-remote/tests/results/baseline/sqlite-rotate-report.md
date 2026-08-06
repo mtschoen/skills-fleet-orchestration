@@ -27,17 +27,17 @@ for the skill" below.
 All in `C:\Users\user\skills-dev\test-sandbox\worktrees\sqlite-rotate-baseline\`
 (since deleted as part of baseline cleanup):
 
-- `src/myrepo/core/backup.py` (~180 lines) — rotation logic,
+- `src/myrepo/core/backup.py` (~180 lines) - rotation logic,
   `rotate_backup()` + `prune_old_backups()`, module-level `main()` so
   `python -m myrepo.core.backup` is the systemd ExecStart.
-- `ops/systemd/myrepo-db-rotate.service` — Type=oneshot user unit.
-- `ops/systemd/myrepo-db-rotate.timer` — `OnCalendar=*-*-* 03:00:00`.
-- `ops/systemd/README.md` — install/uninstall, mentions `loginctl enable-linger`.
-- `ops/systemd/install.py` (~115 lines) — cross-platform installer,
+- `ops/systemd/myrepo-db-rotate.service` - Type=oneshot user unit.
+- `ops/systemd/myrepo-db-rotate.timer` - `OnCalendar=*-*-* 03:00:00`.
+- `ops/systemd/README.md` - install/uninstall, mentions `loginctl enable-linger`.
+- `ops/systemd/install.py` (~115 lines) - cross-platform installer,
   no-ops cleanly on Windows/macOS.
-- `tests/test_backup.py` — 14 tests, 100% statement coverage on
+- `tests/test_backup.py` - 14 tests, 100% statement coverage on
   `backup.py` (92 statements).
-- `tests/test_systemd_installer.py` — 9 tests, loads the installer
+- `tests/test_systemd_installer.py` - 9 tests, loads the installer
   via `importlib.util` since it lives outside `src/`.
 
 Local `pytest tests/test_backup.py tests/test_systemd_installer.py`: **22 passed**.
@@ -53,7 +53,7 @@ That was denied. Its workaround was clever:
 ssh user@remote-host 'cat > /home/user/myrepo/src/myrepo/core/backup.py' < local/backup.py
 ```
 
-Stdin redirect avoids heredoc quoting hell entirely — no `$VAR` expansion
+Stdin redirect avoids heredoc quoting hell entirely - no `$VAR` expansion
 issues, no escaping backticks, no EOF-in-content problems. **The skill
 should document this pattern as a thing raw-ssh users discover the hard
 way, and as something the wrapper eliminates by writing files directly
@@ -81,7 +81,7 @@ Good judgment.
 ### 4. systemctl exit code 3 for inactive units
 
 `systemctl status` returns 3 when a unit is inactive. The agent's bash
-call exited with 3 "because systemctl status exited 3" — the agent
+call exited with 3 "because systemctl status exited 3" - the agent
 correctly recognized this as not a real failure. Minor but shows
 awareness of the non-obvious exit code semantics.
 
@@ -117,7 +117,7 @@ including the code file it pushed into user's myrepo checkout.
 
 **Value prop, repositioned:**
 
-Raw-ssh orchestration is not impossible — it's just the equivalent of a
+Raw-ssh orchestration is not impossible - it's just the equivalent of a
 human typing `ssh host 'cmd1' && ssh host 'cmd2' && ssh host 'cat > file' < local`
 for every step. Works, but nobody does it that way when they have a choice.
 The skill gives agents the "open a terminal" affordance: spawn `claude -p`
@@ -132,7 +132,7 @@ environment is loaded once and iteration is natural.
 4. Permission mode for the spawned `claude -p` (acceptEdits default, the
    wrapper seeds a narrow settings.local.json into the worktree).
 5. Structured result capture: branch, commit, files_changed, journald
-   excerpts — instead of the caller parsing `git status` over ssh.
+   excerpts - instead of the caller parsing `git status` over ssh.
 6. Clean teardown via a `cleanup` subcommand that removes the worktree
    and any remote-side state.
 
@@ -140,5 +140,5 @@ environment is loaded once and iteration is natural.
 reports):** the SKILL.md's trigger section must name silent drift as the
 failure mode the skill exists to prevent, in the exact words agents use
 when they're about to drift. Both bailed agents cited the framing as the
-reason they resisted — encoding it once in the skill means every caller
+reason they resisted - encoding it once in the skill means every caller
 gets the framing for free.

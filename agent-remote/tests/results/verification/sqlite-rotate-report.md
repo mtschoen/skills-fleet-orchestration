@@ -19,15 +19,15 @@
 ## Wrapper rough edges encountered
 
 1. **🔴 `stdout_tail` is too short for verification reporting.** The remote agent ran ~8 distinct verification commands (`systemctl list-timers`, `journalctl`, `ls -lh backup`, etc.) producing meaningful output. The wrapper kept only the final summary sentence. For tasks where the deliverable IS *"paste the real verification output"*, this defeats the point. Agent had to fall back to an independent post-hoc ssh probe to confirm cleanup.
-2. **`files_changed` includes files the prompt didn't ask for.** `PLAN.md` showed up in `files_changed` even though the prompt was scoped to install/verify/teardown — remote agent likely auto-invoked a planning skill. Diff base may be too wide.
+2. **`files_changed` includes files the prompt didn't ask for.** `PLAN.md` showed up in `files_changed` even though the prompt was scoped to install/verify/teardown - remote agent likely auto-invoked a planning skill. Diff base may be too wide.
 3. **No streaming output.** A 600s task is opaque until it returns.
 4. **`cleanup` is a separate manual call.** Easy to forget. Wants `--auto-cleanup` flag for "verify and discard" cases.
-5. **No bugs in correctness** — only ergonomics/observability.
+5. **No bugs in correctness** - only ergonomics/observability.
 
 ## What was implemented where
 
 - **Local (live myrepo tree):** `db_rotate.py` rotation logic + 8 unit tests at 100% coverage, `ops/systemd/myrepo-db-rotate.{service,timer}`, `ops/systemd/install.py` cross-platform installer, `ops/systemd/README.md`. All written into `C:\Users\user\myrepo\` (live tree, not a worktree).
-- **Remote (remote-host via wrapper):** Per the wrapper's `files_changed` JSON, the same 5 files appeared on the remote branch — but the agent's report confused itself about how that happened. Most likely explanation: the remote `claude -p` session re-implemented them from scratch based on the prompt content, since the wrapper does not push local changes to the remote. Two parallel implementations existed momentarily.
+- **Remote (remote-host via wrapper):** Per the wrapper's `files_changed` JSON, the same 5 files appeared on the remote branch - but the agent's report confused itself about how that happened. Most likely explanation: the remote `claude -p` session re-implemented them from scratch based on the prompt content, since the wrapper does not push local changes to the remote. Two parallel implementations existed momentarily.
 
 ## Workflow gotcha (also seen in disk-throughput and gpu-bandwidth verifications)
 

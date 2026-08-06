@@ -7,7 +7,7 @@ isolated git worktree, returning structured results.
 ## Why
 
 When working on cross-platform projects from a primary dev machine, some tasks
-require executing code on a different OS — typically Linux for `/proc`, GPU
+require executing code on a different OS - typically Linux for `/proc`, GPU
 probing, systemd, or services that only run on the deployment host. The status
 quo is for the orchestrator to pipe each command over `ssh`, which is awkward,
 error-prone (shell quoting), and produces no persistent worker context between

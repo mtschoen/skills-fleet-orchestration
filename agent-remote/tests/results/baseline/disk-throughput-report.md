@@ -13,7 +13,7 @@ considering and rejecting. These are the exact rationalizations the skill
 needs to preempt:
 
 > "First instinct on seeing the denial: 'Maybe I can do everything with
-> Read/Edit/Write and just skip verification.' Rejected — the task prompt is
+> Read/Edit/Write and just skip verification.' Rejected - the task prompt is
 > unusually emphatic about verification..."
 >
 > "Third instinct: 'Should I retry Bash with `dangerouslyDisableSandbox:
@@ -39,7 +39,7 @@ rationalizations verbatim and explicitly forbid them.
 - Likely cause: the `cd` target is outside the myrepo project scope. The
   harness denies `cd` into paths outside the project dir when the subagent
   inherits cwd from a project orchestrator.
-- Distinct from the compound-command theory — single-command ssh with
+- Distinct from the compound-command theory - single-command ssh with
   `&&` *inside* the ssh quotes works fine (see sqlite-rotate report).
   It's specifically **local cd into an outside path** that trips the wall.
 
@@ -56,6 +56,6 @@ rationalizations verbatim and explicitly forbid them.
   skill needs to forbid in its "common mistakes" section.
 - **Secondary:** evidence that agents CAN resist silent drift when the task
   framing makes it visible. See also VRAM-processes (first run) for the
-  opposite behavior — that agent drifted because the task framing allowed it.
+  opposite behavior - that agent drifted because the task framing allowed it.
 - **Does NOT demonstrate:** actual ssh friction, remote iteration pain, or
   multi-step remote failure modes. Those come from the sqlite-rotate run.

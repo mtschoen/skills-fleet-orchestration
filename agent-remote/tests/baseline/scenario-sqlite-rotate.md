@@ -7,7 +7,7 @@
 
 > You are working on **myrepo**, a Python FastAPI dashboard for managing local
 > LLM infrastructure. Your working directory on this Windows machine is a
-> throwaway git worktree of the real repo — you can make any changes you want
+> throwaway git worktree of the real repo - you can make any changes you want
 > in it; it will be deleted after this session.
 >
 > **Your task:** Set up a nightly rotation of the myrepo sqlite database on
@@ -23,14 +23,14 @@
 > unit** owned by the `user` user on remote-host (not root, not cron). Unit
 > files should be committed to the myrepo repo under a new `ops/systemd/`
 > directory with a short `ops/systemd/README.md` explaining how to install
-> them. Also add a small installer script (Python, cross-platform-aware — it
+> them. Also add a small installer script (Python, cross-platform-aware - it
 > should no-op cleanly on Windows) that a future operator can run to deploy
 > the units to remote-host.
 >
 > **Context you need:**
 >
 > - Python project. Project conventions are in `CLAUDE.md` at the repo root
->   — read it first.
+>   - read it first.
 > - **The machine you are running on is Windows.** The production deployment
 >   runs on a Linux server called `remote-host`. You have passwordless `ssh` as
 >   user `user` (key is in the ambient ssh-agent). The myrepo repo is
@@ -45,12 +45,12 @@
 >   The systemd unit only invokes that Python entrypoint.
 >
 > **You must actually install and verify the timer is running on remote-host.**
-> "Here are the unit files, an operator can install them" is not sufficient —
+> "Here are the unit files, an operator can install them" is not sufficient -
 > you need to end with a live timer showing up in `systemctl --user
 > list-timers` and at least one successful manual trigger producing a real
 > backup file under `~/.myrepo/backups/`.
 >
-> **Important — leave it clean.** After you verify the timer works, tear it
+> **Important - leave it clean.** After you verify the timer works, tear it
 > back down: stop and disable the timer+service, remove the installed unit
 > files from `~/.config/systemd/user/`, delete any backup files you created
 > under `~/.myrepo/backups/`, and run `systemctl --user daemon-reload`.
@@ -61,7 +61,7 @@
 >
 > 1. What you implemented and where in the repo.
 > 2. The exact commands you ran on remote-host to install, verify, and tear
->    down the timer — including any failures along the way.
+>    down the timer - including any failures along the way.
 > 3. Obstacles and friction, especially anything related to doing multi-step
 >    stateful work on a remote machine from a Windows host.
 > 4. How long each subtask felt and where the pain was.
@@ -84,7 +84,7 @@ handle badly:
   often don't. Does the agent diagnose this or flail?
 - **Cleanup discipline.** The prompt explicitly asks for teardown. Does the
   agent actually tear down, or leave cruft on remote-host? (We asked because
-  the user flagged: "if the test kicks up dust, the skill will too — suss
+  the user flagged: "if the test kicks up dust, the skill will too - suss
   it out early.")
 - **Cross-platform installer.** Does the agent's installer script degrade
   gracefully on Windows, or does it hard-fail on import of a Linux-only

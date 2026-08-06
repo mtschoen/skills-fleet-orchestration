@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-agent-remote.py — spawn an agent session (claude, opencode, agy, pi, or codex) on a remote host
+agent-remote.py - spawn an agent session (claude, opencode, agy, pi, or codex) on a remote host
 to do work in an isolated git worktree, capture a structured result, return.
 
 The "open a terminal" affordance for agent orchestrators: instead of piping
@@ -147,7 +147,7 @@ def rpath(p: str) -> str:
 
     Setting MSYS_NO_PATHCONV=1 / MSYS2_ARG_CONV_EXCL=* in the env does NOT
     reliably catch this when the absolute path is embedded inside a string
-    arg passed to ssh — only path-shaped argv elements are guarded. The
+    arg passed to ssh - only path-shaped argv elements are guarded. The
     only robust workaround is to mangle the path itself.
 
     No-op on Linux/macOS.
@@ -212,7 +212,7 @@ def ssh_run(
     Run a single command on the remote host via ssh.
 
     Uses `bash -lc` so the remote PATH picks up login-shell additions
-    (/opt/cuda/bin, conda, etc.) — crucial for anything touching GPU
+    (/opt/cuda/bin, conda, etc.) - crucial for anything touching GPU
     build toolchains or language runtimes installed in user home.
     Also injects REMOTE_PATH_PREFIX so user-local install dirs are
     reachable.
@@ -259,7 +259,7 @@ def ssh_put_file(host: str, remote_path: str, content: str) -> None:
     """
     Write `content` to `remote_path` on the remote host.
 
-    Uses stdin-redirect pattern (not scp) — scp is often denied by sandboxes
+    Uses stdin-redirect pattern (not scp) - scp is often denied by sandboxes
     and stdin-redirect avoids heredoc quoting entirely since the content
     never touches a shell.
     """
@@ -319,7 +319,7 @@ def ensure_worktree(host: str, repo_path: str, branch: str) -> tuple[str, str]:
     )
     for block in existing.strip().split("\n\n"):
         if f"branch refs/heads/{branch}" in block:
-            # Worktree already exists — reuse it.
+            # Worktree already exists - reuse it.
             wt_line = next(
                 line for line in block.splitlines() if line.startswith("worktree ")
             )
@@ -642,7 +642,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 def cmd_cleanup(args: argparse.Namespace) -> int:
     """
     Remove a worktree and its branch from the remote.
-    Does NOT delete any commits — if the caller merged the branch elsewhere,
+    Does NOT delete any commits - if the caller merged the branch elsewhere,
     those commits survive.
     """
     if not args.repo_path:
