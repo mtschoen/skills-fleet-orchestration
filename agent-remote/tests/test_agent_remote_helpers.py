@@ -125,9 +125,12 @@ class SshTests(unittest.TestCase):
         self.assertEqual(keyword_arguments["creationflags"], 134_217_728)
 
     def test_put_file_creates_parent_and_streams_content(self) -> None:
-        with patch.object(
-            agent_remote, "ssh_run", return_value=completed_process()
-        ) as ssh_run:
+        with (
+            patch.object(agent_remote.sys, "platform", "linux"),
+            patch.object(
+                agent_remote, "ssh_run", return_value=completed_process()
+            ) as ssh_run,
+        ):
             agent_remote.ssh_put_file("host", "/srv/worktree/file.txt", "contents")
 
         remote_command = ssh_run.call_args.args[1]

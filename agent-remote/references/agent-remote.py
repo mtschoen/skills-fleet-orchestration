@@ -452,6 +452,7 @@ def run_remote_agent(
         raise ValueError(f"Unknown agent: {agent}")
 
     result = ssh_run(host, remote_cmd, timeout=timeout)
+    stderr = result.stderr
 
     # Cleanup remains best-effort because the agent result is the primary outcome.
     try:
@@ -460,7 +461,7 @@ def run_remote_agent(
         cleanup_warning = f"warning: could not remove remote prompt file: {exception}"
         stderr = "\n".join(part for part in (stderr, cleanup_warning) if part)
 
-    return result.returncode, result.stdout, result.stderr
+    return result.returncode, result.stdout, stderr
 
 
 # --------------------------------------------------------------------------

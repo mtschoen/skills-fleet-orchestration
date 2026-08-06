@@ -45,7 +45,8 @@ class RemoteAgentInvocationTests(unittest.TestCase):
         return ssh_run.call_args_list[0].args[1]
 
     def test_builds_claude_command(self) -> None:
-        command = self.invoke("claude", "plan")
+        with patch.object(agent_remote.sys, "platform", "linux"):
+            command = self.invoke("claude", "plan")
         self.assertIn("claude -p --permission-mode plan", command)
         self.assertIn("< /srv/worktree/.agent-prompt.txt", command)
 
@@ -71,6 +72,26 @@ class RemoteAgentInvocationTests(unittest.TestCase):
                 agent_remote.run_remote_agent(
                     "host", "/worktree", "prompt", "default", 1, "unknown"
                 )
+
+    def test_cleanup_failure_appends_warning_without_raising(self) -> None:
+        with (
+            patch.object(agent_remote, "ssh_put_file"),
+            patch.object(
+                agent_remote,
+                "ssh_run",
+                side_effect=[
+                    completed_process(0, "stdout", "stderr"),
+                    subprocess.TimeoutExpired("ssh", 5),
+                ],
+            ),
+        ):
+            exit_code, stdout, stderr = agent_remote.run_remote_agent(
+                "host", "/srv/worktree", "prompt", "acceptEdits", 30, "claude"
+            )
+
+        self.assertEqual((exit_code, stdout), (0, "stdout"))
+        self.assertIn("stderr", stderr)
+        self.assertIn("warning: could not remove remote prompt file", stderr)
 
 
 class RunCommandTests(unittest.TestCase):
