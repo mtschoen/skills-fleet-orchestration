@@ -23,7 +23,6 @@ from __future__ import annotations
 
 import argparse
 import html
-import json
 import sys
 import webbrowser
 from collections import Counter
@@ -31,7 +30,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from pricing import iter_assistant_turns, model_family  # noqa: E402
-from chart_runtime import chartjs_script_tags  # noqa: E402
+from chart_runtime import (  # noqa: E402
+    chartjs_script_tags,
+    fill_html_template,
+    json_for_script,
+)
 from roots import reports_directory  # noqa: E402
 
 
@@ -226,7 +229,8 @@ def render_html(turns, subagent_count, subagent_cost, session_id,
 
     # Escape string fields rendered into HTML text context - model ids can
     # legitimately contain angle brackets (e.g. `<synthetic>`).
-    return HTML_TEMPLATE.format(
+    return fill_html_template(
+        HTML_TEMPLATE,
         session_id=html.escape(session_id),
         session_id_prefix=html.escape(session_id[:8]),
         chartjs_script_tag=chartjs_script_tag,
@@ -237,10 +241,7 @@ def render_html(turns, subagent_count, subagent_cost, session_id,
         models_label=html.escape(_models_label(turns)),
         subagent_count=subagent_count,
         subagent_cost=subagent_cost,
-        # Escape `</` as `<\/` so a `</script>` substring inside any string
-        # field (e.g. a model id like `<synthetic>`) cannot break out of the
-        # surrounding <script> block. `<\/` is valid JSON per RFC 8259.
-        turns_json=json.dumps(turns, default=str).replace("</", "<\\/"),
+        turns_json=json_for_script(turns, default=str),
         x_axis_mode=x_axis_mode,
     )
 

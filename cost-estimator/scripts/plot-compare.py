@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import argparse
 import html
-import json
 import sys
 import webbrowser
 from datetime import datetime, timedelta, timezone
@@ -31,7 +30,11 @@ from trend_data import (  # noqa: E402
     auto_bucket, bucket_index, inclusive_date_bounds, inclusive_month_bounds,
     num_buckets, parse_last, prior_window_for, read_sessions_in_range,
 )
-from chart_runtime import chartjs_script_tags  # noqa: E402
+from chart_runtime import (  # noqa: E402
+    chartjs_script_tags,
+    fill_html_template,
+    json_for_script,
+)
 from roots import reports_directory  # noqa: E402
 
 DEFAULT_CSV_PATH = reports_directory() / "sessions.csv"
@@ -209,7 +212,8 @@ def render_html(*, range_label, current_start, current_end,
     chartjs_script_tag, _ = chartjs_script_tags(inline=inline,
                                                 want_time_adapter=False)
     # range_label comes from the CLI; escape it for the HTML text context.
-    return HTML_TEMPLATE.format(
+    return fill_html_template(
+        HTML_TEMPLATE,
         chartjs_script_tag=chartjs_script_tag,
         range_label=html.escape(range_label),
         current_start=current_start.isoformat(),
@@ -220,11 +224,11 @@ def render_html(*, range_label, current_start, current_end,
         prior_total=prior_total,
         current_sessions=current_sessions,
         prior_sessions=prior_sessions,
-        labels_json=json.dumps(labels).replace("</", "<\\/"),
-        current_per_bucket_json=json.dumps(current_per_bucket).replace("</", "<\\/"),
-        current_cumulative_json=json.dumps(current_cumulative_data).replace("</", "<\\/"),
-        prior_per_bucket_json=json.dumps(prior_per_bucket).replace("</", "<\\/"),
-        prior_cumulative_json=json.dumps(prior_cumulative_data).replace("</", "<\\/"),
+        labels_json=json_for_script(labels),
+        current_per_bucket_json=json_for_script(current_per_bucket),
+        current_cumulative_json=json_for_script(current_cumulative_data),
+        prior_per_bucket_json=json_for_script(prior_per_bucket),
+        prior_cumulative_json=json_for_script(prior_cumulative_data),
     )
 
 
