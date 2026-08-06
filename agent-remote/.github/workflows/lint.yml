@@ -16,3 +16,16 @@ jobs:
       - uses: DavidAnson/markdownlint-cli2-action@v23
         with:
           globs: '**/*.md'
+
+  python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install pytest ruff==0.15.15
+      - run: ruff check references tests
+      - run: ruff format --check references tests
+      - run: python -m pytest tests -q
