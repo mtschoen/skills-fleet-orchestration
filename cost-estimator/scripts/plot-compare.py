@@ -119,7 +119,7 @@ HTML_TEMPLATE = """<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Cost compare — {range_label}</title>
+<title>Cost compare - {range_label}</title>
 {chartjs_script_tag}
 <style>
   html, body {{ height: 100%; }}
@@ -136,7 +136,7 @@ HTML_TEMPLATE = """<!doctype html>
 </style>
 </head>
 <body>
-<h1>Cost comparison — current vs prior</h1>
+<h1>Cost comparison - current vs prior</h1>
 <div class="sub">Range: {range_label}. Bars and lines below use bucket-index (Day/Week/Month N), so paired columns represent the same wall-clock-relative slice in each window.</div>
 <div class="meta">
   <span>current: {current_start} → {current_end} (${current_total:,.2f} / {current_sessions} sessions)</span>
@@ -157,19 +157,19 @@ new Chart(document.getElementById("chart"), {{
   data: {{
     labels: LABELS,
     datasets: [
-      {{ type: "bar", label: "Current — per bucket", data: CURRENT_PER_BUCKET,
+      {{ type: "bar", label: "Current - per bucket", data: CURRENT_PER_BUCKET,
          backgroundColor: "rgba(54, 162, 235, 0.85)",
          borderColor: "rgba(20, 95, 145, 1)", borderWidth: 1,
          yAxisID: "y", order: 2 }},
-      {{ type: "bar", label: "Prior — per bucket", data: PRIOR_PER_BUCKET,
+      {{ type: "bar", label: "Prior - per bucket", data: PRIOR_PER_BUCKET,
          backgroundColor: "rgba(150, 150, 150, 0.75)",
          borderColor: "rgba(80, 80, 80, 1)", borderWidth: 1,
          yAxisID: "y", order: 2 }},
-      {{ type: "line", label: "Current — cumulative", data: CURRENT_CUMULATIVE,
+      {{ type: "line", label: "Current - cumulative", data: CURRENT_CUMULATIVE,
          borderColor: "rgba(20, 95, 145, 1)", backgroundColor: "rgba(0,0,0,0)",
          borderWidth: 2, tension: 0.15, pointRadius: 3,
          yAxisID: "y1", order: 1 }},
-      {{ type: "line", label: "Prior — cumulative", data: PRIOR_CUMULATIVE,
+      {{ type: "line", label: "Prior - cumulative", data: PRIOR_CUMULATIVE,
          borderColor: "rgba(80, 80, 80, 1)", backgroundColor: "rgba(0,0,0,0)",
          borderWidth: 2, borderDash: [6, 4], tension: 0.15, pointRadius: 3,
          yAxisID: "y1", order: 1 }},

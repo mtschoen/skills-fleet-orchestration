@@ -49,7 +49,7 @@ def auto_bucket(days: int) -> str:
 def parse_last(value: str) -> timedelta:
     """Parse '168h' or '7d' shorthand into a timedelta.
 
-    Accepts only hours and days for v1 (weeks / months deferred — calendar
+    Accepts only hours and days for v1 (weeks / months deferred - calendar
     ambiguity for 'mo'). Raises ValueError on malformed input.
     """
     if not value or len(value) < 2:

@@ -7,7 +7,7 @@ and cumulative cost (line, right y-axis). Hover tooltips show turn
 metadata (model, top tools, tokens, timestamp).
 
 Subagent JSONL files (under <session-id>/subagents/) are summarized
-in the page caption but not plotted on the timeline — overlay
+in the page caption but not plotted on the timeline - overlay
 sub-trajectories are deferred to a future Phase 2.
 
 Usage:
@@ -44,7 +44,7 @@ HTML_TEMPLATE = """<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Session {session_id_prefix} — cost trajectory</title>
+<title>Session {session_id_prefix} - cost trajectory</title>
 {chartjs_script_tag}
 {time_adapter_script_tag}
 <style>

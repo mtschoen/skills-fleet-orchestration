@@ -44,12 +44,12 @@ def pivot_to_datasets(rows: list[dict], granularity: str):
     Returns (buckets_sorted, per_label_costs, cumulative, per_label_counts):
       - buckets_sorted: list[str], the unique bucket keys present in
         the data, in chronological (lexical) order.
-      - per_label_costs: dict[label, list[float]] — each list aligned
+      - per_label_costs: dict[label, list[float]] - each list aligned
         with buckets_sorted, zero-filled where the (label, bucket) had
         no sessions.
       - cumulative: list[float] aligned with buckets_sorted, running
         total across all labels.
-      - per_label_counts: dict[label, list[int]] — session counts per
+      - per_label_counts: dict[label, list[int]] - session counts per
         bucket, used by hover tooltips at render time.
     """
     sums: dict[str, dict[str, float]] = defaultdict(lambda: defaultdict(float))   # sums[label][bucket]
@@ -125,7 +125,7 @@ HTML_TEMPLATE = """<!doctype html>
 </style>
 </head>
 <body>
-<h1>Cost trend — {range_label}</h1>
+<h1>Cost trend - {range_label}</h1>
 <div class="meta">
   <span>Bucket: {bucket_granularity}</span>
   <span>Total: ${total_cost:.4f}</span>

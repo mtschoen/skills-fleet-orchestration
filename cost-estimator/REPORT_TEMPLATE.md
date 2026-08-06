@@ -43,7 +43,7 @@ State plainly whether this report covers the full range or is a **floor**:
 - **If coverage ≥ 90%** (or no `/stats` aggregate exists): say the total is
   complete to within normal staleness. One line is enough.
 - **If coverage < 90%**: the dollar total is a **FLOOR**. Some days were
-  cache-cleared — their transcripts were garbage-collected before they could
+  cache-cleared - their transcripts were garbage-collected before they could
   be priced (the old 30-day retention; now 365 days, so the gap is historical
   and stops growing). Report:
 
@@ -54,7 +54,7 @@ State plainly whether this report covers the full range or is a **floor**:
   | Implication | reported spend is a **lower bound** for this range |
 
   Comparison is raw-transcript-in+out vs `/stats` `dailyModelTokens` (both
-  non-deduped, so apples-to-apples — verified equal to the token on intact
+  non-deduped, so apples-to-apples - verified equal to the token on intact
   days). `/stats` carries no dollars and no cache, so the cleared days cannot
   be priced; name them and move on. Do **not** present the floor as the
   definitive total.
@@ -85,7 +85,7 @@ Subagent spend was ${SUB} ({PCT}% of total).
 *Include this section only when ccusage was actually run for the same range.*
 
 `ccusage monthly --since YYYYMMDD --until YYYYMMDD` reports ${CCUSAGE_TOTAL}
-across {LABELS}. Analyzer reports ${ANALYZER_TOTAL} — delta {DELTA}%.
+across {LABELS}. Analyzer reports ${ANALYZER_TOTAL} - delta {DELTA}%.
 Where they disagree, treat **${LOW}–${HIGH}** as the honest bracketed
 range; residual gaps come from subagent handling and the $0.01/web-search
 charge, not 1M-tier pricing (both price `[1m]` at the flat rate).
@@ -114,7 +114,7 @@ Source: "TOP TOOL CALLS" section of summarize.py output.
 | ... | | | |
 
 Highlight any MCP tools concentrated in a small number of expensive
-sessions — those are typical "specialized work" patterns (e.g. Unity
+sessions - those are typical "specialized work" patterns (e.g. Unity
 sessions, web automation), not waste.
 
 ## First-turn input bloat (skill / MCP loader proxy)
@@ -131,7 +131,7 @@ paid on the first turn of every fresh session):
 |---|---|---|---|---|
 | ... | | | | |
 
-Anything over ~50K is worth investigating — that fresh-session toll
+Anything over ~50K is worth investigating - that fresh-session toll
 gets paid every time the conversation restarts. Shaving auto-loaded
 plugins/MCPs/skills compounds across sessions.
 
@@ -145,10 +145,10 @@ Source: `daily.csv` (or "DAILY TOTALS" section of summarize.py output).
 
 Drop the prorated column when --paid was not supplied.
 
-## Things to avoid — what the data shows
+## Things to avoid - what the data shows
 
 Walk through the four classes below. Either point at culprits or
-explicitly state "no problem here" — both are useful findings.
+explicitly state "no problem here" - both are useful findings.
 
 ### 1. Cache discipline
 

@@ -6,7 +6,7 @@ harnesses is planned.
 
 Three feature phases planned:
 
-- **Retrospective — built (2026-05-04).** "What did I spend over [date
+- **Retrospective - built (2026-05-04).** "What did I spend over [date
   range]?" Walks `~/.claude/projects` (and equivalent on other hosts),
   dedupes assistant turns by `message.id`, prices each turn per the
   canonical Anthropic rate table, and reports per-session, daily, and
@@ -17,7 +17,7 @@ Three feature phases planned:
   time separately from concurrent subagent processing, and attributes timed
   slash-command turns so questions like "how long did I wait on `/wrap`?"
   have a measured answer.
-- **Predictive — planned.** "How much will it cost to [some future
+- **Predictive - planned.** "How much will it cost to [some future
   task]?" Uses Anthropic's `count_tokens` API + heuristics + the
   retrospective dataset as a reference. Design notes below.
 
@@ -40,7 +40,7 @@ python scripts/plot-session.py <session-id-prefix> --open
 Output lands in `~/.agents/cost-estimator/reports/session-<id-prefix>.html`
 (override with `AGENTS_COST_REPORTS_DIR`).
 Subagent costs are summarized in the page header but not overlaid on
-the timeline — that's a planned Phase 2.
+the timeline - that's a planned Phase 2.
 
 ## Active time and slash commands
 
@@ -92,7 +92,7 @@ python scripts/plot-compare.py --month 2026-04 --open  # April vs March
 The prior window is auto-derived (no second range to specify). The chart
 shows grouped bars (current vs prior side by side) per bucket and twin
 cumulative lines on a right axis. Bucket-index makes paired bars
-apples-to-apples wall-clock-relative slices — Day 1 covers the first 24h
+apples-to-apples wall-clock-relative slices - Day 1 covers the first 24h
 of each window, not the same calendar date.
 
 ![Current vs prior window comparison](screenshot-compare.png)
@@ -103,7 +103,7 @@ The analyzer prices *surviving* transcripts. Under Claude Code's default
 30-day retention, heavy old days were garbage-collected before they could
 be priced, so a report for a pre-retention window undercounts. The
 `stats-cache.json` behind the `/stats` dashboard keeps a per-machine
-`dailyModelTokens` aggregate that survives transcript deletion — the only
+`dailyModelTokens` aggregate that survives transcript deletion - the only
 fossil record of those days.
 
 Note when configuring agent harnesses on a new system: is there a cache
@@ -119,7 +119,7 @@ python scripts/stats_cache.py ~/.claude/projects --month 2026-04
 
 It classifies each day as match / partial / **cleared** and reports a
 coverage %. The comparison is raw-transcript-in+out vs `/stats`
-`dailyModelTokens` — both non-deduped, so they agree to the token on
+`dailyModelTokens` - both non-deduped, so they agree to the token on
 intact days (verified), and a low coverage means real data loss, not the
 ~3.2× no-dedup artifact that bites a deduped-vs-raw comparison. `/stats`
 carries no dollars and no cache, so cleared days are flagged and counted
@@ -128,58 +128,58 @@ but not priced; the report labels the affected total a floor.
 ## Cache TTL diagnostic
 
 `scripts/cache_ttl.py <root>` reports the `ephemeral_5m` vs `ephemeral_1h`
-split of cache-write tokens and an inter-turn-gap behavioral table — for
+split of cache-write tokens and an inter-turn-gap behavioral table - for
 confirming whether the account writes 1h-TTL cache (the subscription
 default) or is leaking cost to 5m-TTL prefix expiry.
 
 ## Files
 
-- `SKILL.md` — the retrospective skill (the working part).
-- `scripts/pricing.py` — canonical pricing formula and JSONL
+- `SKILL.md` - the retrospective skill (the working part).
+- `scripts/pricing.py` - canonical pricing formula and JSONL
   turn-iterator, shared by the analyzer and plotter.
-- `scripts/chart_runtime.py` — shared Chart.js version constants,
+- `scripts/chart_runtime.py` - shared Chart.js version constants,
   CDN/inline download cache, and `<script>` tag builder used by
   both plotters.
 - `scripts/analyze-month.py` - JSONL walker, per-turn pricer, measured time
   extractor, and `sessions.csv` / `daily.csv` / `commands.csv` writer. It also
   prints the "COVERAGE vs /stats" guardrail.
-- `scripts/roots.py` — shared root resolution, date-bound parsers, and
+- `scripts/roots.py` - shared root resolution, date-bound parsers, and
   `stats_file_for()`. Imported by the analyzer, `stats_cache.py`, and
   `cache_ttl.py`.
-- `scripts/stats_cache.py` — reconciles surviving transcripts against the
+- `scripts/stats_cache.py` - reconciles surviving transcripts against the
   per-machine `/stats` `stats-cache.json`; flags cache-cleared days and
   reports coverage %. Standalone CLI + helpers the analyzer imports.
-- `scripts/cache_ttl.py` — cache-write TTL (5m vs 1h) diagnostic.
+- `scripts/cache_ttl.py` - cache-write TTL (5m vs 1h) diagnostic.
 - `scripts/summarize.py` - CSV reader plus cost, active-time, slash-command,
   and waste-pattern report. Accepts `--command /name` for focused detail.
-- `scripts/plot-session.py` — render a single session's per-turn
+- `scripts/plot-session.py` - render a single session's per-turn
   cost trajectory as an interactive HTML chart (Chart.js). Useful for
   investigating a session that `summarize.py` flagged as a top
   spender; shows where in the session the cost actually accrued.
-- `scripts/plot-trend.py` — render aggregate cost trend across
+- `scripts/plot-trend.py` - render aggregate cost trend across
   sessions as a stacked-bar + cumulative-line HTML chart
   (reads `sessions.csv` from `analyze-month.py`).
-- `scripts/plot-compare.py` — render any window vs the same-length
+- `scripts/plot-compare.py` - render any window vs the same-length
   prior window as an overlay chart (grouped bars + twin cumulative
   lines). Uses bucket-index within each window so paired bars are
   apples-to-apples wall-clock-relative slices.
-- `scripts/trend_data.py` — shared bucket math, CSV reader, and
+- `scripts/trend_data.py` - shared bucket math, CSV reader, and
   range parsers (month / range / duration). Imported by both
   `plot-trend.py` and `plot-compare.py`.
 - `reports/` - dev-only scratch for screenshot fixtures (see
   `dev/regen-screenshots` below); gitignored, not shipped to installed
   copies of the skill. Generated cost data for real usage lands in
   `~/.agents/cost-estimator/reports/` instead (see `SKILL.md`).
-- `dev/capture-screenshot.py` — headless Chrome wrapper used by
+- `dev/capture-screenshot.py` - headless Chrome wrapper used by
   the screenshot regen scripts. Dev-only (excluded from `install-skills`).
-- `dev/regen-screenshots.{sh,bat}` — orchestrator that regenerates
+- `dev/regen-screenshots.{sh,bat}` - orchestrator that regenerates
   the README PNGs by running plot-trend + plot-compare against the
   demo fixture and capturing each to a 1760x1440 PNG. Dev-only.
-- `tests/fixtures/sessions-demo.csv` — synthetic two-host two-month
+- `tests/fixtures/sessions-demo.csv` - synthetic two-host two-month
   sessions data used by `regen-screenshots`. Dev-only.
-- `screenshot-trend.png`, `screenshot-compare.png` — README screenshots
+- `screenshot-trend.png`, `screenshot-compare.png` - README screenshots
   regenerated by `dev/regen-screenshots`.
-- `.gitignore` — keeps the dev `reports/` scratch and CSV outputs out of git.
+- `.gitignore` - keeps the dev `reports/` scratch and CSV outputs out of git.
 
 ## Predictive companion (planned)
 
@@ -200,7 +200,7 @@ invoking an agent on a task. Concrete shapes:
 
 A pragmatic v1 → v2 split, tightest first.
 
-**v1 — bounded subcases (math is exact).** All three are deterministic
+**v1 - bounded subcases (math is exact).** All three are deterministic
 given input tokens and a turn count:
 
 - "Cost to summarize N files" → `count_tokens` on file contents, pick a
@@ -209,7 +209,7 @@ given input tokens and a turn count:
   `count_tokens` once, multiply by K, apply cache-write/read split.
 - "Cost of an agent loop for K iterations of T turns each" → same shape.
 
-**v2 — fuzzy plan estimation (needs heuristics).** Two plausible
+**v2 - fuzzy plan estimation (needs heuristics).** Two plausible
 foundations:
 
 1. **LLM-based turn-count estimator.** Show the plan to the agent, ask
@@ -217,8 +217,8 @@ foundations:
 2. **Regression on the historical dataset.** The retrospective half
    produced a `sessions.csv` with hundreds of labeled rows (cost,
    turns, top tools, models, subagents). If the user labels a sample
-   by task profile — "refactor", "debug", "feature build",
-   "exploration" — that becomes training input for a per-profile
+   by task profile - "refactor", "debug", "feature build",
+   "exploration" - that becomes training input for a per-profile
    $/turn estimator.
 
 v2 should report ranges, not point estimates, and explicitly call out
@@ -229,8 +229,8 @@ the assumption that drove the bounds.
 Two built-in slash commands already exist in agent harnesses that this
 skill does **not** want to collide with:
 
-- `/cost` — current-session per-model breakdown (Claude Code v2.1.92+).
-- `/cost-estimate` — scans a codebase to compute what it would have cost
+- `/cost` - current-session per-model breakdown (Claude Code v2.1.92+).
+- `/cost-estimate` - scans a codebase to compute what it would have cost
   a human team to build it. Different purpose entirely.
 
 The retrospective half cross-validates Claude Code sessions against
@@ -255,12 +255,12 @@ The skill should:
 
 - Trigger on phrases like "how much will it cost", "estimate cost",
   "predict spend", "what would XYZ cost", "cost projection".
-- Call `count_tokens` on actual content (files, draft prompts) — don't
+- Call `count_tokens` on actual content (files, draft prompts) - don't
   use char/4 heuristics.
 - Heuristic-estimate output tokens by task type (code edit ≈ N tokens,
   summary ≈ M, agent-loop iteration ≈ K). Bound uncertainty
   explicitly: "between $X and $Y".
-- Pin the pricing table inline (don't depend on memory notes — skill
+- Pin the pricing table inline (don't depend on memory notes - skill
   should stay self-contained, eventually publishable).
 - Honor the cache-write/read multipliers. The Opus 1M-context tier bills
   at the flat rate (no surcharge above 200K).
