@@ -2,3 +2,8 @@ evals/workspace/
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# aislop runtime artifacts (session/history logs, caches, baselines).
+# Unanchored so nested project directories are covered too.
+**/.aislop/*
+!**/.aislop/config.yml
