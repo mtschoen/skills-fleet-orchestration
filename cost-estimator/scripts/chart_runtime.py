@@ -1,14 +1,15 @@
-"""Shared Chart.js runtime helpers for plot-session.py and plot-trend.py.
+"""Shared Chart.js runtime helpers for the plot-*.py scripts.
 
-Holds the Chart.js + date-fns adapter version constants and the
-CDN/inline download plumbing. Each plotter still owns its own HTML
-template and chart config; only the bits that would literally
-duplicate (and must stay in sync across plotters when Chart.js
-updates) live here.
+Holds the Chart.js + date-fns adapter version constants, the CDN/inline
+download plumbing, and the HTML-template fill helpers. Each plotter
+still owns its own HTML template and chart config; only the bits that
+would literally duplicate (and must stay in sync across plotters when
+Chart.js updates) live here.
 """
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -76,3 +77,24 @@ def chartjs_script_tags(inline: bool, want_time_adapter: bool) -> tuple[str, str
         adapter_tag = f'<script src="{TIME_ADAPTER_CDN_URL}"></script>'
 
     return chartjs_tag, adapter_tag
+
+
+def json_for_script(value, *, default=None) -> str:
+    """JSON-encode a value for embedding inside a <script> block.
+
+    Escapes `</` as `<\\/` so a `</script>` substring inside any string
+    field (e.g. a model id like `<synthetic>`) cannot break out of the
+    surrounding script element. `<\\/` is valid JSON per RFC 8259.
+    """
+    return json.dumps(value, default=default).replace("</", "<\\/")
+
+
+def fill_html_template(template: str, **fields) -> str:
+    """Fill an HTML report template with pre-sanitized fields.
+
+    Sanitization happens at the argument site, where the context is
+    known: text fields go through html.escape, JSON payloads through
+    json_for_script, and markup fields (script tags built from the
+    pinned constants above) are inserted as-is.
+    """
+    return template.format(**fields)

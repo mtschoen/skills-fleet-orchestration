@@ -21,7 +21,6 @@ import argparse
 import csv
 import hashlib
 import html
-import json
 import sys
 import webbrowser
 from collections import defaultdict
@@ -29,7 +28,11 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from chart_runtime import chartjs_script_tags  # noqa: E402
+from chart_runtime import (  # noqa: E402
+    chartjs_script_tags,
+    fill_html_template,
+    json_for_script,
+)
 from roots import reports_directory  # noqa: E402
 from trend_data import (  # noqa: E402
     bucket_key, auto_bucket, read_sessions_in_range,
@@ -219,18 +222,19 @@ def render_html(*, range_label: str, bucket_granularity: str,
 
     # Escape string fields rendered into HTML text context - machine labels
     # come from the CSV and range_label from the CLI, neither is trusted.
-    return HTML_TEMPLATE.format(
+    return fill_html_template(
+        HTML_TEMPLATE,
         range_label=html.escape(range_label),
         bucket_granularity=html.escape(bucket_granularity),
         total_cost=total_cost,
         total_sessions=total_sessions,
         machines_summary=html.escape(machines_summary or "(none)"),
         chartjs_script_tag=chartjs_script_tag,
-        buckets_json=json.dumps(buckets).replace("</", "<\\/"),
-        per_label_costs_json=json.dumps(per_label_costs).replace("</", "<\\/"),
-        per_label_counts_json=json.dumps(per_label_counts).replace("</", "<\\/"),
-        per_label_colors_json=json.dumps(per_label_colors).replace("</", "<\\/"),
-        cumulative_json=json.dumps(cumulative).replace("</", "<\\/"),
+        buckets_json=json_for_script(buckets),
+        per_label_costs_json=json_for_script(per_label_costs),
+        per_label_counts_json=json_for_script(per_label_counts),
+        per_label_colors_json=json_for_script(per_label_colors),
+        cumulative_json=json_for_script(cumulative),
     )
 
 
