@@ -69,7 +69,7 @@ Add one line to every parallel implementer dispatch: *a reviewer agent will exam
 
 ## Cost
 
-~N per-branch reviewer runs plus ~1 round-boundary run per round; sonnet keeps each modest. Break-even is one caught cross-branch issue per round - and empirically (a Windows-to-Android-XR streaming project's sessions, rounds of 3-14 agents) every round produced at least one. Strongly positive ROI.
+~N per-branch reviewer runs plus ~1 round-boundary run per round; sonnet keeps each modest. Break-even is one caught cross-branch issue per round - and empirically (a Windows-to-Android-XR streaming project's sessions, rounds of 2-14 agents) every round produced at least one. Strongly positive ROI.
 
 ## Red flags - you are about to skip review
 
