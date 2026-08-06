@@ -106,8 +106,8 @@ About to dispatch N agents in parallel. Approve?
   # | Project    | Task                                | Risk
   --|------------|-------------------------------------|------
   1 | webapp     | Search/filter (PLAN.md:55)          | green
-  2 | myrepo   | Edit model filename (PLAN.md:676)   | yellow
-  3 | cstb       | Graceful shutdown (PLAN.md:48)      | green
+  2 | myrepo     | Edit model filename (PLAN.md:676)   | yellow
+  3 | game-proto | Graceful shutdown (PLAN.md:48)      | green
 
 Yellow notes:
   2: "filename" looks like a label, haven't verified it isn't
