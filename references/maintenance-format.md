@@ -28,7 +28,7 @@ Repo-local breadcrumb file recording the last run of recurring maintenance tasks
 - `last_run`: ISO 8601 UTC timestamp. Required for `time-based`, optional but recommended for `per-commit`.
 - `interval_days`: number. Required for `time-based`. Per-task, so different repos can have different cadences.
 - `status`: not read by the staleness check, but written by runners for human inspection and future use.
-- `last_error`: optional short error string. Same caveat — informational only.
+- `last_error`: optional short error string. Same caveat - informational only.
 
 ## Staleness rules
 
@@ -43,7 +43,7 @@ Repo-local breadcrumb file recording the last run of recurring maintenance tasks
 
 ## Standard task names
 
-Reserved names — use these exactly so project-tracker and the orchestrator skill can reason about them across repos:
+Reserved names - use these exactly so project-tracker and the orchestrator skill can reason about them across repos:
 
 | Name | Kind | Purpose |
 |---|---|---|
@@ -103,7 +103,7 @@ project-tracker reads these files via its maintenance scanner module and exposes
 The Python helpers (importable from the maintenance scanner module):
 
 - `read_maintenance_state(project_path) -> dict`
-- `write_maintenance_state(project_path, state)` — also appends to `.gitignore`
+- `write_maintenance_state(project_path, state)` - also appends to `.gitignore`
 - `is_task_stale(project_path, task_name, *, state=None, head=None, now=None) -> bool`
 - `list_stale_tasks(project_path, task_names=None) -> list[str]`
 
