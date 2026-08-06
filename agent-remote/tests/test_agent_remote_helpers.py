@@ -139,26 +139,30 @@ class SshTests(unittest.TestCase):
         self.assertEqual(ssh_run.call_args.kwargs["input_text"], "contents")
 
     def test_put_file_reports_remote_failure(self) -> None:
-        with patch.object(
-            agent_remote,
-            "ssh_run",
-            return_value=completed_process(5, stderr="permission denied"),
+        with (
+            patch.object(
+                agent_remote,
+                "ssh_run",
+                return_value=completed_process(5, stderr="permission denied"),
+            ),
+            self.assertRaisesRegex(RuntimeError, "permission denied"),
         ):
-            with self.assertRaisesRegex(RuntimeError, "permission denied"):
-                agent_remote.ssh_put_file("host", "/srv/file", "contents")
+            agent_remote.ssh_put_file("host", "/srv/file", "contents")
 
     def test_ssh_check_returns_stdout_or_raises_with_context(self) -> None:
         with patch.object(
             agent_remote, "ssh_run", return_value=completed_process(stdout="ok\n")
         ):
             self.assertEqual(agent_remote.ssh_check("host", "command"), "ok\n")
-        with patch.object(
-            agent_remote,
-            "ssh_run",
-            return_value=completed_process(9, stderr="failed"),
+        with (
+            patch.object(
+                agent_remote,
+                "ssh_run",
+                return_value=completed_process(9, stderr="failed"),
+            ),
+            self.assertRaisesRegex(RuntimeError, r"\(collect state\)"),
         ):
-            with self.assertRaisesRegex(RuntimeError, r"\(collect state\)"):
-                agent_remote.ssh_check("host", "command", error_context="collect state")
+            agent_remote.ssh_check("host", "command", error_context="collect state")
 
 
 class WorktreeTests(unittest.TestCase):

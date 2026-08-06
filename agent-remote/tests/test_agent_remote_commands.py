@@ -67,11 +67,13 @@ class RemoteAgentInvocationTests(unittest.TestCase):
         self.assertIn('"codex", "exec", "--dangerously-bypass', codex_command)
 
     def test_rejects_unknown_agent(self) -> None:
-        with patch.object(agent_remote, "ssh_put_file"):
-            with self.assertRaisesRegex(ValueError, "Unknown agent"):
-                agent_remote.run_remote_agent(
-                    "host", "/worktree", "prompt", "default", 1, "unknown"
-                )
+        with (
+            patch.object(agent_remote, "ssh_put_file"),
+            self.assertRaisesRegex(ValueError, "Unknown agent"),
+        ):
+            agent_remote.run_remote_agent(
+                "host", "/worktree", "prompt", "default", 1, "unknown"
+            )
 
     def test_cleanup_failure_appends_warning_without_raising(self) -> None:
         with (
@@ -137,7 +139,7 @@ class RunCommandTests(unittest.TestCase):
         self.assertEqual(arguments.repo_path, "/repo")
         self.assertEqual(
             seed_settings.call_args.args[2],
-            agent_remote.DEFAULT_REMOTE_ALLOWLIST + ["Bash(sudo *)"],
+            [*agent_remote.DEFAULT_REMOTE_ALLOWLIST, "Bash(sudo *)"],
         )
         self.assertTrue(json.loads(output.getvalue())["success"])
 

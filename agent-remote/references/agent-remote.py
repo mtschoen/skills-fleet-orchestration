@@ -194,10 +194,10 @@ def unmangle_msys_path(p: str) -> str:
     if sys.platform != "win32":
         return p
     for prefix in _MSYS_PREFIXES:
-        if p.startswith(prefix + "/") or p.startswith(prefix + "\\"):
-            tail = p[len(prefix) :].replace("\\", "/")
-            # tail starts with /, which is what we want for a POSIX path
-            return tail
+        if p.startswith((prefix + "/", prefix + "\\")):
+            # The stripped remainder starts with /, which is what we want for
+            # a POSIX path.
+            return p[len(prefix) :].replace("\\", "/")
     return p
 
 
@@ -232,14 +232,14 @@ def ssh_run(
     # this, ssh inherits the orchestrator's stdin and can hang waiting for
     # input in non-TTY contexts (e.g. when called from a subagent or
     # background task).
-    run_kwargs: dict = dict(
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-        env=env,
-        encoding="utf-8",
-        errors="replace",
-    )
+    run_kwargs: dict = {
+        "capture_output": True,
+        "text": True,
+        "timeout": timeout,
+        "env": env,
+        "encoding": "utf-8",
+        "errors": "replace",
+    }
     if input_text is not None:
         run_kwargs["input"] = input_text
     else:
@@ -320,7 +320,9 @@ def ensure_worktree(host: str, repo_path: str, branch: str) -> tuple[str, str]:
     for block in existing.strip().split("\n\n"):
         if f"branch refs/heads/{branch}" in block:
             # Worktree already exists — reuse it.
-            wt_line = [l for l in block.splitlines() if l.startswith("worktree ")][0]
+            wt_line = next(
+                line for line in block.splitlines() if line.startswith("worktree ")
+            )
             worktree_path = wt_line.split(" ", 1)[1]
             parent = ssh_check(
                 host,
@@ -412,7 +414,7 @@ def run_remote_agent(
         if model:
             opencode_args.extend(["--model", model])
 
-        args_json = json.dumps(opencode_args + ["PROMPT_PLACEHOLDER"])
+        args_json = json.dumps([*opencode_args, "PROMPT_PLACEHOLDER"])
         py_cmd = (
             "import json, subprocess; "
             f"args = json.loads({args_json!r}); "
@@ -425,7 +427,7 @@ def run_remote_agent(
         if model:
             pi_args.extend(["--model", model])
 
-        args_json = json.dumps(pi_args + ["PROMPT_PLACEHOLDER"])
+        args_json = json.dumps([*pi_args, "PROMPT_PLACEHOLDER"])
         py_cmd = (
             "import json, subprocess; "
             f"args = json.loads({args_json!r}); "
@@ -440,7 +442,7 @@ def run_remote_agent(
         if model:
             codex_args.extend(["--model", model])
 
-        args_json = json.dumps(codex_args + ["PROMPT_PLACEHOLDER"])
+        args_json = json.dumps([*codex_args, "PROMPT_PLACEHOLDER"])
         py_cmd = (
             "import json, subprocess; "
             f"args = json.loads({args_json!r}); "
@@ -497,7 +499,7 @@ def collect_result(
     )
     diff_out = ssh_run(host, diff_cmd).stdout
     files_changed = sorted(
-        set(line.strip() for line in diff_out.splitlines() if line.strip())
+        {line.strip() for line in diff_out.splitlines() if line.strip()}
     )
 
     cleanup_command = (
@@ -533,14 +535,16 @@ def cmd_run(args: argparse.Namespace) -> int:
     args.repo_path = unmangle_msys_path(args.repo_path)
 
     # Permission mode guardrail
-    if args.permission_mode == "bypassPermissions":
-        if os.environ.get("REMOTE_AGENT_ALLOW_BYPASS") != "1":
-            print(
-                "refused: --permission-mode bypassPermissions requires "
-                "REMOTE_AGENT_ALLOW_BYPASS=1 in the environment.",
-                file=sys.stderr,
-            )
-            return 2
+    if (
+        args.permission_mode == "bypassPermissions"
+        and os.environ.get("REMOTE_AGENT_ALLOW_BYPASS") != "1"
+    ):
+        print(
+            "refused: --permission-mode bypassPermissions requires "
+            "REMOTE_AGENT_ALLOW_BYPASS=1 in the environment.",
+            file=sys.stderr,
+        )
+        return 2
 
     # Auto-generate branch name if not provided
     branch = args.branch or f"agent-remote/auto-{int(time.time())}"
@@ -560,16 +564,16 @@ def cmd_run(args: argparse.Namespace) -> int:
         if not agent:
             if os.environ.get("ANTIGRAVITY_AGENT") == "1":
                 agent = "agy"
-            elif any(k.startswith("OPENCODE_") for k in os.environ.keys()):
+            elif any(k.startswith("OPENCODE_") for k in os.environ):
                 agent = "opencode"
             elif (
-                any(k.startswith("CLAUDE_CODE") for k in os.environ.keys())
+                any(k.startswith("CLAUDE_CODE") for k in os.environ)
                 or os.environ.get("CLAUDE_CODE_SUBPROCESS_ENV_SCRUB") == "1"
             ):
                 agent = "claude"
-            elif any(k.startswith("PI_") for k in os.environ.keys()):
+            elif any(k.startswith("PI_") for k in os.environ):
                 agent = "pi"
-            elif any(k.startswith("CODEX_") for k in os.environ.keys()):
+            elif any(k.startswith("CODEX_") for k in os.environ):
                 agent = "codex"
             else:
                 agent = "opencode"
