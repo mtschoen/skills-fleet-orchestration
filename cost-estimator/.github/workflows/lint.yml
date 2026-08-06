@@ -24,7 +24,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install ruff mypy pytest pytest-cov
+      - run: pip install ruff==0.15.15 mypy pytest pytest-cov
       - run: ruff check scripts/ ci/ tests/
       - run: mypy scripts/ ci/ --ignore-missing-imports
       - name: Run tests with coverage
@@ -32,7 +32,9 @@ jobs:
           pytest tests/ --cov=scripts --cov=ci --cov-report=term-missing
           --cov-report=json:coverage.json
       - name: Post coverage status
-        if: always()
+        # Targets Gitea's /api/v1 status endpoint and is consumed only by
+        # pr-crew, so skip it on GitHub where that endpoint does not exist.
+        if: ${{ always() && github.server_url != 'https://github.com' }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: python ci/post-coverage-status.py

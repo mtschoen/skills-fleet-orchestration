@@ -12,7 +12,7 @@ import pytest
 
 REPOSITORY_ROOT = Path(__file__).resolve().parent.parent
 SCRIPT_PATH = REPOSITORY_ROOT / "ci" / "post-coverage-status.py"
-WORKFLOW_PATH = REPOSITORY_ROOT / ".gitea" / "workflows" / "lint.yml"
+WORKFLOW_PATH = REPOSITORY_ROOT / ".github" / "workflows" / "lint.yml"
 CI_ENVIRONMENT = {
     "GITHUB_SERVER_URL": "https://gitea.example",
     "GITHUB_REPOSITORY": "owner/repo",
@@ -43,7 +43,7 @@ def test_workflow_runs_pytest_with_coverage_and_always_posts_status():
     assert "pytest-cov" in workflow
     assert "pytest tests/ --cov=scripts --cov=ci" in workflow
     assert "--cov-report=json:coverage.json" in workflow
-    assert "if: always()" in workflow
+    assert "always() && github.server_url != 'https://github.com'" in workflow
     assert "GITHUB_TOKEN: ${{ github.token }}" in workflow
     assert "python ci/post-coverage-status.py" in workflow
 
