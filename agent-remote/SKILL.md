@@ -150,7 +150,7 @@ The `run` output is JSON on stdout: `{success, branch, worktree_path, parent_com
 2. **An ssh key authorized for passwordless login.** `ssh-copy-id user@host` once.
 3. **An existing checkout of the repo** at a known path on the remote. The wrapper creates a *sibling* worktree under `<parent-of-repo>/agent-remote-worktrees/`; it does not modify the existing checkout.
 
-When using `claude` as the remote agent, the wrapper writes a narrow `.claude/settings.local.json` into each remote worktree before launching it, so it has Bash/Edit/Write/Read/Glob/Grep without needing `--permission-mode bypassPermissions`. For `opencode` and `agy`, permissions are bypassed/approved automatically using `--auto` or `--dangerously-skip-permissions` flags.
+When using `claude` as the remote agent, the wrapper writes a narrow `.claude/settings.local.json` into each remote worktree before launching it, so it has Bash/Edit/Write/Read/Glob/Grep without needing `--permission-mode bypassPermissions`. Note: "narrow" means few tools, not low power - the seeded allowlist includes unrestricted Bash inside the remote worktree; see "Permission modes" below for the full caveat and the tightening knob. For `opencode` and `agy`, permissions are bypassed/approved automatically using `--auto` or `--dangerously-skip-permissions` flags.
 
 ## Common mistakes (each one was discovered the hard way)
 
