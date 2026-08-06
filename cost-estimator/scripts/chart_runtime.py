@@ -79,7 +79,7 @@ def chartjs_script_tags(inline: bool, want_time_adapter: bool) -> tuple[str, str
     return chartjs_tag, adapter_tag
 
 
-def json_for_script(value, *, default=None) -> str:
+def json_for_script(value: object, *, default=None) -> str:
     """JSON-encode a value for embedding inside a <script> block.
 
     Escapes `</` as `<\\/` so a `</script>` substring inside any string
