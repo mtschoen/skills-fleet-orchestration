@@ -9,3 +9,8 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
+
+# aislop runtime artifacts (session/history logs, caches, baselines).
+# Unanchored so nested project directories are covered too.
+**/.aislop/*
+!**/.aislop/config.yml
