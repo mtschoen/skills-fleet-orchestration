@@ -289,53 +289,22 @@ was never present in the billed aggregate.
 
 ## Files in this skill
 
-- `SKILL.md` - this file.
-- `REPORT_TEMPLATE.md` - section-by-section template for the markdown
-  report this skill produces. Follow it.
-- `scripts/pricing.py` - canonical pricing formula (rates, cache
-  multipliers, flat 1M-tier pricing) plus the JSONL turn-iterator helper.
-  Both retrospective and per-session scripts import from here so the
-  formula does not drift.
-- `scripts/analyze-month.py` - JSONL walker and per-turn pricer
-  (uses `pricing.py`). Default `--out` is `~/.agents/cost-estimator/reports/`
-  (override `AGENTS_COST_REPORTS_DIR`).
-  Also extracts measured `turn_duration` values and writes per-session,
-  per-day, and per-command active-time fields without adding concurrent
-  subagent time to parent wait time.
-  Also prints the "COVERAGE vs /stats" guardrail (uses `stats_cache.py`).
-- `scripts/roots.py` - shared root resolution (`AGENTS_COST_ROOTS` /
-  positional roots), date-bound parsers, and `stats_file_for()`.
-  Imported by `analyze-month.py`, `stats_cache.py`, and `cache_ttl.py`
-  so path/range logic stays in one place.
-- `scripts/stats_cache.py` - reconciles surviving transcripts against
-  Claude Code's per-machine `/stats` aggregate (`stats-cache.json`).
-  Flags cache-cleared (garbage-collected) days and reports coverage %,
-  so a report never silently presents an undercount as the full total.
-  Exposes `coverage_for_roots` / `format_warning` for the analyze-month
-  guardrail, plus a standalone per-day reconciliation CLI.
-- `scripts/cache_ttl.py` - diagnostic for cache-write TTL (5m vs 1h
-  split) and an inter-turn-gap behavioral table.
-- `scripts/summarize.py` - CSV reader and cost, active-time,
-  slash-command, and waste-pattern report.
-  Default `--csv` is `~/.agents/cost-estimator/reports/sessions.csv`.
-  Reads the sibling `commands.csv` and accepts `--command /name` for focused
-  slash-command timing detail.
-- `scripts/plot-session.py` - per-session HTML cost trajectory chart
-  (uses `pricing.py`).
-- `scripts/plot-trend.py` - aggregate trend chart across sessions.csv
-  (uses `chart_runtime.py`). Stacks by machine label.
-- `scripts/plot-compare.py` - period-over-period overlay chart.
-  Renders any window vs the same-length prior window (--month /
-  --start+--end / --last). Imports bucket helpers from `trend_data.py`.
-- `scripts/trend_data.py` - shared bucket math, CSV reader, and range
-  parsers. Imported by plot-trend.py and plot-compare.py so the same
-  bucketing logic stays in one place.
-- `scripts/chart_runtime.py` - shared Chart.js URL/version constants,
-  download cache, and script-tag helper used by both plot scripts.
+An installed copy ships `SKILL.md`, `REPORT_TEMPLATE.md` (the report
+template step 4 follows), and `scripts/`. Every script the steps above
+reference is invoked directly as `python <skill-root>/scripts/<name>.py`.
 
-All generated cost data (CSVs, charts, saved reports) lands in
-`~/.agents/cost-estimator/reports/`, outside the installed skill tree, via
-`roots.reports_directory()` (override with `AGENTS_COST_REPORTS_DIR`) - a
-reinstall of this skill never touches it. This list covers everything an
-installed copy of this skill ships; see `README.md` in the source repo for
-dev-only files (screenshot regen tooling, test fixtures) that don't ship.
+Four modules in `scripts/` are never invoked directly - they are shared
+helpers the others import so the logic cannot drift between them:
+
+- `pricing.py` - the canonical pricing formula (rates, cache multipliers,
+  flat 1M-tier pricing) plus the JSONL turn-iterator. Keep the inlined
+  pricing table above in sync with it.
+- `roots.py` - root resolution (`AGENTS_COST_ROOTS` / positional roots),
+  date-bound parsers, `stats_file_for()`, and `reports_directory()`, which
+  is why generated data lands outside the installed skill tree.
+- `trend_data.py` - bucket math, CSV reading, and range parsing shared by
+  both trend charts.
+- `chart_runtime.py` - Chart.js version constants and download cache.
+
+See `README.md` in the source repo for dev-only files (screenshot regen
+tooling, test fixtures) that don't ship.
