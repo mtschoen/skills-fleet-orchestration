@@ -8,7 +8,7 @@
 #   branch-b INDEPENDENTLY adds an identical `slugify` inside src/search.py
 #           (its author didn't know branch-a created textutil.slugify).
 #
-# After merging both, `main` has the same helper defined twice — duplicated
+# After merging both, `main` has the same helper defined twice - duplicated
 # logic that should be consolidated (search.py should import textutil.slugify).
 # Only a round-boundary review that compares branches against each other, or
 # inspects the integrated whole, surfaces it. branch-c is unrelated and clean.
@@ -56,27 +56,27 @@ EOF
 cat > PLAN.md <<'EOF'
 # Implementation Plan
 
-## Phase 2 — DONE
+## Phase 2 - DONE
 User directory primitives landed on `main`.
 
-## Phase 3 — three parallel tasks (this round)
+## Phase 3 - three parallel tasks (this round)
 Dispatched concurrently into isolated branches:
 
-- **branch-a** — add `src/export.py` that exports users to a file whose name is
+- **branch-a** - add `src/export.py` that exports users to a file whose name is
   a URL-safe slug of the user's name.
-- **branch-b** — add `src/search.py` with a `search(query, users)` that matches
+- **branch-b** - add `src/search.py` with a `search(query, users)` that matches
   users by a normalized form of their name.
-- **branch-c** — add `src/pagination.py` with a `paginate(items, page, size)`
+- **branch-c** - add `src/pagination.py` with a `paginate(items, page, size)`
   helper.
 
-## Phase 4, 5, 6 — queued
+## Phase 4, 5, 6 - queued
 (blocked on phase 3 landing)
 EOF
 
 git add -A
 git commit -qm "phase 2: user directory primitives"
 
-# branch-a — export, introduces textutil.slugify (the canonical home).
+# branch-a - export, introduces textutil.slugify (the canonical home).
 git checkout -qb branch-a main
 cat > src/textutil.py <<'EOF'
 def slugify(value: str) -> str:
@@ -100,7 +100,7 @@ EOF
 git add -A
 git commit -qm "branch-a: export filenames via textutil.slugify"
 
-# branch-b — search, INDEPENDENTLY reimplements the same slugify locally.
+# branch-b - search, INDEPENDENTLY reimplements the same slugify locally.
 git checkout -qb branch-b main
 cat > src/search.py <<'EOF'
 def slugify(value: str) -> str:
@@ -124,7 +124,7 @@ EOF
 git add -A
 git commit -qm "branch-b: name search with normalized matching"
 
-# branch-c — pagination, unrelated and clean.
+# branch-c - pagination, unrelated and clean.
 git checkout -qb branch-c main
 cat > src/pagination.py <<'EOF'
 def paginate(items: list, page: int, size: int) -> list:
@@ -144,7 +144,7 @@ git commit -qm "branch-c: add pagination helper"
 git checkout -q main
 
 cat > reports/branch-a.md <<'EOF'
-# branch-a report — export
+# branch-a report - export
 
 Added `src/export.py::export_filename`, which builds a URL-safe filename from a
 user's name using a new `src/textutil.py::slugify` helper.
@@ -156,7 +156,7 @@ Ready to merge.
 EOF
 
 cat > reports/branch-b.md <<'EOF'
-# branch-b report — search
+# branch-b report - search
 
 Added `src/search.py` with `search(query, users)` that matches users by a
 normalized form of their name (lowercased, whitespace collapsed).
@@ -168,7 +168,7 @@ Ready to merge.
 EOF
 
 cat > reports/branch-c.md <<'EOF'
-# branch-c report — pagination
+# branch-c report - pagination
 
 Added `src/pagination.py::paginate(items, page, size)`. No changes to existing
 modules.
