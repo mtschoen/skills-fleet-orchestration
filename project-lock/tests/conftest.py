@@ -14,6 +14,25 @@ from project_lock import core  # noqa: E402  (path must be extended first)
 
 
 @pytest.fixture(autouse=True)
+def neutral_enforcement_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep the ambient environment from deciding what the tests assert.
+
+    Most hook tests exercise the default `deny` mode by leaving
+    PROJECT_LOCK_ENFORCE unset, and the acquire tests assert on a session id
+    and owner pid they set themselves. A developer machine that exports any of
+    these (wiring the hook globally exports PROJECT_LOCK_ENFORCE, for one) would
+    otherwise flip those defaults and fail the suite for reasons that have
+    nothing to do with the code under test.
+    """
+    for variable in (
+        "PROJECT_LOCK_ENFORCE",
+        *core.SESSION_ID_ENVIRONMENT_VARIABLES,
+        *core.OWNER_PID_ENVIRONMENT_VARIABLES,
+    ):
+        monkeypatch.delenv(variable, raising=False)
+
+
+@pytest.fixture(autouse=True)
 def isolated_state_directory(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("PROJECT_LOCK_STATE_DIR", str(tmp_path / "state"))
 
