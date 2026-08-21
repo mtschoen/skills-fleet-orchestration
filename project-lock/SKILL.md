@@ -58,6 +58,8 @@ Use:
 - `--strategy worktree` when this is the session's main project or lengthy work.
 - `--strategy auto` when duration alone should decide: up to five minutes recommends waiting; longer recommends a worktree.
 
+`--session` and `--owner-pid` are both optional: when omitted, `acquire` reads a recognized harness environment variable instead (Claude Code sets `CLAUDE_CODE_SESSION_ID` and `CLAUDE_PID`; `--help` lists the full candidate order). Passing either flag explicitly always takes precedence over the environment. This is what lets `check`/`list`/`watch` and the enforcement hook tell your own lock apart from another session of the same user on the same host.
+
 Capture the returned `lock id`; it proves ownership for renew and release. A Git path resolves to its current worktree root. Separate Git worktrees therefore have separate locks.
 
 ## When another lock exists
@@ -114,7 +116,7 @@ Every force-clear is appended to `audit.jsonl` in the per-user state directory b
 - **running-unverified** - something holds that pid, but its identity could not be confirmed. Treat as running.
 - **unknown** - no process was nominated (the default), the lock was taken on another host, or this platform cannot answer. Start identity is read on Linux and Windows only.
 
-Liveness is **opt-in**, and `unknown` is the default for good reason. Pass `--owner-pid` at acquire time only for a process that outlives the command:
+Liveness is **opt-in**, and `unknown` is the default for good reason. `acquire` fills `--owner-pid` from a recognized harness environment variable (Claude Code sets `CLAUDE_PID`) when the flag is omitted; pass it explicitly only to nominate a different durable process, and never the process running the command itself:
 
 ```bash
 python <script> acquire <path> --reason "..." --duration 30m --owner-pid $AGENT_SESSION_PID

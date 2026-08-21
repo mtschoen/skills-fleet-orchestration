@@ -44,6 +44,74 @@ def test_acquire_inspect_renew_release(repository: Path) -> None:
     assert core.list_locks() == []
 
 
+def test_default_session_reads_recognized_environment_variables(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    assert core.default_session() is None
+
+    monkeypatch.setenv("PI_SESSION_ID", "pi-session")
+    assert core.default_session() == "pi-session"
+
+    # CLAUDE_CODE_SESSION_ID is earlier in the candidate list, so it wins when
+    # both are set.
+    monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "claude-session")
+    assert core.default_session() == "claude-session"
+
+
+def test_default_owner_pid_reads_recognized_environment_variable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    assert core.default_owner_pid() is None
+
+    monkeypatch.setenv("CLAUDE_PID", "27044")
+    assert core.default_owner_pid() == 27044
+
+
+@pytest.mark.parametrize("value", ["not-a-number", "0", "-5", ""])
+def test_default_owner_pid_rejects_unusable_values(
+    value: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("CLAUDE_PID", value)
+    assert core.default_owner_pid() is None
+
+
+def test_acquire_defaults_session_and_owner_pid_from_environment(
+    repository: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "env-session")
+    monkeypatch.setenv("CLAUDE_PID", "4242")
+
+    metadata = core.acquire(repository, reason="env defaults", duration=timedelta(minutes=1))
+
+    assert metadata["session"] == "env-session"
+    assert metadata["owner_pid"] == 4242
+
+
+def test_acquire_explicit_session_and_owner_pid_win_over_environment(
+    repository: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "env-session")
+    monkeypatch.setenv("CLAUDE_PID", "4242")
+
+    metadata = core.acquire(
+        repository,
+        reason="explicit wins",
+        duration=timedelta(minutes=1),
+        session="explicit-session",
+        owner_pid=9999,
+    )
+
+    assert metadata["session"] == "explicit-session"
+    assert metadata["owner_pid"] == 9999
+
+
+def test_acquire_without_session_or_environment_leaves_session_null(repository: Path) -> None:
+    metadata = core.acquire(repository, reason="no session", duration=timedelta(minutes=1))
+
+    assert metadata["session"] is None
+    assert metadata["owner_pid"] is None
+
+
 def test_explicit_strategies_and_overdue(repository: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     metadata = core.acquire(
         repository,

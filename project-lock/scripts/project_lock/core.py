@@ -27,6 +27,24 @@ PROTOCOL_VERSION = 1
 MARKER_DIRECTORY_NAME = ".agent-lock"
 METADATA_FILE_NAME = "owner.json"
 
+# Environment variables set by different agent harnesses to identify the
+# current session. Read only when a caller does not pass `--session`
+# explicitly; the first variable present in this tuple wins. Add a harness by
+# extending this tuple, not by changing the derivation logic.
+SESSION_ID_ENVIRONMENT_VARIABLES: tuple[str, ...] = (
+    "CLAUDE_CODE_SESSION_ID",  # Claude Code
+    "PI_SESSION_ID",  # pi
+)
+
+# Environment variables set by different agent harnesses to name a durable
+# process outliving any single command: the same nomination `--owner-pid`
+# asks a caller to make by hand. Read only when a caller does not pass
+# `--owner-pid` explicitly; the first variable present in this tuple wins.
+# Never derive this from `os.getpid()`: that is this short-lived `acquire`
+# invocation's own pid, dead the moment the lock is written, which would make
+# every healthy lock read as abandoned.
+OWNER_PID_ENVIRONMENT_VARIABLES: tuple[str, ...] = ("CLAUDE_PID",)  # Claude Code
+
 
 class LockConflict(RuntimeError):
     """Raised when another owner already holds the project lock."""
@@ -323,6 +341,36 @@ def default_owner() -> str:
     return f"{agent or 'agent'}@{socket.gethostname()}"
 
 
+def _first_environment_value(names: tuple[str, ...]) -> str | None:
+    for name in names:
+        value = os.environ.get(name)
+        if value:
+            return value
+    return None
+
+
+def default_session() -> str | None:
+    """Session id from the first recognized harness environment variable."""
+    return _first_environment_value(SESSION_ID_ENVIRONMENT_VARIABLES)
+
+
+def default_owner_pid() -> int | None:
+    """Durable owner pid from the first recognized harness environment variable.
+
+    Returns `None` when no candidate is set or its value is not a positive
+    integer, so a garbled environment falls back to `unknown` liveness rather
+    than raising.
+    """
+    value = _first_environment_value(OWNER_PID_ENVIRONMENT_VARIABLES)
+    if value is None:
+        return None
+    try:
+        pid = int(value)
+    except ValueError:
+        return None
+    return pid if pid > 0 else None
+
+
 @dataclass(frozen=True)
 class Claimant:
     """Who is taking the lock, and which process death would abandon it."""
@@ -341,24 +389,24 @@ def build_metadata(
     claimant: Claimant,
 ) -> dict[str, Any]:
     now = utc_now()
-    owner_pid = claimant.owner_pid
+    owner_pid = claimant.owner_pid if claimant.owner_pid is not None else default_owner_pid()
     return {
         "version": PROTOCOL_VERSION,
         "lock_id": str(uuid.uuid4()),
         "root": str(root),
         "owner": claimant.owner or default_owner(),
-        "session": claimant.session
-        or os.environ.get("CLAUDE_SESSION_ID")
-        or os.environ.get("PI_SESSION_ID"),
+        "session": claimant.session or default_session(),
         "reason": reason,
         "strategy": strategy,
         "branch": current_branch(root),
         "host": socket.gethostname(),
         "platform": platform.system(),
         "creator_pid": os.getpid(),
-        # A process whose death means this lock is abandoned, nominated by the
-        # caller. Left absent by default: `creator_pid` above is this
-        # short-lived CLI invocation, which is dead moments later on every
+        # A process whose death means this lock is abandoned. Nominated
+        # explicitly via the caller's `owner_pid`, or, when absent, derived
+        # from a recognized harness environment variable
+        # (`OWNER_PID_ENVIRONMENT_VARIABLES`). Never `creator_pid`: that is
+        # this short-lived CLI invocation, dead moments later on every
         # healthy lock, so it can never stand in for the owner.
         "owner_pid": owner_pid,
         "owner_process_start": None if owner_pid is None else process_start_identity(owner_pid),

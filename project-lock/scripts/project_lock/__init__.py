@@ -1,6 +1,8 @@
 """Cooperative project locking for coding agents."""
 
 from .core import (
+    OWNER_PID_ENVIRONMENT_VARIABLES,
+    SESSION_ID_ENVIRONMENT_VARIABLES,
     LockConflict,
     LockOwnershipError,
     acquire,
@@ -16,6 +18,8 @@ from .core import (
 )
 
 __all__ = [
+    "OWNER_PID_ENVIRONMENT_VARIABLES",
+    "SESSION_ID_ENVIRONMENT_VARIABLES",
     "LockConflict",
     "LockOwnershipError",
     "acquire",

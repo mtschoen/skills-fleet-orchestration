@@ -12,6 +12,8 @@ from datetime import timedelta
 from pathlib import Path
 
 from project_lock import (
+    OWNER_PID_ENVIRONMENT_VARIABLES,
+    SESSION_ID_ENVIRONMENT_VARIABLES,
     LockConflict,
     LockOwnershipError,
     acquire,
@@ -62,6 +64,7 @@ def print_status(status: dict) -> None:
     overdue = " OVERDUE" if status["overdue"] else ""
     print(f"LOCKED{overdue}  {status['root']}")
     print(f"  owner:    {metadata['owner']}")
+    print(f"  session:  {metadata.get('session') or '-'}")
     print(f"  reason:   {metadata['reason']}")
     print(f"  branch:   {metadata.get('branch') or '-'}")
     print(f"  expected: {metadata['expected_until']}")
@@ -190,14 +193,25 @@ def build_parser() -> argparse.ArgumentParser:
     acquire_parser.add_argument("--duration", required=True, type=parse_duration)
     acquire_parser.add_argument("--strategy", choices=("auto", "wait", "worktree"), default="auto")
     acquire_parser.add_argument("--owner")
-    acquire_parser.add_argument("--session")
+    acquire_parser.add_argument(
+        "--session",
+        help=(
+            "session id recorded on the lock, so a lock can be told apart from "
+            "another session of the same owner. Defaults to the current "
+            "session id read from a recognized harness environment variable "
+            f"({', '.join(SESSION_ID_ENVIRONMENT_VARIABLES)}) when omitted."
+        ),
+    )
     acquire_parser.add_argument(
         "--owner-pid",
         type=int,
         help=(
             "pid of a durable process whose death means this lock is abandoned "
-            "(e.g. the agent session). Omit unless it outlives this command: "
-            "this command's own pid dies immediately and would read as abandoned."
+            "(e.g. the agent session). Defaults to a recognized harness "
+            f"environment variable ({', '.join(OWNER_PID_ENVIRONMENT_VARIABLES)}) "
+            "when omitted. Pass explicitly only for a process that outlives this "
+            "command: this command's own pid dies immediately and would read as "
+            "abandoned."
         ),
     )
     acquire_parser.add_argument("--json", action="store_true")

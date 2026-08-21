@@ -71,10 +71,11 @@ def lock_is_foreign(lock: dict | None, session_id: str) -> bool:
 def describe_lock(governed: dict) -> str:
     lock = governed["lock"] or {}
     owner = lock.get("owner", "unknown")
+    session = lock.get("session") or "unknown"
     reason = lock.get("reason", "metadata unavailable")
     expected = lock.get("expected_until", "unknown")
     return (
-        f"project-lock: {governed['root']} is locked by {owner}\n"
+        f"project-lock: {governed['root']} is locked by {owner} (session {session})\n"
         f"  reason: {reason}\n  expected until: {expected}\n"
         "  Wait, work elsewhere, or use a separate git worktree. Overdue "
         "locks are not free; contact the owner before any force-clear."

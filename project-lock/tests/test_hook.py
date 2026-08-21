@@ -50,6 +50,7 @@ def test_foreign_lock_denies_edit(nested_worktree_repo):
     result = run_hook(edit_payload(main / "README.md", session_id="session-a"))
     assert result.returncode == 2
     assert "busy" in result.stderr
+    assert "session-b" in result.stderr
 
 
 def test_relative_target_resolves_against_payload_cwd(nested_worktree_repo):
@@ -78,6 +79,7 @@ def test_sessionless_legacy_lock_denies(nested_worktree_repo):
     core.acquire(main, reason="manual", duration=timedelta(minutes=5))
     result = run_hook(edit_payload(main / "README.md"))
     assert result.returncode == 2
+    assert "session unknown" in result.stderr
 
 
 def test_no_lock_denies_with_acquire_recipe(nested_worktree_repo):

@@ -10,10 +10,27 @@ import pytest
 SCRIPTS_DIRECTORY = Path(__file__).parents[1] / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIRECTORY))
 
+from project_lock import core  # noqa: E402  (path must be extended first)
+
 
 @pytest.fixture(autouse=True)
 def isolated_state_directory(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("PROJECT_LOCK_STATE_DIR", str(tmp_path / "state"))
+
+
+@pytest.fixture(autouse=True)
+def isolated_harness_identity(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Clear harness-identity environment variables so tests are hermetic.
+
+    A developer machine running these tests from inside an agent session
+    (for example, Claude Code) has variables such as CLAUDE_CODE_SESSION_ID
+    and CLAUDE_PID set for real. Without this fixture, that ambient state
+    would leak into any test that does not pass --session/--owner-pid (or
+    session=/owner_pid=) explicitly, making the result depend on where the
+    suite happens to run.
+    """
+    for name in core.SESSION_ID_ENVIRONMENT_VARIABLES + core.OWNER_PID_ENVIRONMENT_VARIABLES:
+        monkeypatch.delenv(name, raising=False)
 
 
 def run_git_command(*arguments: str, cwd: Path) -> None:

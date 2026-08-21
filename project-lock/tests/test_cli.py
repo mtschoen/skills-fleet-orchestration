@@ -76,6 +76,41 @@ def test_cli_lifecycle(
     assert "No project locks" in capsys.readouterr().out
 
 
+def test_acquire_argument_parsing_defaults_from_environment(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """`--session`/`--owner-pid` are optional on the command line; when a
+    caller omits them, argparse hands `command_acquire` `None`, and the
+    environment-derived default is applied downstream in `core.acquire`."""
+    monkeypatch.setenv("PROJECT_LOCK_STATE_DIR", str(tmp_path / "state"))
+    monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "env-session")
+    monkeypatch.setenv("CLAUDE_PID", "4242")
+
+    arguments = cli.build_parser().parse_args(
+        ["acquire", str(tmp_path), "--reason", "test", "--duration", "1m", "--json"]
+    )
+    assert arguments.session is None
+    assert arguments.owner_pid is None
+
+    assert cli.command_acquire(arguments) == 0
+    metadata = json.loads(capsys.readouterr().out)
+    assert metadata["session"] == "env-session"
+    assert metadata["owner_pid"] == 4242
+
+
+def test_print_status_shows_session(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setenv("PROJECT_LOCK_STATE_DIR", str(tmp_path / "state"))
+    core.acquire(tmp_path, reason="test", duration=timedelta(minutes=1), session="session-a")
+
+    check_arguments = argparse.Namespace(
+        path=tmp_path, wait_threshold=timedelta(minutes=5), json=False
+    )
+    assert cli.command_check(check_arguments) == cli.EXIT_LOCKED
+    assert "session:  session-a" in capsys.readouterr().out
+
+
 def test_json_commands_and_list(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
