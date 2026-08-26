@@ -1,0 +1,48 @@
+name: lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  markdown:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DavidAnson/markdownlint-cli2-action@v23
+        with:
+          globs: '**/*.md'
+  python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install ruff==0.15.15 pytest
+      - run: ruff check evals/
+      - run: ruff format --check evals/
+      # --ignore=evals/scenarios: those trees are eval-scenario seed
+      # fixtures, not the harness under test; excluded so a future scenario
+      # test file can't collide with another scenario's module name.
+      - name: pytest (allow exit 5 = no tests yet)
+        run: |
+          set +e
+          pytest evals/ --ignore=evals/scenarios
+          rc=$?
+          if [ $rc -eq 0 ] || [ $rc -eq 5 ]; then exit 0; fi
+          exit $rc
+  shell:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ludeeus/action-shellcheck@2.0.0
+        with:
+          severity: error
+          scandir: './evals'

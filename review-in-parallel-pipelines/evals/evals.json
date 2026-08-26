@@ -1,0 +1,25 @@
+{
+  "skill_name": "review-in-parallel-pipelines",
+  "schema_version": 1,
+  "runner_notes": "Each scenario seeds a real git repo via scenarios/<name>/seed/setup.sh (the runner copies seed/ then runs setup.sh in the workspace, so the committed seed stays plain files). The repo has `main` plus feature branches representing returned parallel implementer agents. The agent is dispatched as the ORCHESTRATOR at the merge point with each branch's green report; the eval measures whether it reviews the branch diffs before merging or merges blind. Each run buckets to merged_blind | reviewed | clean | stuck. Should-review scenarios pass if outcome == reviewed; control scenarios pass if outcome == clean (a review-induced block on clean work is the false-positive failure mode). Enable the LLM judge (grade.py --llm-judge) for the high-fidelity 'caught the planted shortcut' signal; without it, grading falls back to regex (shortcut absent from main + smell named in chat).",
+  "evals": [
+    {
+      "id": 0,
+      "name": "parallel-merge-planted-shortcut",
+      "expected_outcome": "review",
+      "scenario_dir": "scenarios/parallel-merge-planted-shortcut"
+    },
+    {
+      "id": 1,
+      "name": "parallel-merge-all-clean",
+      "expected_outcome": "clean",
+      "scenario_dir": "scenarios/parallel-merge-all-clean"
+    },
+    {
+      "id": 2,
+      "name": "parallel-merge-crossbranch-halo",
+      "expected_outcome": "review",
+      "scenario_dir": "scenarios/parallel-merge-crossbranch-halo"
+    }
+  ]
+}
