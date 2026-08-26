@@ -22,10 +22,10 @@ from datetime import datetime
 # Accept that historical data will drift as prices change--these are
 # relative quantities we're tracking, not an invoice of real money spend.
 PRICES = {
-    "fable":   (10.0, 50.0),
-    "opus":    (5.0, 25.0),
-    "sonnet":  (3.0, 15.0),
-    "haiku":   (1.0, 5.0),
+    "fable": (10.0, 50.0),
+    "opus": (5.0, 25.0),
+    "sonnet": (3.0, 15.0),
+    "haiku": (1.0, 5.0),
 }
 CACHE_WRITE_MULTIPLIER = 1.25
 CACHE_READ_MULTIPLIER = 0.10
@@ -63,20 +63,24 @@ def parse_timestamp(value):
         return None
 
 
-def cost_for_turn(model_identifier, input_tokens, output_tokens,
-                  cache_read_tokens, cache_write_tokens):
+def cost_for_turn(
+    model_identifier, input_tokens, output_tokens, cache_read_tokens, cache_write_tokens
+):
     family = model_family(model_identifier)
     if family is None:
         return 0.0
     input_rate, output_rate = rates_for(family)
-    return (input_tokens * input_rate
-            + output_tokens * output_rate
-            + cache_read_tokens * input_rate * CACHE_READ_MULTIPLIER
-            + cache_write_tokens * input_rate * CACHE_WRITE_MULTIPLIER) / 1_000_000
+    return (
+        input_tokens * input_rate
+        + output_tokens * output_rate
+        + cache_read_tokens * input_rate * CACHE_READ_MULTIPLIER
+        + cache_write_tokens * input_rate * CACHE_WRITE_MULTIPLIER
+    ) / 1_000_000
 
 
-def unpriced_usage(model_identifier, input_tokens, output_tokens,
-                   cache_read_tokens, cache_write_tokens):
+def unpriced_usage(
+    model_identifier, input_tokens, output_tokens, cache_read_tokens, cache_write_tokens
+):
     """Flag a turn that cost_for_turn() silently priced at $0.00.
 
     Returns (turns=1, tokens) when `model_identifier` is a real (non-empty)
@@ -180,8 +184,12 @@ def iter_assistant_turns(jsonl_path):
                 "output_tokens": output_tokens,
                 "cache_read_tokens": cache_read_tokens,
                 "cache_write_tokens": cache_write_tokens,
-                "cost_usd": cost_for_turn(model_identifier, input_tokens,
-                                          output_tokens, cache_read_tokens,
-                                          cache_write_tokens),
+                "cost_usd": cost_for_turn(
+                    model_identifier,
+                    input_tokens,
+                    output_tokens,
+                    cache_read_tokens,
+                    cache_write_tokens,
+                ),
                 "top_tools": tools_seen,
             }

@@ -46,5 +46,7 @@ def load_script():
 def workspace_directory() -> Iterator[Path]:
     """Provide a disposable directory without writing outside the worktree."""
 
-    with TemporaryDirectory(prefix="cost-estimator-test-", dir=Path(__file__).parent) as path:
+    with TemporaryDirectory(
+        prefix="cost-estimator-test-", dir=Path(__file__).parent
+    ) as path:
         yield Path(path)

@@ -40,8 +40,10 @@ def _resolve_roots(cli_roots, cli_labels, env_value):
     """
     if cli_roots:
         if env_value:
-            print("note: AGENTS_COST_ROOTS set but CLI roots given; using CLI",
-                  file=sys.stderr)
+            print(
+                "note: AGENTS_COST_ROOTS set but CLI roots given; using CLI",
+                file=sys.stderr,
+            )
         labels = list(cli_labels or [])
         while len(labels) < len(cli_roots):
             labels.append(f"root{len(labels)}")
@@ -54,14 +56,18 @@ def _resolve_roots(cli_roots, cli_labels, env_value):
             if not entry:
                 continue
             if ":" not in entry:
-                sys.exit(f"error: AGENTS_COST_ROOTS malformed near '{entry}' "
-                         f"(expected 'label:path')")
+                sys.exit(
+                    f"error: AGENTS_COST_ROOTS malformed near '{entry}' "
+                    f"(expected 'label:path')"
+                )
             label, _, path = entry.partition(":")
             label = label.strip()
             path = path.strip()
             if not label or not path:
-                sys.exit(f"error: AGENTS_COST_ROOTS malformed near '{entry}' "
-                         f"(expected 'label:path')")
+                sys.exit(
+                    f"error: AGENTS_COST_ROOTS malformed near '{entry}' "
+                    f"(expected 'label:path')"
+                )
             pairs.append((label, Path(path)))
         return pairs
 

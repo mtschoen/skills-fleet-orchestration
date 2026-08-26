@@ -31,12 +31,12 @@ from roots import _resolve_roots  # noqa: E402  -- after sys.path manipulation
 
 # Inter-turn gap buckets, half-open [lo, hi) in seconds.
 BUCKETS = [
-    ("0-1m",   0,    60),
-    ("1-5m",   60,   300),
-    ("5-10m",  300,  600),
-    ("10-20m", 600,  1200),
+    ("0-1m", 0, 60),
+    ("1-5m", 60, 300),
+    ("5-10m", 300, 600),
+    ("10-20m", 600, 1200),
     ("20-60m", 1200, 3600),
-    (">60m",   3600, 10 ** 9),
+    (">60m", 3600, 10**9),
 ]
 
 
@@ -73,13 +73,17 @@ def turns_of(path):
             timestamp = entry.get("timestamp")
             if not timestamp:
                 continue
-            out.append({
-                "ts": parse_timestamp(timestamp),
-                "read": usage.get("cache_read_input_tokens", 0) or 0,
-                "create": usage.get("cache_creation_input_tokens", 0) or 0,
-                "ephemeral_5m": cache_creation.get("ephemeral_5m_input_tokens", 0) or 0,
-                "ephemeral_1h": cache_creation.get("ephemeral_1h_input_tokens", 0) or 0,
-            })
+            out.append(
+                {
+                    "ts": parse_timestamp(timestamp),
+                    "read": usage.get("cache_read_input_tokens", 0) or 0,
+                    "create": usage.get("cache_creation_input_tokens", 0) or 0,
+                    "ephemeral_5m": cache_creation.get("ephemeral_5m_input_tokens", 0)
+                    or 0,
+                    "ephemeral_1h": cache_creation.get("ephemeral_1h_input_tokens", 0)
+                    or 0,
+                }
+            )
     out.sort(key=lambda turn: turn["ts"])
     return out
 
@@ -94,10 +98,12 @@ def parent_transcripts(resolved_roots):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("roots", nargs="*",
-                        help="One or more .claude/projects directories")
-    parser.add_argument("--label", action="append",
-                        help="Label paired with each root (repeatable)")
+    parser.add_argument(
+        "roots", nargs="*", help="One or more .claude/projects directories"
+    )
+    parser.add_argument(
+        "--label", action="append", help="Label paired with each root (repeatable)"
+    )
     arguments = parser.parse_args()
 
     resolved_roots = _resolve_roots(
@@ -106,8 +112,9 @@ def main():
         env_value=os.environ.get("AGENTS_COST_ROOTS"),
     )
 
-    aggregate = {name: {"n": 0, "read": 0, "create": 0, "miss": 0}
-                 for name, _, _ in BUCKETS}
+    aggregate = {
+        name: {"n": 0, "read": 0, "create": 0, "miss": 0} for name, _, _ in BUCKETS
+    }
     total_5m = total_1h = total_create = 0
 
     for path in parent_transcripts(resolved_roots):
@@ -143,14 +150,18 @@ def main():
     print(f"  (sum)               {total_create:>15,} cache_creation_input_tokens")
     if total_5m + total_1h > 0:
         percent_5m = 100 * total_5m / (total_5m + total_1h)
-        print(f"  => {percent_5m:.1f}% of cache-write tokens are 5m-TTL, "
-              f"{100 - percent_5m:.1f}% are 1h-TTL")
+        print(
+            f"  => {percent_5m:.1f}% of cache-write tokens are 5m-TTL, "
+            f"{100 - percent_5m:.1f}% are 1h-TTL"
+        )
 
     print("\n" + "=" * 78)
     print("BEHAVIORAL TEST: cache behavior of the LATER turn, by inter-turn gap")
     print("-" * 78)
-    print(f"{'gap bucket':<10} {'pairs':>7} {'avg_read':>12} "
-          f"{'avg_create':>12} {'miss%':>7}")
+    print(
+        f"{'gap bucket':<10} {'pairs':>7} {'avg_read':>12} "
+        f"{'avg_create':>12} {'miss%':>7}"
+    )
     print("-" * 78)
     for name, _, _ in BUCKETS:
         bucket = aggregate[name]
@@ -160,8 +171,10 @@ def main():
         average_read = bucket["read"] / bucket["n"]
         average_create = bucket["create"] / bucket["n"]
         miss_percent = 100 * bucket["miss"] / bucket["n"]
-        print(f"{name:<10} {bucket['n']:>7} {average_read:>12,.0f} "
-              f"{average_create:>12,.0f} {miss_percent:>6.1f}%")
+        print(
+            f"{name:<10} {bucket['n']:>7} {average_read:>12,.0f} "
+            f"{average_create:>12,.0f} {miss_percent:>6.1f}%"
+        )
     print("-" * 78)
     print("miss% = share of later-turns that re-wrote >>4x what they read back")
     print("(prefix expired). High miss% in 5-60m buckets => 5m TTL in effect.")

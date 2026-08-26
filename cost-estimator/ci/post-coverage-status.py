@@ -61,7 +61,9 @@ def main(arguments: list[str]) -> int:
     """Read coverage and post success, or post an error if it is unreadable."""
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("coverage_json", nargs="?", type=Path, default=Path("coverage.json"))
+    parser.add_argument(
+        "coverage_json", nargs="?", type=Path, default=Path("coverage.json")
+    )
     parsed_arguments = parser.parse_args(arguments[1:])
     try:
         percent = percent_from_coverage_json(parsed_arguments.coverage_json)

@@ -10,8 +10,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 from trend_data import (  # noqa: E402
-    auto_bucket, bucket_index, bucket_key, parse_last,
-    inclusive_month_bounds, inclusive_date_bounds, read_sessions_in_range,
+    auto_bucket,
+    bucket_index,
+    bucket_key,
+    parse_last,
+    inclusive_month_bounds,
+    inclusive_date_bounds,
+    read_sessions_in_range,
 )
 
 
@@ -128,10 +133,12 @@ def test_read_sessions_in_range_includes_subsecond_boundary_timestamp():
         with csv_path.open("w", newline="", encoding="utf-8") as handle:
             writer = csv.DictWriter(handle, fieldnames=["first_timestamp", "cost_usd"])
             writer.writeheader()
-            writer.writerow({
-                "first_timestamp": "2026-04-30T23:59:59.500000",
-                "cost_usd": "1.23",
-            })
+            writer.writerow(
+                {
+                    "first_timestamp": "2026-04-30T23:59:59.500000",
+                    "cost_usd": "1.23",
+                }
+            )
         range_start, range_end = inclusive_date_bounds("2026-04-01", "2026-04-30")
         rows, skipped = read_sessions_in_range(csv_path, range_start, range_end)
         assert skipped == 0

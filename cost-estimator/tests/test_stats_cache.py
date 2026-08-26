@@ -61,9 +61,9 @@ def test_daily_in_out_of_file_raw_counts_duplicate_snapshots():
 def test_classify_days_flags_cleared_match_partial():
     stats_daily = {
         "2026-03-01": 1_000_000,  # transcripts gutted -> CLEARED
-        "2026-03-02": 60_000,     # equal -> match
-        "2026-03-03": 30_000,     # below cleared floor, equal -> match
-        "2026-03-10": 500_000,    # nothing survived -> CLEARED
+        "2026-03-02": 60_000,  # equal -> match
+        "2026-03-03": 30_000,  # below cleared floor, equal -> match
+        "2026-03-10": 500_000,  # nothing survived -> CLEARED
     }
     tx_daily = {
         "2026-03-01": 50_000,
@@ -90,8 +90,8 @@ def test_coverage_for_march_range_excludes_april_and_flags_cleared():
     start = datetime(2026, 3, 1, tzinfo=timezone.utc)
     end = datetime(2026, 4, 1, tzinfo=timezone.utc)  # exclusive
     cov = stats_cache.coverage(stats_daily, tx_daily, start, end)
-    assert cov.stats_total == 1_590_000          # 1,000,000+60,000+30,000+500,000
-    assert cov.transcript_total == 140_000        # 50,000+60,000+30,000 (April excluded)
+    assert cov.stats_total == 1_590_000  # 1,000,000+60,000+30,000+500,000
+    assert cov.transcript_total == 140_000  # 50,000+60,000+30,000 (April excluded)
     assert cov.cleared_days == ["2026-03-01", "2026-03-10"]
     assert cov.cleared_tokens == 1_500_000
     assert abs(cov.coverage_pct - (140_000 / 1_590_000)) < 1e-9

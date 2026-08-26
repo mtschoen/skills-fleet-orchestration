@@ -16,3 +16,58 @@ jobs:
       - uses: DavidAnson/markdownlint-cli2-action@v23
         with:
           globs: '**/*.md'
+
+  python:
+    # Each skill below owns its own ruff+pytest gate, run from its own
+    # directory so ruff/pytest config discovery (project-lock's pyproject.toml)
+    # and test collection stay scoped per skill instead of colliding across
+    # skills that each have their own tests/ package.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install ruff==0.15.15 pytest pytest-cov
+      - name: agent-remote
+        working-directory: agent-remote
+        run: |
+          ruff check references tests
+          ruff format --check references tests
+          python -m pytest tests -q
+      - name: cost-estimator
+        working-directory: cost-estimator
+        run: |
+          ruff check scripts/ ci/ tests/
+          ruff format --check scripts/ ci/ tests/
+          pytest tests/ --cov=scripts --cov=ci --cov-report=term-missing
+      - name: project-lock
+        working-directory: project-lock
+        run: |
+          ruff check scripts tests hooks
+          ruff format --check scripts tests hooks
+          pytest -q
+      - name: review-in-parallel-pipelines
+        working-directory: review-in-parallel-pipelines
+        run: |
+          ruff check evals/
+          ruff format --check evals/
+      - name: review-in-parallel-pipelines pytest (allow exit 5 = no tests yet)
+        working-directory: review-in-parallel-pipelines
+        run: |
+          set +e
+          pytest evals/ --ignore=evals/scenarios
+          rc=$?
+          if [ $rc -eq 0 ] || [ $rc -eq 5 ]; then exit 0; fi
+          exit $rc
+
+  shellcheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ludeeus/action-shellcheck@2.0.0
+        with:
+          severity: error
+          scandir: '.'

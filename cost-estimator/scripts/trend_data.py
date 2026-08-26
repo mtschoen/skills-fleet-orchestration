@@ -67,8 +67,7 @@ def parse_last(value: str) -> timedelta:
     raise ValueError(f"--last suffix must be 'h' or 'd', got {value!r}")
 
 
-def read_sessions_in_range(csv_path: Path, range_start: datetime,
-                           range_end: datetime):
+def read_sessions_in_range(csv_path: Path, range_start: datetime, range_end: datetime):
     """Read rows of sessions.csv whose first_timestamp falls in
     [range_start, range_end] (inclusive).
 
@@ -128,7 +127,9 @@ def inclusive_month_bounds(month_string: str) -> tuple[datetime, datetime]:
     return start, end_exclusive - timedelta(microseconds=1)
 
 
-def inclusive_date_bounds(start_string: str, end_string: str) -> tuple[datetime, datetime]:
+def inclusive_date_bounds(
+    start_string: str, end_string: str
+) -> tuple[datetime, datetime]:
     """Return (start, inclusive_end) for YYYY-MM-DD start + end strings.
 
     NAIVE datetimes (no tzinfo) and END-INCLUSIVE -- the opposite
@@ -140,12 +141,16 @@ def inclusive_date_bounds(start_string: str, end_string: str) -> tuple[datetime,
     """
     start = datetime.fromisoformat(start_string)
     end = datetime.fromisoformat(end_string).replace(
-        hour=23, minute=59, second=59, microsecond=999999)
+        hour=23, minute=59, second=59, microsecond=999999
+    )
     return start, end
 
 
 def prior_window_for(
-    current_start: datetime, current_end: datetime, *, mode: str,
+    current_start: datetime,
+    current_end: datetime,
+    *,
+    mode: str,
 ) -> tuple[datetime, datetime]:
     """Return (prior_start, prior_end) for the same-length window
     immediately before [current_start, current_end].
@@ -168,7 +173,9 @@ def prior_window_for(
         if current_start.month == 1:
             prior_month_string = f"{current_start.year - 1:04d}-12"
         else:
-            prior_month_string = f"{current_start.year:04d}-{current_start.month - 1:02d}"
+            prior_month_string = (
+                f"{current_start.year:04d}-{current_start.month - 1:02d}"
+            )
         return inclusive_month_bounds(prior_month_string)
     if mode == "range":
         duration = current_end - current_start
@@ -183,8 +190,7 @@ def prior_window_for(
     raise ValueError(f"unknown mode {mode!r} (expected 'month', 'range', 'duration')")
 
 
-def bucket_index(timestamp: datetime, window_start: datetime,
-                 granularity: str) -> int:
+def bucket_index(timestamp: datetime, window_start: datetime, granularity: str) -> int:
     """Return 0-based bucket index for a timestamp within its window.
 
     Distinct from `bucket_key`: bucket-index makes paired bars in an

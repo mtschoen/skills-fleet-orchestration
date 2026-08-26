@@ -49,11 +49,11 @@ from roots import (  # noqa: E402  -- after sys.path manipulation
 
 # A day counts as cache-CLEARED when /stats recorded a substantial in+out
 # volume but the surviving transcripts hold almost none of it.
-CLEARED_FLOOR = 50_000      # ignore tiny days; only flag days that mattered
-CLEARED_RATIO = 0.10        # transcripts < 10% of /stats => cleared
+CLEARED_FLOOR = 50_000  # ignore tiny days; only flag days that mattered
+CLEARED_RATIO = 0.10  # transcripts < 10% of /stats => cleared
 # A day MATCHES when the two sources agree within a tolerance.
-MATCH_FLOOR = 5_000         # absolute slack for small days
-MATCH_RATIO = 0.25          # or 25% relative slack
+MATCH_FLOOR = 5_000  # absolute slack for small days
+MATCH_RATIO = 0.25  # or 25% relative slack
 # Coverage below this fraction triggers the report-flow warning.
 WARN_THRESHOLD = 0.90
 
@@ -108,8 +108,9 @@ def daily_in_out_of_file(path, dedupe=True):
                     continue
                 seen.add(message_id)
             usage = message.get("usage") or {}
-            in_out = (usage.get("input_tokens", 0) or 0) + \
-                     (usage.get("output_tokens", 0) or 0)
+            in_out = (usage.get("input_tokens", 0) or 0) + (
+                usage.get("output_tokens", 0) or 0
+            )
             timestamp = entry.get("timestamp")
             if timestamp:
                 daily[timestamp[:10]] += in_out
@@ -135,18 +136,27 @@ def walk_transcripts_daily_in_out(root, dedupe=True):
     return dict(merged)
 
 
-def classify_days(stats_daily, transcript_daily, *,
-                  cleared_floor=CLEARED_FLOOR, cleared_ratio=CLEARED_RATIO,
-                  match_floor=MATCH_FLOOR, match_ratio=MATCH_RATIO):
+def classify_days(
+    stats_daily,
+    transcript_daily,
+    *,
+    cleared_floor=CLEARED_FLOOR,
+    cleared_ratio=CLEARED_RATIO,
+    match_floor=MATCH_FLOOR,
+    match_ratio=MATCH_RATIO,
+):
     """Label each /stats day as 'cleared', 'match', or 'partial'."""
     status = {}
     for day, stats_value in stats_daily.items():
         transcript_value = transcript_daily.get(day, 0)
-        if stats_value > cleared_floor and \
-                transcript_value < cleared_ratio * stats_value:
+        if (
+            stats_value > cleared_floor
+            and transcript_value < cleared_ratio * stats_value
+        ):
             status[day] = "cleared"
-        elif abs(stats_value - transcript_value) < \
-                max(match_floor, match_ratio * stats_value):
+        elif abs(stats_value - transcript_value) < max(
+            match_floor, match_ratio * stats_value
+        ):
             status[day] = "match"
         else:
             status[day] = "partial"
@@ -156,14 +166,15 @@ def classify_days(stats_daily, transcript_daily, *,
 @dataclass
 class Coverage:
     """Reconciliation summary for a date range."""
+
     stats_total: int
     transcript_total: int
     coverage_pct: float | None  # None when there is no /stats volume to compare
     cleared_days: list
     cleared_tokens: int
     statuses: dict
-    stats_by_day: dict | None = None       # /stats in+out per day, in-range
-    transcript_by_day: dict | None = None   # transcript in+out per day, in-range
+    stats_by_day: dict | None = None  # /stats in+out per day, in-range
+    transcript_by_day: dict | None = None  # transcript in+out per day, in-range
 
 
 def _in_range(day, start, end):
@@ -174,11 +185,11 @@ def _in_range(day, start, end):
 def coverage(stats_daily, transcript_daily, start, end, **classify_kwargs):
     """Compare /stats vs transcript in+out over [start, end) (end exclusive)."""
     stats_in_range = {
-        day: value for day, value in stats_daily.items()
-        if _in_range(day, start, end)
+        day: value for day, value in stats_daily.items() if _in_range(day, start, end)
     }
     transcript_in_range = {
-        day: value for day, value in transcript_daily.items()
+        day: value
+        for day, value in transcript_daily.items()
         if _in_range(day, start, end)
     }
     stats_total = sum(stats_in_range.values())
@@ -187,9 +198,16 @@ def coverage(stats_daily, transcript_daily, start, end, **classify_kwargs):
     cleared_days = sorted(d for d, s in statuses.items() if s == "cleared")
     cleared_tokens = sum(stats_in_range[d] for d in cleared_days)
     coverage_pct = (transcript_total / stats_total) if stats_total > 0 else None
-    return Coverage(stats_total, transcript_total, coverage_pct,
-                    cleared_days, cleared_tokens, statuses,
-                    stats_in_range, transcript_in_range)
+    return Coverage(
+        stats_total,
+        transcript_total,
+        coverage_pct,
+        cleared_days,
+        cleared_tokens,
+        statuses,
+        stats_in_range,
+        transcript_in_range,
+    )
 
 
 def coverage_for_roots(resolved_roots, start, end, **classify_kwargs):
@@ -209,18 +227,21 @@ def coverage_for_roots(resolved_roots, start, end, **classify_kwargs):
         # with like. Deduping here would falsely report ~30% coverage on
         # fully-intact months (the ~3.2x no-dedup factor, not real loss).
         transcript_daily = walk_transcripts_daily_in_out(root, dedupe=False)
-        per_root.append((
-            label,
-            coverage(stats_daily, transcript_daily, start, end, **classify_kwargs),
-            stats_path,
-            stats is not None,
-        ))
+        per_root.append(
+            (
+                label,
+                coverage(stats_daily, transcript_daily, start, end, **classify_kwargs),
+                stats_path,
+                stats is not None,
+            )
+        )
         for day, value in stats_daily.items():
             combined_stats[day] += value
         for day, value in transcript_daily.items():
             combined_transcript[day] += value
-    combined = coverage(dict(combined_stats), dict(combined_transcript),
-                        start, end, **classify_kwargs)
+    combined = coverage(
+        dict(combined_stats), dict(combined_transcript), start, end, **classify_kwargs
+    )
     return combined, per_root
 
 
@@ -250,13 +271,16 @@ def _print_model_usage(stats, label):
     print(f"\n[{label}] modelUsage inventory (cumulative, per-machine):")
     header = f"  {'model':<32} {'in':>13} {'out':>13} {'cache_read':>15} {'cache_create':>14}"
     print(header)
-    for model, info in sorted(usage.items(),
-                              key=lambda kv: -(kv[1].get("inputTokens", 0)
-                                               + kv[1].get("outputTokens", 0))):
-        print(f"  {model:<32} {info.get('inputTokens', 0):>13,} "
-              f"{info.get('outputTokens', 0):>13,} "
-              f"{info.get('cacheReadInputTokens', 0):>15,} "
-              f"{info.get('cacheCreationInputTokens', 0):>14,}")
+    for model, info in sorted(
+        usage.items(),
+        key=lambda kv: -(kv[1].get("inputTokens", 0) + kv[1].get("outputTokens", 0)),
+    ):
+        print(
+            f"  {model:<32} {info.get('inputTokens', 0):>13,} "
+            f"{info.get('outputTokens', 0):>13,} "
+            f"{info.get('cacheReadInputTokens', 0):>15,} "
+            f"{info.get('cacheCreationInputTokens', 0):>14,}"
+        )
 
 
 def _print_day_table(cov, label):
@@ -269,24 +293,34 @@ def _print_day_table(cov, label):
     stats_by_day = cov.stats_by_day or {}
     transcript_by_day = cov.transcript_by_day or {}
     for day in sorted(cov.statuses):
-        print(f"  {day:<12} {stats_by_day.get(day, 0):>15,} "
-              f"{transcript_by_day.get(day, 0):>15,} {cov.statuses[day]:>10}")
+        print(
+            f"  {day:<12} {stats_by_day.get(day, 0):>15,} "
+            f"{transcript_by_day.get(day, 0):>15,} {cov.statuses[day]:>10}"
+        )
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Reconcile transcripts against /stats stats-cache.json.")
-    parser.add_argument("roots", nargs="*",
-                        help="One or more .claude/projects directories")
+        description="Reconcile transcripts against /stats stats-cache.json."
+    )
+    parser.add_argument(
+        "roots", nargs="*", help="One or more .claude/projects directories"
+    )
     range_group = parser.add_mutually_exclusive_group(required=True)
     range_group.add_argument("--month", help="YYYY-MM (e.g. 2026-04)")
-    range_group.add_argument("--start",
-                             help="YYYY-MM-DD inclusive start (paired with --end)")
+    range_group.add_argument(
+        "--start", help="YYYY-MM-DD inclusive start (paired with --end)"
+    )
     parser.add_argument("--end", help="YYYY-MM-DD inclusive end (with --start)")
-    parser.add_argument("--label", action="append",
-                        help="Label paired with each root (repeatable)")
-    parser.add_argument("--threshold", type=float, default=WARN_THRESHOLD,
-                        help="Coverage fraction below which to warn (default 0.90)")
+    parser.add_argument(
+        "--label", action="append", help="Label paired with each root (repeatable)"
+    )
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        default=WARN_THRESHOLD,
+        help="Coverage fraction below which to warn (default 0.90)",
+    )
     arguments = parser.parse_args()
 
     if arguments.month and arguments.end:
@@ -321,23 +355,30 @@ def main():
             _print_model_usage(load_stats(stats_path), label)
         _print_day_table(cov, label)
         if cov.coverage_pct is not None:
-            print(f"  coverage: {100 * cov.coverage_pct:.1f}%  "
-                  f"({cov.transcript_total:,} transcript / "
-                  f"{cov.stats_total:,} /stats in+out)")
-            print(f"  cleared days: {len(cov.cleared_days)}  "
-                  f"({cov.cleared_tokens:,} in+out tokens with no surviving "
-                  f"transcript)")
+            print(
+                f"  coverage: {100 * cov.coverage_pct:.1f}%  "
+                f"({cov.transcript_total:,} transcript / "
+                f"{cov.stats_total:,} /stats in+out)"
+            )
+            print(
+                f"  cleared days: {len(cov.cleared_days)}  "
+                f"({cov.cleared_tokens:,} in+out tokens with no surviving "
+                f"transcript)"
+            )
 
     print("\n" + "=" * 72)
     print("COMBINED")
     print("=" * 72)
     if combined.coverage_pct is None:
-        print("  no /stats in+out volume recorded for this range "
-              "(nothing to reconcile).")
+        print(
+            "  no /stats in+out volume recorded for this range (nothing to reconcile)."
+        )
     else:
-        print(f"  coverage: {100 * combined.coverage_pct:.1f}%  "
-              f"({combined.transcript_total:,} transcript / "
-              f"{combined.stats_total:,} /stats in+out)")
+        print(
+            f"  coverage: {100 * combined.coverage_pct:.1f}%  "
+            f"({combined.transcript_total:,} transcript / "
+            f"{combined.stats_total:,} /stats in+out)"
+        )
         warning = format_warning(combined, threshold=arguments.threshold)
         if warning:
             print(f"\n  {warning}")

@@ -54,10 +54,12 @@ import stats_cache  # noqa: E402  -- after sys.path manipulation
 
 
 COMMAND_NAME_PATTERN = re.compile(
-    r"<command-name>\s*([^<]+?)\s*</command-name>", re.IGNORECASE,
+    r"<command-name>\s*([^<]+?)\s*</command-name>",
+    re.IGNORECASE,
 )
 COMMAND_MESSAGE_PATTERN = re.compile(
-    r"<command-message>\s*([^<]+?)\s*</command-message>", re.IGNORECASE,
+    r"<command-message>\s*([^<]+?)\s*</command-message>",
+    re.IGNORECASE,
 )
 
 
@@ -129,8 +131,9 @@ def _duration_ms(value):
 
 
 def process_file(path, parent_session, is_subagent):
-    totals = FileTotals(path=str(path), is_subagent=is_subagent,
-                        parent_session=parent_session)
+    totals = FileTotals(
+        path=str(path), is_subagent=is_subagent, parent_session=parent_session
+    )
     seen_ids = set()
     saw_any = False
     first_turn_recorded = False
@@ -153,9 +156,15 @@ def process_file(path, parent_session, is_subagent):
 
                 timestamp = parse_timestamp(entry.get("timestamp"))
                 if timestamp:
-                    if totals.first_timestamp is None or timestamp < totals.first_timestamp:
+                    if (
+                        totals.first_timestamp is None
+                        or timestamp < totals.first_timestamp
+                    ):
                         totals.first_timestamp = timestamp
-                    if totals.last_timestamp is None or timestamp > totals.last_timestamp:
+                    if (
+                        totals.last_timestamp is None
+                        or timestamp > totals.last_timestamp
+                    ):
                         totals.last_timestamp = timestamp
 
                 entry_type = entry.get("type")
@@ -222,12 +231,21 @@ def process_file(path, parent_session, is_subagent):
                 totals.cache_write_tokens += cache_write_tokens
 
                 model_identifier = message.get("model") or ""
-                totals.cost_usd += cost_for_turn(model_identifier, input_tokens,
-                                                 output_tokens, cache_read_tokens,
-                                                 cache_write_tokens)
+                totals.cost_usd += cost_for_turn(
+                    model_identifier,
+                    input_tokens,
+                    output_tokens,
+                    cache_read_tokens,
+                    cache_write_tokens,
+                )
 
-                gap = unpriced_usage(model_identifier, input_tokens, output_tokens,
-                                     cache_read_tokens, cache_write_tokens)
+                gap = unpriced_usage(
+                    model_identifier,
+                    input_tokens,
+                    output_tokens,
+                    cache_read_tokens,
+                    cache_write_tokens,
+                )
                 if gap is not None:
                     turns, tokens = gap
                     gap_entry = totals.unpriced_models.setdefault(
@@ -293,22 +311,30 @@ def _worker(payload):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("roots", nargs="*", help="One or more .claude/projects directories")
+    parser.add_argument(
+        "roots", nargs="*", help="One or more .claude/projects directories"
+    )
     range_group = parser.add_mutually_exclusive_group(required=True)
     range_group.add_argument("--month", help="YYYY-MM (e.g. 2026-04)")
-    range_group.add_argument("--start",
-                             help="YYYY-MM-DD inclusive start (paired with --end)")
-    parser.add_argument("--end",
-                        help="YYYY-MM-DD inclusive end (paired with --start)")
-    parser.add_argument("--label", action="append",
-                        help="Label paired with each root (repeat to label multiple)")
-    parser.add_argument("--out",
-                        default=str(reports_directory()),
-                        help="Output directory for CSVs "
-                             "(default: ~/.agents/cost-estimator/reports/, "
-                             "override dir via AGENTS_COST_REPORTS_DIR)")
-    parser.add_argument("--workers", type=int,
-                        default=max(1, (os.cpu_count() or 4) // 2))
+    range_group.add_argument(
+        "--start", help="YYYY-MM-DD inclusive start (paired with --end)"
+    )
+    parser.add_argument("--end", help="YYYY-MM-DD inclusive end (paired with --start)")
+    parser.add_argument(
+        "--label",
+        action="append",
+        help="Label paired with each root (repeat to label multiple)",
+    )
+    parser.add_argument(
+        "--out",
+        default=str(reports_directory()),
+        help="Output directory for CSVs "
+        "(default: ~/.agents/cost-estimator/reports/, "
+        "override dir via AGENTS_COST_REPORTS_DIR)",
+    )
+    parser.add_argument(
+        "--workers", type=int, default=max(1, (os.cpu_count() or 4) // 2)
+    )
     arguments = parser.parse_args()
 
     if arguments.month and arguments.end:
@@ -369,33 +395,36 @@ def main():
     by_session = {}
     for totals, label in file_results:
         key = (label, totals.parent_session)
-        session = by_session.setdefault(key, {
-            "label": label,
-            "session_id": totals.parent_session,
-            "parent_path": "",
-            "first_timestamp": None,
-            "last_timestamp": None,
-            "cost_usd": 0.0,
-            "input_tokens": 0,
-            "output_tokens": 0,
-            "cache_read_tokens": 0,
-            "cache_write_tokens": 0,
-            "by_model": defaultdict(lambda: [0, 0, 0, 0]),
-            "unpriced_models": defaultdict(lambda: [0, 0]),
-            "tool_calls": Counter(),
-            "assistant_turns": 0,
-            "user_turns": 0,
-            "subagent_count": 0,
-            "subagent_cost": 0.0,
-            "had_compact": False,
-            "first_turn_input_tokens": 0,
-            "active_time_ms": 0,
-            "subagent_time_ms": 0,
-            "timed_turns": 0,
-            "subagent_timed_turns": 0,
-            "command_time_ms": Counter(),
-            "command_invocations": Counter(),
-        })
+        session = by_session.setdefault(
+            key,
+            {
+                "label": label,
+                "session_id": totals.parent_session,
+                "parent_path": "",
+                "first_timestamp": None,
+                "last_timestamp": None,
+                "cost_usd": 0.0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "cache_read_tokens": 0,
+                "cache_write_tokens": 0,
+                "by_model": defaultdict(lambda: [0, 0, 0, 0]),
+                "unpriced_models": defaultdict(lambda: [0, 0]),
+                "tool_calls": Counter(),
+                "assistant_turns": 0,
+                "user_turns": 0,
+                "subagent_count": 0,
+                "subagent_cost": 0.0,
+                "had_compact": False,
+                "first_turn_input_tokens": 0,
+                "active_time_ms": 0,
+                "subagent_time_ms": 0,
+                "timed_turns": 0,
+                "subagent_timed_turns": 0,
+                "command_time_ms": Counter(),
+                "command_invocations": Counter(),
+            },
+        )
         if not totals.is_subagent:
             session["parent_path"] = totals.path
             session["first_turn_input_tokens"] = totals.first_turn_input_tokens
@@ -451,7 +480,9 @@ def main():
             except OSError:
                 reference = None
         if reference and range_start <= reference < range_end:
-            session["session_date"] = reference.astimezone(timezone.utc).date().isoformat()
+            session["session_date"] = (
+                reference.astimezone(timezone.utc).date().isoformat()
+            )
             selected_sessions.append(session)
     print(f"Sessions in {range_label}: {len(selected_sessions)}", file=sys.stderr)
 
@@ -459,60 +490,83 @@ def main():
     output_directory.mkdir(parents=True, exist_ok=True)
 
     fields = [
-        "label", "session_date", "session_id",
-        "first_timestamp", "last_timestamp",
-        "cost_usd", "input_tokens", "output_tokens",
-        "cache_read_tokens", "cache_write_tokens",
-        "cache_hit_pct", "first_turn_input_tokens",
-        "assistant_turns", "user_turns",
-        "subagent_count", "subagent_cost",
-        "active_time_seconds", "subagent_time_seconds",
-        "timed_turns", "subagent_timed_turns",
+        "label",
+        "session_date",
+        "session_id",
+        "first_timestamp",
+        "last_timestamp",
+        "cost_usd",
+        "input_tokens",
+        "output_tokens",
+        "cache_read_tokens",
+        "cache_write_tokens",
+        "cache_hit_pct",
+        "first_turn_input_tokens",
+        "assistant_turns",
+        "user_turns",
+        "subagent_count",
+        "subagent_cost",
+        "active_time_seconds",
+        "subagent_time_seconds",
+        "timed_turns",
+        "subagent_timed_turns",
         "had_compact",
-        "models", "top_tools", "parent_path",
+        "models",
+        "top_tools",
+        "parent_path",
     ]
     rows = []
     selected_sessions.sort(key=lambda session: -session["cost_usd"])
     for session in selected_sessions:
-        cache_total = (session["cache_read_tokens"]
-                       + session["cache_write_tokens"]
-                       + session["input_tokens"])
+        cache_total = (
+            session["cache_read_tokens"]
+            + session["cache_write_tokens"]
+            + session["input_tokens"]
+        )
         hit_percent = (
             session["cache_read_tokens"] / cache_total * 100.0
-            if cache_total > 0 else 0.0
+            if cache_total > 0
+            else 0.0
         )
         models_label = ",".join(
             f"{name}:{sum(values)}"
-            for name, values in session["by_model"].items() if any(values)
+            for name, values in session["by_model"].items()
+            if any(values)
         )
         top_tools = session["tool_calls"].most_common(5)
         top_tools_label = ",".join(f"{name}:{count}" for name, count in top_tools)
-        rows.append({
-            "label": session["label"],
-            "session_date": session.get("session_date", ""),
-            "session_id": session["session_id"],
-            "first_timestamp": session["first_timestamp"].isoformat() if session["first_timestamp"] else "",
-            "last_timestamp": session["last_timestamp"].isoformat() if session["last_timestamp"] else "",
-            "cost_usd": round(session["cost_usd"], 4),
-            "input_tokens": session["input_tokens"],
-            "output_tokens": session["output_tokens"],
-            "cache_read_tokens": session["cache_read_tokens"],
-            "cache_write_tokens": session["cache_write_tokens"],
-            "cache_hit_pct": round(hit_percent, 2),
-            "first_turn_input_tokens": session["first_turn_input_tokens"],
-            "assistant_turns": session["assistant_turns"],
-            "user_turns": session["user_turns"],
-            "subagent_count": session["subagent_count"],
-            "subagent_cost": round(session["subagent_cost"], 4),
-            "active_time_seconds": round(session["active_time_ms"] / 1000, 3),
-            "subagent_time_seconds": round(session["subagent_time_ms"] / 1000, 3),
-            "timed_turns": session["timed_turns"],
-            "subagent_timed_turns": session["subagent_timed_turns"],
-            "had_compact": session["had_compact"],
-            "models": models_label,
-            "top_tools": top_tools_label,
-            "parent_path": session["parent_path"],
-        })
+        rows.append(
+            {
+                "label": session["label"],
+                "session_date": session.get("session_date", ""),
+                "session_id": session["session_id"],
+                "first_timestamp": session["first_timestamp"].isoformat()
+                if session["first_timestamp"]
+                else "",
+                "last_timestamp": session["last_timestamp"].isoformat()
+                if session["last_timestamp"]
+                else "",
+                "cost_usd": round(session["cost_usd"], 4),
+                "input_tokens": session["input_tokens"],
+                "output_tokens": session["output_tokens"],
+                "cache_read_tokens": session["cache_read_tokens"],
+                "cache_write_tokens": session["cache_write_tokens"],
+                "cache_hit_pct": round(hit_percent, 2),
+                "first_turn_input_tokens": session["first_turn_input_tokens"],
+                "assistant_turns": session["assistant_turns"],
+                "user_turns": session["user_turns"],
+                "subagent_count": session["subagent_count"],
+                "subagent_cost": round(session["subagent_cost"], 4),
+                "active_time_seconds": round(session["active_time_ms"] / 1000, 3),
+                "subagent_time_seconds": round(session["subagent_time_ms"] / 1000, 3),
+                "timed_turns": session["timed_turns"],
+                "subagent_timed_turns": session["subagent_timed_turns"],
+                "had_compact": session["had_compact"],
+                "models": models_label,
+                "top_tools": top_tools_label,
+                "parent_path": session["parent_path"],
+            }
+        )
 
     sessions_csv = output_directory / "sessions.csv"
     with open(sessions_csv, "w", newline="", encoding="utf-8") as handle:
@@ -523,31 +577,48 @@ def main():
 
     commands_csv = output_directory / "commands.csv"
     command_fields = [
-        "label", "session_date", "session_id", "command",
-        "invocations", "active_seconds", "parent_path",
+        "label",
+        "session_date",
+        "session_id",
+        "command",
+        "invocations",
+        "active_seconds",
+        "parent_path",
     ]
     command_rows = []
     for session in selected_sessions:
         for command in sorted(session["command_invocations"]):
-            command_rows.append({
-                "label": session["label"],
-                "session_date": session.get("session_date", ""),
-                "session_id": session["session_id"],
-                "command": command,
-                "invocations": session["command_invocations"][command],
-                "active_seconds": round(session["command_time_ms"][command] / 1000, 3),
-                "parent_path": session["parent_path"],
-            })
+            command_rows.append(
+                {
+                    "label": session["label"],
+                    "session_date": session.get("session_date", ""),
+                    "session_id": session["session_id"],
+                    "command": command,
+                    "invocations": session["command_invocations"][command],
+                    "active_seconds": round(
+                        session["command_time_ms"][command] / 1000, 3
+                    ),
+                    "parent_path": session["parent_path"],
+                }
+            )
     with open(commands_csv, "w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=command_fields)
         writer.writeheader()
         writer.writerows(command_rows)
     print(f"Wrote {commands_csv} ({len(command_rows)} rows)", file=sys.stderr)
 
-    by_day = defaultdict(lambda: {"sessions": 0, "cost": 0.0,
-                                  "input": 0, "output": 0,
-                                  "cache_read": 0, "cache_write": 0,
-                                  "subagents": 0, "active_seconds": 0.0})
+    by_day = defaultdict(
+        lambda: {
+            "sessions": 0,
+            "cost": 0.0,
+            "input": 0,
+            "output": 0,
+            "cache_read": 0,
+            "cache_write": 0,
+            "subagents": 0,
+            "active_seconds": 0.0,
+        }
+    )
     for row in rows:
         bucket_key = row["session_date"] or "unknown"
         bucket = by_day[bucket_key]
@@ -562,17 +633,34 @@ def main():
     daily_csv = output_directory / "daily.csv"
     with open(daily_csv, "w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
-        writer.writerow(["date", "sessions", "cost_usd", "input", "output",
-                         "cache_read", "cache_write", "subagents",
-                         "active_seconds"])
+        writer.writerow(
+            [
+                "date",
+                "sessions",
+                "cost_usd",
+                "input",
+                "output",
+                "cache_read",
+                "cache_write",
+                "subagents",
+                "active_seconds",
+            ]
+        )
         for date_string in sorted(by_day):
             bucket = by_day[date_string]
-            writer.writerow([date_string, bucket["sessions"],
-                             round(bucket["cost"], 4),
-                             bucket["input"], bucket["output"],
-                             bucket["cache_read"], bucket["cache_write"],
-                             bucket["subagents"],
-                             round(bucket["active_seconds"], 3)])
+            writer.writerow(
+                [
+                    date_string,
+                    bucket["sessions"],
+                    round(bucket["cost"], 4),
+                    bucket["input"],
+                    bucket["output"],
+                    bucket["cache_read"],
+                    bucket["cache_write"],
+                    bucket["subagents"],
+                    round(bucket["active_seconds"], 3),
+                ]
+            )
     print(f"Wrote {daily_csv}", file=sys.stderr)
 
     total_cost = sum(row["cost_usd"] for row in rows)
@@ -588,8 +676,10 @@ def main():
     print(f"Total raw cost: ${total_cost:,.2f}")
     total_active_seconds = sum(row["active_time_seconds"] for row in rows)
     print(f"Active turn time: {total_active_seconds:,.1f} seconds")
-    print(f"Tokens: input {total_input:,}  output {total_output:,}  "
-          f"cache_read {total_cache_read:,}  cache_write {total_cache_write:,}")
+    print(
+        f"Tokens: input {total_input:,}  output {total_output:,}  "
+        f"cache_read {total_cache_read:,}  cache_write {total_cache_write:,}"
+    )
     print(f"Overall cache hit: {overall_hit:.1f}%")
 
     by_label = defaultdict(lambda: [0.0, 0])
@@ -602,18 +692,24 @@ def main():
 
     print("\nTop 20 sessions by raw cost:")
     for row in rows[:20]:
-        print(f"  ${row['cost_usd']:>7.2f}  {row['session_date']}  "
-              f"{row['label']:9}  hit={row['cache_hit_pct']:>5.1f}%  "
-              f"sub={row['subagent_count']:>3}  turns={row['assistant_turns']:>3}  "
-              f"id={row['session_id'][:8]}  models={row['models'][:60]}")
+        print(
+            f"  ${row['cost_usd']:>7.2f}  {row['session_date']}  "
+            f"{row['label']:9}  hit={row['cache_hit_pct']:>5.1f}%  "
+            f"sub={row['subagent_count']:>3}  turns={row['assistant_turns']:>3}  "
+            f"id={row['session_id'][:8]}  models={row['models'][:60]}"
+        )
 
     print("\nLeast cache-friendly (>=$5 cost, hit < 70%):")
-    bad = [row for row in rows if row["cost_usd"] >= 5.0 and row["cache_hit_pct"] < 70.0]
+    bad = [
+        row for row in rows if row["cost_usd"] >= 5.0 and row["cache_hit_pct"] < 70.0
+    ]
     for row in bad[:15]:
         cw_to_in_ratio = row["cache_write_tokens"] / max(row["input_tokens"], 1)
-        print(f"  ${row['cost_usd']:>7.2f}  hit={row['cache_hit_pct']:>5.1f}%  "
-              f"cw/in={cw_to_in_ratio:>6.1f}  "
-              f"id={row['session_id'][:8]}  tools={row['top_tools'][:60]}")
+        print(
+            f"  ${row['cost_usd']:>7.2f}  hit={row['cache_hit_pct']:>5.1f}%  "
+            f"cw/in={cw_to_in_ratio:>6.1f}  "
+            f"id={row['session_id'][:8]}  tools={row['top_tools'][:60]}"
+        )
 
     # Unpriced-model guardrail. cost_for_turn() silently returns $0.00 for
     # any model id pricing.py's model_family() doesn't recognize -- a new
@@ -629,17 +725,24 @@ def main():
 
     print("\n=== UNPRICED MODELS ===")
     if unpriced_totals:
-        print(f"warning: {len(unpriced_totals)} model id(s) below have no "
-              f"entry in pricing.py's model_family() -- cost_for_turn() "
-              f"returned $0.00 for every one of these turns, so the totals "
-              f"above UNDERCOUNT this range.")
+        print(
+            f"warning: {len(unpriced_totals)} model id(s) below have no "
+            f"entry in pricing.py's model_family() -- cost_for_turn() "
+            f"returned $0.00 for every one of these turns, so the totals "
+            f"above UNDERCOUNT this range."
+        )
         for model_identifier, (turns, tokens) in sorted(
-                unpriced_totals.items(), key=lambda item: -item[1][1]):
-            print(f"  UNPRICED MODEL: {model_identifier!r} "
-                  f"({turns} turns, {tokens:,} tokens) -- update pricing.py")
+            unpriced_totals.items(), key=lambda item: -item[1][1]
+        ):
+            print(
+                f"  UNPRICED MODEL: {model_identifier!r} "
+                f"({turns} turns, {tokens:,} tokens) -- update pricing.py"
+            )
     else:
-        print("No unrecognized model ids in this range -- every turn priced "
-              "against a known family.")
+        print(
+            "No unrecognized model ids in this range -- every turn priced "
+            "against a known family."
+        )
 
     # Coverage guardrail. The cost above prices only SURVIVING transcripts;
     # if transcripts were GC'd (old 30-day retention), the total undercounts.
@@ -650,18 +753,20 @@ def main():
     print("\n=== COVERAGE vs /stats ===")
     try:
         combined_coverage, _ = stats_cache.coverage_for_roots(
-            resolved_roots, range_start, range_end)
+            resolved_roots, range_start, range_end
+        )
         warning = stats_cache.format_warning(combined_coverage)
         if warning:
             print(warning)
             print("Run stats_cache.py for the per-day cleared/match breakdown.")
         elif combined_coverage.coverage_pct is not None:
-            print(f"{100 * combined_coverage.coverage_pct:.0f}% of the /stats "
-                  f"in+out aggregate is present in transcripts for this range "
-                  f"-- no material undercount.")
+            print(
+                f"{100 * combined_coverage.coverage_pct:.0f}% of the /stats "
+                f"in+out aggregate is present in transcripts for this range "
+                f"-- no material undercount."
+            )
         else:
-            print("No /stats aggregate recorded for this range; nothing to "
-                  "reconcile.")
+            print("No /stats aggregate recorded for this range; nothing to reconcile.")
     except Exception as error:
         print(f"note: coverage check skipped ({error})", file=sys.stderr)
 

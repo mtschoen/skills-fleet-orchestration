@@ -28,106 +28,128 @@ def transcript_lines(
         "not json",
         json.dumps(["not", "a", "mapping"]),
         json.dumps({"type": "progress", "timestamp": "2026-03-01T09:00:00Z"}),
-        json.dumps({
-            "type": "user",
-            "timestamp": "2026-03-01T09:30:00Z",
-            "isCompactSummary": True,
-            "message": {"role": "user"},
-        }),
-        json.dumps({
-            "type": "system",
-            "subtype": "local_command",
-            "timestamp": "2026-03-01T09:31:00Z",
-            "content": "<command-name>/wrap</command-name>",
-        }),
-        json.dumps({
-            "type": "system",
-            "subtype": "turn_duration",
-            "timestamp": "2026-03-01T09:31:01Z",
-            "durationMs": "invalid",
-        }),
-        json.dumps({
-            "type": "assistant",
-            "timestamp": "2026-03-01T10:00:00Z",
-            "message": {
-                "id": f"{identifier_prefix}-1",
-                "role": "assistant",
-                "model": "claude-opus-4-7",
-                "usage": {
-                    "input_tokens": 1_000_000,
-                    "output_tokens": 10_000,
-                    "cache_read_input_tokens": 1_000,
-                    "cache_creation_input_tokens": 10_000,
-                    "cache_creation": {
-                        "ephemeral_5m_input_tokens": 2_000,
-                        "ephemeral_1h_input_tokens": 8_000,
+        json.dumps(
+            {
+                "type": "user",
+                "timestamp": "2026-03-01T09:30:00Z",
+                "isCompactSummary": True,
+                "message": {"role": "user"},
+            }
+        ),
+        json.dumps(
+            {
+                "type": "system",
+                "subtype": "local_command",
+                "timestamp": "2026-03-01T09:31:00Z",
+                "content": "<command-name>/wrap</command-name>",
+            }
+        ),
+        json.dumps(
+            {
+                "type": "system",
+                "subtype": "turn_duration",
+                "timestamp": "2026-03-01T09:31:01Z",
+                "durationMs": "invalid",
+            }
+        ),
+        json.dumps(
+            {
+                "type": "assistant",
+                "timestamp": "2026-03-01T10:00:00Z",
+                "message": {
+                    "id": f"{identifier_prefix}-1",
+                    "role": "assistant",
+                    "model": "claude-opus-4-7",
+                    "usage": {
+                        "input_tokens": 1_000_000,
+                        "output_tokens": 10_000,
+                        "cache_read_input_tokens": 1_000,
+                        "cache_creation_input_tokens": 10_000,
+                        "cache_creation": {
+                            "ephemeral_5m_input_tokens": 2_000,
+                            "ephemeral_1h_input_tokens": 8_000,
+                        },
                     },
+                    "content": [
+                        {"type": "tool_use", "name": "Read"},
+                        {"type": "tool_use"},
+                        {"type": "text", "text": "done"},
+                    ],
                 },
-                "content": [
-                    {"type": "tool_use", "name": "Read"},
-                    {"type": "tool_use"},
-                    {"type": "text", "text": "done"},
-                ],
-            },
-        }),
-        json.dumps({
-            "type": "assistant",
-            "timestamp": "2026-03-01T10:00:00Z",
-            "message": {"id": f"{identifier_prefix}-1", "role": "assistant"},
-        }),
-        json.dumps({
-            "type": "system",
-            "subtype": "turn_duration",
-            "timestamp": "2026-03-01T10:00:01Z",
-            "uuid": f"{identifier_prefix}-duration-1",
-            "durationMs": 1_800_000,
-        }),
-        json.dumps({
-            "type": "system",
-            "subtype": "turn_duration",
-            "timestamp": "2026-03-01T10:00:01Z",
-            "uuid": f"{identifier_prefix}-duration-1",
-            "durationMs": 1_800_000,
-        }),
-        json.dumps({
-            "type": "user",
-            "timestamp": "2026-03-01T10:00:02Z",
-            "isMeta": True,
-            "message": {
-                "role": "user",
-                "content": "<command-message>review</command-message>"
-                           "<command-name>/review</command-name>",
-            },
-        }),
-        json.dumps({
-            "type": "assistant",
-            "timestamp": "2026-03-01T10:06:00Z",
-            "message": {
-                "id": f"{identifier_prefix}-2",
-                "role": "assistant",
-                "model": "claude-sonnet-5",
-                "usage": {
-                    "input_tokens": 100,
-                    "output_tokens": 200,
-                    "cache_read_input_tokens": 100,
-                    "cache_creation_input_tokens": 6_000,
-                    "cache_creation": {"ephemeral_5m_input_tokens": 6_000},
+            }
+        ),
+        json.dumps(
+            {
+                "type": "assistant",
+                "timestamp": "2026-03-01T10:00:00Z",
+                "message": {"id": f"{identifier_prefix}-1", "role": "assistant"},
+            }
+        ),
+        json.dumps(
+            {
+                "type": "system",
+                "subtype": "turn_duration",
+                "timestamp": "2026-03-01T10:00:01Z",
+                "uuid": f"{identifier_prefix}-duration-1",
+                "durationMs": 1_800_000,
+            }
+        ),
+        json.dumps(
+            {
+                "type": "system",
+                "subtype": "turn_duration",
+                "timestamp": "2026-03-01T10:00:01Z",
+                "uuid": f"{identifier_prefix}-duration-1",
+                "durationMs": 1_800_000,
+            }
+        ),
+        json.dumps(
+            {
+                "type": "user",
+                "timestamp": "2026-03-01T10:00:02Z",
+                "isMeta": True,
+                "message": {
+                    "role": "user",
+                    "content": "<command-message>review</command-message>"
+                    "<command-name>/review</command-name>",
                 },
-                "content": "not a list",
-            },
-        }),
-        json.dumps({
-            "type": "system",
-            "subtype": "turn_duration",
-            "timestamp": "2026-03-01T10:06:01Z",
-            "uuid": f"{identifier_prefix}-duration-2",
-            "durationMs": 360_000,
-        }),
-        json.dumps({
-            "type": "assistant",
-            "timestamp": "2026-03-01T10:07:00Z",
-            "message": {"id": f"{identifier_prefix}-wrong", "role": "user"},
-        }),
+            }
+        ),
+        json.dumps(
+            {
+                "type": "assistant",
+                "timestamp": "2026-03-01T10:06:00Z",
+                "message": {
+                    "id": f"{identifier_prefix}-2",
+                    "role": "assistant",
+                    "model": "claude-sonnet-5",
+                    "usage": {
+                        "input_tokens": 100,
+                        "output_tokens": 200,
+                        "cache_read_input_tokens": 100,
+                        "cache_creation_input_tokens": 6_000,
+                        "cache_creation": {"ephemeral_5m_input_tokens": 6_000},
+                    },
+                    "content": "not a list",
+                },
+            }
+        ),
+        json.dumps(
+            {
+                "type": "system",
+                "subtype": "turn_duration",
+                "timestamp": "2026-03-01T10:06:01Z",
+                "uuid": f"{identifier_prefix}-duration-2",
+                "durationMs": 360_000,
+            }
+        ),
+        json.dumps(
+            {
+                "type": "assistant",
+                "timestamp": "2026-03-01T10:07:00Z",
+                "message": {"id": f"{identifier_prefix}-wrong", "role": "user"},
+            }
+        ),
     ]
     if not include_non_mapping:
         lines.remove(json.dumps(["not", "a", "mapping"]))
@@ -142,10 +164,13 @@ def write_transcript(
 ):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
-        "\n".join(transcript_lines(
-            identifier_prefix,
-            include_non_mapping=include_non_mapping,
-        )) + "\n",
+        "\n".join(
+            transcript_lines(
+                identifier_prefix,
+                include_non_mapping=include_non_mapping,
+            )
+        )
+        + "\n",
         encoding="utf-8",
     )
 
@@ -176,10 +201,15 @@ def test_analyze_process_file_and_discovery_cover_edge_cases(
     assert totals.command_invocations == {"/review": 1}
     assert analyze_month._worker((str(parent), "session", False)).assistant_turns == 2
 
-    assert analyze_month.command_name_from([
-        {"type": "text", "text": "<command-message>Wrap now</command-message>"},
-        {"type": "tool_result", "content": "ignored"},
-    ]) == "/wrap"
+    assert (
+        analyze_month.command_name_from(
+            [
+                {"type": "text", "text": "<command-message>Wrap now</command-message>"},
+                {"type": "tool_result", "content": "ignored"},
+            ]
+        )
+        == "/wrap"
+    )
     assert analyze_month.command_name_from("/REVIEW details") == "/review"
     assert analyze_month.command_name_from({"text": "/ignored"}) is None
     assert analyze_month.command_name_from(" ") is None
@@ -191,7 +221,12 @@ def test_analyze_process_file_and_discovery_cover_edge_cases(
     empty = workspace_directory / "empty.jsonl"
     empty.write_text("not json\n", encoding="utf-8")
     assert analyze_month.process_file(empty, "empty", False) is None
-    assert analyze_month.process_file(workspace_directory / "missing.jsonl", "missing", False) is None
+    assert (
+        analyze_month.process_file(
+            workspace_directory / "missing.jsonl", "missing", False
+        )
+        is None
+    )
     assert analyze_month.discover_files(workspace_directory / "absent") == []
 
     discovered = analyze_month.discover_files(projects)
@@ -210,22 +245,60 @@ def test_analyze_process_file_clears_commands_for_skipped_durations(
     entries = [
         {"type": "system", "subtype": "local_command", "content": "/invalid"},
         {"type": "system", "subtype": "turn_duration", "durationMs": "invalid"},
-        {"type": "system", "subtype": "turn_duration", "uuid": "valid-1", "durationMs": 100},
+        {
+            "type": "system",
+            "subtype": "turn_duration",
+            "uuid": "valid-1",
+            "durationMs": 100,
+        },
         {"type": "system", "subtype": "local_command", "content": "/missing"},
         {"type": "system", "subtype": "turn_duration"},
-        {"type": "system", "subtype": "turn_duration", "uuid": "valid-2", "durationMs": 200},
-        {"type": "system", "subtype": "turn_duration", "uuid": "duplicate", "durationMs": 300},
+        {
+            "type": "system",
+            "subtype": "turn_duration",
+            "uuid": "valid-2",
+            "durationMs": 200,
+        },
+        {
+            "type": "system",
+            "subtype": "turn_duration",
+            "uuid": "duplicate",
+            "durationMs": 300,
+        },
         {"type": "system", "subtype": "local_command", "content": "/duplicate"},
-        {"type": "system", "subtype": "turn_duration", "uuid": "duplicate", "durationMs": 300},
-        {"type": "system", "subtype": "turn_duration", "uuid": "valid-3", "durationMs": 400},
+        {
+            "type": "system",
+            "subtype": "turn_duration",
+            "uuid": "duplicate",
+            "durationMs": 300,
+        },
+        {
+            "type": "system",
+            "subtype": "turn_duration",
+            "uuid": "valid-3",
+            "durationMs": 400,
+        },
         {"type": "system", "subtype": "local_command", "content": "/absent"},
         {"type": "assistant", "message": {"role": "assistant"}},
         {"type": "user", "message": {"role": "user", "content": "next turn"}},
         {"type": "assistant", "message": {"role": "assistant"}},
-        {"type": "system", "subtype": "turn_duration", "uuid": "valid-4", "durationMs": 500},
+        {
+            "type": "system",
+            "subtype": "turn_duration",
+            "uuid": "valid-4",
+            "durationMs": 500,
+        },
         {"type": "system", "subtype": "local_command", "content": "/tools"},
-        {"type": "user", "message": {"role": "user", "content": [{"type": "tool_result"}]}},
-        {"type": "system", "subtype": "turn_duration", "uuid": "valid-5", "durationMs": 600},
+        {
+            "type": "user",
+            "message": {"role": "user", "content": [{"type": "tool_result"}]},
+        },
+        {
+            "type": "system",
+            "subtype": "turn_duration",
+            "uuid": "valid-5",
+            "durationMs": 600,
+        },
     ]
     transcript.write_text(
         "\n".join(json.dumps(entry) for entry in entries) + "\n",
@@ -261,13 +334,22 @@ def test_analyze_main_writes_session_and_daily_reports(
     output_directory = workspace_directory / "reports"
 
     monkeypatch.setattr(analyze_month, "ProcessPoolExecutor", ThreadPoolExecutor)
-    monkeypatch.setattr(sys, "argv", [
-        "analyze-month.py", str(projects),
-        "--month", "2026-03",
-        "--label", "local",
-        "--workers", "1",
-        "--out", str(output_directory),
-    ])
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "analyze-month.py",
+            str(projects),
+            "--month",
+            "2026-03",
+            "--label",
+            "local",
+            "--workers",
+            "1",
+            "--out",
+            str(output_directory),
+        ],
+    )
 
     analyze_month.main()
 
@@ -277,7 +359,9 @@ def test_analyze_main_writes_session_and_daily_reports(
     assert "Least cache-friendly" in standard_output
     assert "COVERAGE vs /stats" in standard_output
 
-    with (output_directory / "sessions.csv").open(newline="", encoding="utf-8") as handle:
+    with (output_directory / "sessions.csv").open(
+        newline="", encoding="utf-8"
+    ) as handle:
         rows = list(csv.DictReader(handle))
     assert len(rows) == 1
     assert rows[0]["session_id"] == "session"
@@ -288,7 +372,9 @@ def test_analyze_main_writes_session_and_daily_reports(
     assert rows[0]["timed_turns"] == "2"
     assert (output_directory / "daily.csv").is_file()
 
-    with (output_directory / "commands.csv").open(newline="", encoding="utf-8") as handle:
+    with (output_directory / "commands.csv").open(
+        newline="", encoding="utf-8"
+    ) as handle:
         command_rows = list(csv.DictReader(handle))
     assert command_rows == [
         {
@@ -322,7 +408,9 @@ def test_cache_ttl_parses_turns_and_prints_behavioral_report(
     assert cache_ttl.bucket_for(-1) is None
     assert cache_ttl.parent_transcripts([("local", projects)]) == [str(transcript)]
 
-    monkeypatch.setattr(sys, "argv", ["cache_ttl.py", str(projects), "--label", "local"])
+    monkeypatch.setattr(
+        sys, "argv", ["cache_ttl.py", str(projects), "--label", "local"]
+    )
     cache_ttl.main()
     output = capsys.readouterr().out
     assert "ephemeral_5m total" in output
@@ -363,9 +451,12 @@ def test_stats_cache_combines_roots_formats_warnings_and_runs_cli(
     warning = stats_cache.format_warning(combined)
     assert warning is not None
     assert "Cleared days" in warning
-    assert stats_cache.format_warning(
-        stats_cache.Coverage(1, 1, 1.0, [], 0, {}),
-    ) is None
+    assert (
+        stats_cache.format_warning(
+            stats_cache.Coverage(1, 1, 1.0, [], 0, {}),
+        )
+        is None
+    )
 
     many_days = [f"2026-03-{day:02d}" for day in range(1, 13)]
     long_warning = stats_cache.format_warning(
@@ -376,12 +467,20 @@ def test_stats_cache_combines_roots_formats_warnings_and_runs_cli(
 
     stats_cache._print_model_usage({}, "empty")
     stats_cache._print_day_table(stats_cache.Coverage(0, 0, None, [], 0, {}), "empty")
-    monkeypatch.setattr(sys, "argv", [
-        "stats_cache.py", str(projects),
-        "--month", "2026-03",
-        "--label", "local",
-        "--threshold", "0.90",
-    ])
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "stats_cache.py",
+            str(projects),
+            "--month",
+            "2026-03",
+            "--label",
+            "local",
+            "--threshold",
+            "0.90",
+        ],
+    )
     stats_cache.main()
     output = capsys.readouterr().out
     assert "stats-cache reconciliation for 2026-03" in output

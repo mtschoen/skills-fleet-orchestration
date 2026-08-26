@@ -43,7 +43,8 @@ def test_default_when_no_cli_no_env():
 def test_windows_drive_letter_in_env_path():
     """First colon is the delimiter; rest is the path (includes C:)."""
     pairs = roots._resolve_roots(
-        cli_roots=[], cli_labels=[],
+        cli_roots=[],
+        cli_labels=[],
         env_value="host-a:C:/Users/someone/.claude/projects",
     )
     assert pairs == [("host-a", Path("C:/Users/someone/.claude/projects"))]
@@ -60,10 +61,12 @@ def test_env_malformed_raises():
 
 def test_stats_file_for_sibling_of_projects():
     """stats-cache.json sits next to the projects/ dir, one level up."""
-    assert roots.stats_file_for(Path("/home/x/.claude/projects")) == \
-        Path("/home/x/.claude/stats-cache.json")
-    assert roots.stats_file_for(Path(r"Y:/.claude/projects")) == \
-        Path(r"Y:/.claude/stats-cache.json")
+    assert roots.stats_file_for(Path("/home/x/.claude/projects")) == Path(
+        "/home/x/.claude/stats-cache.json"
+    )
+    assert roots.stats_file_for(Path(r"Y:/.claude/projects")) == Path(
+        r"Y:/.claude/stats-cache.json"
+    )
 
 
 def test_month_bounds_basic():

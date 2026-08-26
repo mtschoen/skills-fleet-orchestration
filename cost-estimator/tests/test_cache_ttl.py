@@ -18,7 +18,7 @@ def test_bucket_for_boundaries():
     assert cache_ttl.bucket_for(300) == "5-10m"
     assert cache_ttl.bucket_for(3599) == "20-60m"
     assert cache_ttl.bucket_for(3600) == ">60m"
-    assert cache_ttl.bucket_for(10 ** 8) == ">60m"
+    assert cache_ttl.bucket_for(10**8) == ">60m"
 
 
 if __name__ == "__main__":

@@ -35,8 +35,11 @@ from chart_runtime import (  # noqa: E402
 )
 from roots import reports_directory  # noqa: E402
 from trend_data import (  # noqa: E402
-    bucket_key, auto_bucket, read_sessions_in_range,
-    inclusive_month_bounds, inclusive_date_bounds,
+    bucket_key,
+    auto_bucket,
+    read_sessions_in_range,
+    inclusive_month_bounds,
+    inclusive_date_bounds,
 )
 
 
@@ -55,8 +58,12 @@ def pivot_to_datasets(rows: list[dict], granularity: str):
       - per_label_counts: dict[label, list[int]] - session counts per
         bucket, used by hover tooltips at render time.
     """
-    sums: dict[str, dict[str, float]] = defaultdict(lambda: defaultdict(float))   # sums[label][bucket]
-    counts: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))     # counts[label][bucket]
+    sums: dict[str, dict[str, float]] = defaultdict(
+        lambda: defaultdict(float)
+    )  # sums[label][bucket]
+    counts: dict[str, dict[str, int]] = defaultdict(
+        lambda: defaultdict(int)
+    )  # counts[label][bucket]
     bucket_set = set()
     label_set = set()
     for row in rows:
@@ -91,8 +98,14 @@ def pivot_to_datasets(rows: list[dict], granularity: str):
 
 
 PALETTE = [
-    "#4e79a7", "#f28e2b", "#e15759", "#76b7b2",
-    "#59a14f", "#edc948", "#b07aa1", "#ff9da7",
+    "#4e79a7",
+    "#f28e2b",
+    "#e15759",
+    "#76b7b2",
+    "#59a14f",
+    "#edc948",
+    "#b07aa1",
+    "#ff9da7",
 ]
 
 
@@ -202,12 +215,17 @@ new Chart(document.getElementById("chart"), {{
 """
 
 
-def render_html(*, range_label: str, bucket_granularity: str,
-                buckets: list[str], per_label_costs: dict,
-                per_label_counts: dict, cumulative: list[float],
-                inline: bool) -> str:
-    chartjs_script_tag, _ = chartjs_script_tags(inline=inline,
-                                                want_time_adapter=False)
+def render_html(
+    *,
+    range_label: str,
+    bucket_granularity: str,
+    buckets: list[str],
+    per_label_costs: dict,
+    per_label_counts: dict,
+    cumulative: list[float],
+    inline: bool,
+) -> str:
+    chartjs_script_tag, _ = chartjs_script_tags(inline=inline, want_time_adapter=False)
     total_cost = cumulative[-1] if cumulative else 0.0
     total_sessions = sum(sum(counts) for counts in per_label_counts.values())
     per_label_totals = {
@@ -250,14 +268,23 @@ def main():
     range_group.add_argument("--month", help="YYYY-MM")
     range_group.add_argument("--start", help="YYYY-MM-DD start (requires --end)")
     parser.add_argument("--end", help="YYYY-MM-DD end (inclusive)")
-    parser.add_argument("--bucket", choices=("day", "week", "month"),
-                        default=None,
-                        help="Bucket size (default: auto from range length)")
-    parser.add_argument("--csv", default=str(DEFAULT_CSV_PATH),
-                        help=f"sessions.csv path (default: {DEFAULT_CSV_PATH})")
+    parser.add_argument(
+        "--bucket",
+        choices=("day", "week", "month"),
+        default=None,
+        help="Bucket size (default: auto from range length)",
+    )
+    parser.add_argument(
+        "--csv",
+        default=str(DEFAULT_CSV_PATH),
+        help=f"sessions.csv path (default: {DEFAULT_CSV_PATH})",
+    )
     parser.add_argument("--inline-js", action="store_true")
-    parser.add_argument("--out", default=None,
-                        help=f"Output HTML path (default: {DEFAULT_OUT_DIR}/trend-<range>.html)")
+    parser.add_argument(
+        "--out",
+        default=None,
+        help=f"Output HTML path (default: {DEFAULT_OUT_DIR}/trend-<range>.html)",
+    )
     parser.add_argument("--open", dest="open_browser", action="store_true")
     arguments = parser.parse_args()
 
@@ -281,14 +308,17 @@ def main():
         span_days = (range_end - range_start).days + 1
 
     granularity = arguments.bucket or auto_bucket(span_days)
-    print(f"Range: {range_start.isoformat()} -> {range_end.isoformat()}",
-          file=sys.stderr)
+    print(
+        f"Range: {range_start.isoformat()} -> {range_end.isoformat()}", file=sys.stderr
+    )
     print(f"Bucket: {granularity} (span={span_days} days)", file=sys.stderr)
 
     csv_path = Path(arguments.csv)
     if not csv_path.is_file():
-        sys.exit(f"error: sessions.csv not found at {csv_path}. "
-                 f"Run analyze-month.py first, or pass --csv <path>.")
+        sys.exit(
+            f"error: sessions.csv not found at {csv_path}. "
+            f"Run analyze-month.py first, or pass --csv <path>."
+        )
 
     rows, skipped = read_sessions_in_range(csv_path, range_start, range_end)
     if not rows:
@@ -313,18 +343,26 @@ def main():
                     min_ts = ts
                 if max_ts is None or ts > max_ts:
                     max_ts = ts
-        span_message = (f"{min_ts.isoformat()}...{max_ts.isoformat()}"
-                        if min_ts else "(no parseable rows)")
-        sys.exit(f"error: no sessions in range {range_start.date()} -> "
-                 f"{range_end.date()} (csv has {total_rows} rows total, "
-                 f"span {span_message}).")
+        span_message = (
+            f"{min_ts.isoformat()}...{max_ts.isoformat()}"
+            if min_ts
+            else "(no parseable rows)"
+        )
+        sys.exit(
+            f"error: no sessions in range {range_start.date()} -> "
+            f"{range_end.date()} (csv has {total_rows} rows total, "
+            f"span {span_message})."
+        )
 
     if skipped:
-        print(f"note: skipped {skipped} rows with unparseable first_timestamp",
-              file=sys.stderr)
+        print(
+            f"note: skipped {skipped} rows with unparseable first_timestamp",
+            file=sys.stderr,
+        )
 
     buckets, per_label_costs, cumulative, per_label_counts = pivot_to_datasets(
-        rows, granularity,
+        rows,
+        granularity,
     )
 
     html_text = render_html(

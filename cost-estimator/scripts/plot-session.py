@@ -161,8 +161,12 @@ def _models_label(turns):
     totals = Counter()
     for record in turns:
         family = model_family(record["model"]) or record["model"] or "?"
-        totals[family] += (record["input_tokens"] + record["output_tokens"]
-                           + record["cache_read_tokens"] + record["cache_write_tokens"])
+        totals[family] += (
+            record["input_tokens"]
+            + record["output_tokens"]
+            + record["cache_read_tokens"]
+            + record["cache_write_tokens"]
+        )
     return ",".join(f"{family}:{total}" for family, total in totals.most_common())
 
 
@@ -186,15 +190,22 @@ def resolve_session(argument, project_roots):
             if not slug_directory.is_dir():
                 continue
             for entry in slug_directory.iterdir():
-                if (entry.is_file() and entry.suffix == ".jsonl"
-                        and entry.stem.startswith(argument)):
+                if (
+                    entry.is_file()
+                    and entry.suffix == ".jsonl"
+                    and entry.stem.startswith(argument)
+                ):
                     matches.append(entry)
     if not matches:
-        sys.exit(f"error: no session JSONL matched id/prefix '{argument}' "
-                 f"in roots: {[str(root) for root in project_roots]}")
+        sys.exit(
+            f"error: no session JSONL matched id/prefix '{argument}' "
+            f"in roots: {[str(root) for root in project_roots]}"
+        )
     if len(matches) > 1:
-        sys.exit(f"error: ambiguous id/prefix '{argument}' matched "
-                 f"{len(matches)} files:\n  " + "\n  ".join(str(match) for match in matches))
+        sys.exit(
+            f"error: ambiguous id/prefix '{argument}' matched "
+            f"{len(matches)} files:\n  " + "\n  ".join(str(match) for match in matches)
+        )
     return matches[0], matches[0].stem
 
 
@@ -217,8 +228,7 @@ def collect_subagent_summary(parent_jsonl_path):
     return count, total_cost
 
 
-def render_html(turns, subagent_count, subagent_cost, session_id,
-                x_axis_mode, inline):
+def render_html(turns, subagent_count, subagent_cost, session_id, x_axis_mode, inline):
     chartjs_script_tag, time_adapter_script_tag = chartjs_script_tags(
         inline=inline,
         want_time_adapter=(x_axis_mode == "time"),
@@ -251,21 +261,41 @@ def main():
         description="Render one session's cost trajectory as an HTML chart."
     )
     parser.add_argument("session", help="Session UUID, prefix, or full JSONL path")
-    parser.add_argument("--projects", action="append", default=None,
-                        help="Projects root directory (default: ~/.claude/projects). "
-                             "Repeat to search multiple roots.")
-    parser.add_argument("--x", choices=("turn", "time"), default="turn",
-                        help="X-axis mode (default: turn number)")
-    parser.add_argument("--inline-js", action="store_true",
-                        help="Embed Chart.js into the HTML rather than CDN-load")
-    parser.add_argument("--out", default=None,
-                        help="Output HTML path "
-                             "(default: ~/.agents/cost-estimator/reports/session-<prefix>.html)")
-    parser.add_argument("--open", dest="open_browser", action="store_true",
-                        help="Open the resulting HTML in the default browser")
+    parser.add_argument(
+        "--projects",
+        action="append",
+        default=None,
+        help="Projects root directory (default: ~/.claude/projects). "
+        "Repeat to search multiple roots.",
+    )
+    parser.add_argument(
+        "--x",
+        choices=("turn", "time"),
+        default="turn",
+        help="X-axis mode (default: turn number)",
+    )
+    parser.add_argument(
+        "--inline-js",
+        action="store_true",
+        help="Embed Chart.js into the HTML rather than CDN-load",
+    )
+    parser.add_argument(
+        "--out",
+        default=None,
+        help="Output HTML path "
+        "(default: ~/.agents/cost-estimator/reports/session-<prefix>.html)",
+    )
+    parser.add_argument(
+        "--open",
+        dest="open_browser",
+        action="store_true",
+        help="Open the resulting HTML in the default browser",
+    )
     arguments = parser.parse_args()
 
-    project_roots = [Path(root) for root in (arguments.projects or [str(DEFAULT_PROJECTS_ROOT)])]
+    project_roots = [
+        Path(root) for root in (arguments.projects or [str(DEFAULT_PROJECTS_ROOT)])
+    ]
     parent_jsonl, session_id = resolve_session(arguments.session, project_roots)
     print(f"Resolved session: {session_id}", file=sys.stderr)
     print(f"  parent jsonl: {parent_jsonl}", file=sys.stderr)
@@ -276,12 +306,12 @@ def main():
         cumulative += record["cost_usd"]
         record["cumulative_cost"] = round(cumulative, 6)
     total_cost = cumulative
-    print(f"  parent turns: {len(turns)}  parent cost: ${total_cost:.4f}",
-          file=sys.stderr)
+    print(
+        f"  parent turns: {len(turns)}  parent cost: ${total_cost:.4f}", file=sys.stderr
+    )
 
     subagent_count, subagent_cost = collect_subagent_summary(parent_jsonl)
-    print(f"  subagents: {subagent_count} files  ${subagent_cost:.4f}",
-          file=sys.stderr)
+    print(f"  subagents: {subagent_count} files  ${subagent_cost:.4f}", file=sys.stderr)
 
     html_text = render_html(
         turns=turns,

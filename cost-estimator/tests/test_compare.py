@@ -19,7 +19,9 @@ def test_prior_window_for_month():
     current_start = datetime(2026, 4, 1)
     current_end = datetime(2026, 4, 30, 23, 59, 59, 999999)
     prior_start, prior_end = prior_window_for(
-        current_start, current_end, mode="month",
+        current_start,
+        current_end,
+        mode="month",
     )
     assert prior_start == datetime(2026, 3, 1)
     assert prior_end == datetime(2026, 3, 31, 23, 59, 59, 999999)
@@ -30,7 +32,9 @@ def test_prior_window_for_month_year_rollover():
     current_start = datetime(2026, 1, 1)
     current_end = datetime(2026, 1, 31, 23, 59, 59, 999999)
     prior_start, prior_end = prior_window_for(
-        current_start, current_end, mode="month",
+        current_start,
+        current_end,
+        mode="month",
     )
     assert prior_start == datetime(2025, 12, 1)
     assert prior_end == datetime(2025, 12, 31, 23, 59, 59, 999999)
@@ -47,7 +51,9 @@ def test_prior_window_for_arbitrary_range():
     current_start = datetime(2026, 4, 15)
     current_end = datetime(2026, 4, 21, 23, 59, 59, 999999)
     prior_start, prior_end = prior_window_for(
-        current_start, current_end, mode="range",
+        current_start,
+        current_end,
+        mode="range",
     )
     assert prior_start == datetime(2026, 4, 8)
     assert prior_end == datetime(2026, 4, 14, 23, 59, 59, 999999)
@@ -62,7 +68,9 @@ def test_prior_window_for_range_has_no_gap_at_boundary():
     fall into the gap between the two windows."""
     current_start, current_end = inclusive_date_bounds("2026-04-15", "2026-04-21")
     _, prior_end = prior_window_for(
-        current_start, current_end, mode="range",
+        current_start,
+        current_end,
+        mode="range",
     )
     assert prior_end == current_start - timedelta(microseconds=1)
     # No instant exists strictly between prior_end and current_start.
@@ -74,7 +82,9 @@ def test_prior_window_for_duration_half_open():
     current_start = datetime(2026, 5, 4, 9, 30, 0)
     current_end = datetime(2026, 5, 11, 9, 30, 0)
     prior_start, prior_end = prior_window_for(
-        current_start, current_end, mode="duration",
+        current_start,
+        current_end,
+        mode="duration",
     )
     assert prior_start == datetime(2026, 4, 27, 9, 30, 0)
     assert prior_end == datetime(2026, 5, 4, 9, 30, 0)

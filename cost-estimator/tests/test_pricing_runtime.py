@@ -25,9 +25,16 @@ def test_pricing_helpers_cover_model_families_and_flat_rates():
 
     assert pricing.cost_for_turn("unknown", 1, 2, 3, 4) == 0.0
     assert pricing.cost_for_turn("claude-opus-4-7", 1_000_000, 0, 0, 0) == 5.0
-    assert pricing.cost_for_turn(
-        "claude-sonnet-5", 1_000_000, 1_000_000, 1_000_000, 1_000_000,
-    ) == 22.05
+    assert (
+        pricing.cost_for_turn(
+            "claude-sonnet-5",
+            1_000_000,
+            1_000_000,
+            1_000_000,
+            1_000_000,
+        )
+        == 22.05
+    )
 
 
 def test_iter_assistant_turns_filters_duplicates_and_collects_tools(
@@ -40,40 +47,46 @@ def test_iter_assistant_turns_filters_duplicates_and_collects_tools(
         json.dumps(["not", "a", "mapping"]),
         json.dumps({"type": "user", "message": {"role": "user"}}),
         json.dumps({"type": "assistant", "message": {"role": "user"}}),
-        json.dumps({
-            "type": "assistant",
-            "timestamp": "2026-03-01T10:00:00Z",
-            "message": {
-                "id": "turn-1",
-                "role": "assistant",
-                "model": "claude-opus-4-7",
-                "usage": {
-                    "input_tokens": 10,
-                    "output_tokens": 20,
-                    "cache_read_input_tokens": 30,
-                    "cache_creation_input_tokens": 40,
+        json.dumps(
+            {
+                "type": "assistant",
+                "timestamp": "2026-03-01T10:00:00Z",
+                "message": {
+                    "id": "turn-1",
+                    "role": "assistant",
+                    "model": "claude-opus-4-7",
+                    "usage": {
+                        "input_tokens": 10,
+                        "output_tokens": 20,
+                        "cache_read_input_tokens": 30,
+                        "cache_creation_input_tokens": 40,
+                    },
+                    "content": [
+                        {"type": "text", "text": "hello"},
+                        {"type": "tool_use", "name": "Read"},
+                        {"type": "tool_use", "name": "Read"},
+                        {"type": "tool_use"},
+                        "not a block",
+                    ],
                 },
-                "content": [
-                    {"type": "text", "text": "hello"},
-                    {"type": "tool_use", "name": "Read"},
-                    {"type": "tool_use", "name": "Read"},
-                    {"type": "tool_use"},
-                    "not a block",
-                ],
-            },
-        }),
-        json.dumps({
-            "type": "assistant",
-            "message": {"id": "turn-1", "role": "assistant"},
-        }),
-        json.dumps({
-            "type": "assistant",
-            "message": {
-                "role": "assistant",
-                "model": "claude-haiku-4-5",
-                "content": "not a list",
-            },
-        }),
+            }
+        ),
+        json.dumps(
+            {
+                "type": "assistant",
+                "message": {"id": "turn-1", "role": "assistant"},
+            }
+        ),
+        json.dumps(
+            {
+                "type": "assistant",
+                "message": {
+                    "role": "assistant",
+                    "model": "claude-haiku-4-5",
+                    "content": "not a list",
+                },
+            }
+        ),
     ]
     transcript.write_text("\n".join(entries) + "\n", encoding="utf-8")
 
@@ -110,7 +123,9 @@ def test_chartjs_script_tags_support_cdn_and_inline(monkeypatch):
     assert adapter_tag == "<script>js</script>"
 
 
-def test_cached_download_writes_and_reuses_cache(monkeypatch, workspace_directory: Path):
+def test_cached_download_writes_and_reuses_cache(
+    monkeypatch, workspace_directory: Path
+):
     class Response:
         def __enter__(self):
             return self
@@ -127,9 +142,17 @@ def test_cached_download_writes_and_reuses_cache(monkeypatch, workspace_director
         calls.append(url)
         return Response()
 
-    monkeypatch.setattr(Path, "home", classmethod(lambda path_class: workspace_directory))
+    monkeypatch.setattr(
+        Path, "home", classmethod(lambda path_class: workspace_directory)
+    )
     monkeypatch.setattr("urllib.request.urlopen", urlopen)
 
-    assert chart_runtime.cached_download("https://example.test/chart.js", "chart.js") == b"downloaded"
-    assert chart_runtime.cached_download("https://example.test/chart.js", "chart.js") == b"downloaded"
+    assert (
+        chart_runtime.cached_download("https://example.test/chart.js", "chart.js")
+        == b"downloaded"
+    )
+    assert (
+        chart_runtime.cached_download("https://example.test/chart.js", "chart.js")
+        == b"downloaded"
+    )
     assert calls == ["https://example.test/chart.js"]
