@@ -1,0 +1,23 @@
+{
+  "version": 3,
+  "lastComputedDate": "2026-03-15",
+  "totalSessions": 120,
+  "totalMessages": 4000,
+  "firstSessionDate": "2026-03-01",
+  "dailyModelTokens": [
+    {"date": "2026-03-01", "tokensByModel": {"claude-opus-4-6": 800000, "claude-sonnet-4-6": 200000}},
+    {"date": "2026-03-02", "tokensByModel": {"claude-opus-4-6": 60000}},
+    {"date": "2026-03-03", "tokensByModel": {"claude-opus-4-6": 30000}},
+    {"date": "2026-03-10", "tokensByModel": {"claude-opus-4-6": 500000}},
+    {"date": "2026-04-05", "tokensByModel": {"claude-opus-4-6": 90000}}
+  ],
+  "modelUsage": {
+    "claude-opus-4-6": {
+      "inputTokens": 1000000,
+      "outputTokens": 200000,
+      "cacheReadInputTokens": 50000000,
+      "cacheCreationInputTokens": 2000000,
+      "costUSD": 0
+    }
+  }
+}

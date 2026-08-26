@@ -1,0 +1,16 @@
+# Generated reports and analyzer outputs - session-specific, not for the published skill
+reports/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# aislop runtime artifacts (session/history logs, caches, baselines).
+# Unanchored so nested project directories are covered too.
+**/.aislop/*
+!**/.aislop/config.yml
