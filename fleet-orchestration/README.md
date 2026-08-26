@@ -10,7 +10,7 @@ For fixing several bugs in **one** repo, use the parent skill alone.
 
 ## What it does
 
-Adds task selection/triage across the fleet, a user pre-approval gate (feature mode), result triage (the orchestrator answers agents' open questions rather than forwarding them verbatim), the maintenance-vs-feature dual mode, `.maintenance.json` breadcrumbs, and cross-repo permission/worktree-isolation guidance.
+Adds task selection/triage across the fleet, a user pre-approval gate (feature mode), result triage (the orchestrator answers agents' open questions rather than forwarding them verbatim), the maintenance-vs-feature dual mode, `.maintenance.json` breadcrumbs, cross-repo permission and worktree-isolation guidance, and the persistent warm worktree pool protocol for projects whose first build is expensive.
 
 The authoritative spec is [`SKILL.md`](SKILL.md).
 

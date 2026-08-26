@@ -164,6 +164,7 @@ Any brief that includes a run longer than one tool call (Unity batch suites, ful
 
 - **The failure mode**: the agent detaches the process (correct - a foreground call would time out), then STOPS its turn "waiting for the notification." A raw detached OS process is not harness-tracked, so nothing ever re-invokes the agent; its stop surfaces to the orchestrator as `completed` with a non-result ("Still running... pausing"). This is the top-level reflex (the main session genuinely gets task-notifications) pattern-matched one level down, where it's wrong.
 - **Brief the fix verbatim**: "wrap launch + wait + result-parse in ONE tracked background Bash (`run_in_background`) that exits only when the run is done - wait on the pid or until the results file exists, and put a hard timeout on the run itself (e.g. `timeout 3600 <cmd>`) so a hang can't strand you. Its exit re-invokes you exactly once. Never detach a process and stop your turn to 'wait'." Chained sub-cap foreground polls are an acceptable fallback.
+- **Route the artifacts, not just the process.** Send every log and result file to a gitignored directory inside the lane's own worktree, with a timestamp in the filename. Default tool log paths and fixed filenames put parallel lanes in each other's way, clobber the previous run you still need to compare against, and leave stray files that dirty the repo's `git status` for whoever reviews the diff.
 - **Orchestrator backstop**: when a lane still stops with "waiting...", don't trust `completed` status - read the result text. Verify the process state yourself (pgrep, lockfile, log mtime) and arm your own watcher (`while kill -0 <pid>; do sleep 30; done` in a tracked background Bash) so you get re-invoked to nudge or intervene. A log that hasn't grown in an hour with the process still alive is a HUNG run: read the log tail for the culprit (often an async op nothing pumps in batch mode), kill it, clear any shared lock, and send the diagnosis back to the agent - don't wait it out.
 
 **Symptom you missed this**: repeated completion notifications from the same agent whose "result" is a status update, each needing a manual nudge; or a shared test-pool lock held for hours by a run whose log went quiet.
@@ -209,6 +210,56 @@ Before ANY worktree fan-out:
 3. **Verify base after creation, before work starts.** Every worktree, auto or pre-baked: `git rev-parse HEAD` must equal the intended base SHA. For auto-created worktrees you can't inspect pre-dispatch, put it in the brief verbatim: "FIRST ACTION: confirm `git rev-parse HEAD` prints `<full sha>`; on mismatch STOP and report. Do not merge, rebase, or reset to self-correct."
 
 **Symptom you missed this check**: agents report that files or functions named in the brief "don't exist in this checkout", or a returned diff re-implements work that already exists on the real base.
+
+## Persistent warm worktree pools (projects with costly first-build state)
+
+The section above is about getting an *ephemeral*, per-dispatch worktree onto the right base. This one covers the projects where an ephemeral worktree is the wrong tool at all.
+
+Some projects carry per-checkout build state that costs 5-30 minutes to populate from cold: an installed `node_modules`, a Rust `target/`, a populated ccache or Gradle cache, a game engine's imported-asset database. A fresh worktree per agent pays that cost once per agent, and it dwarfs any wall-clock saving from running the lanes in parallel. On those projects, do **not** use `isolation: "worktree"`.
+
+Instead, pre-provision a small pool of long-lived worktrees, each keeping its own warm build state, and have each agent check out the branch it needs inside an assigned slot:
+
+```text
+<repo>/
+├── <main checkout>      <- the user's, warm
+├── .worktrees/pool1/    <- pool slot, warm
+└── .worktrees/pool2/    <- pool slot, warm
+```
+
+Each slot is created once with `git worktree add`, built once to populate its cache, and then reused across sessions. An agent runs `git fetch` and checks out its branch in the slot, and the incremental build touches only what actually changed.
+
+**Rules for the pool:**
+
+- **One agent per slot at a time.** Many toolchains take an exclusive per-checkout lock (a game engine's asset database, a build daemon's lockfile) and fail hard on a second concurrent process against the same directory. Even where they do not, two lanes sharing one working tree collide on the same files.
+- **Reset and clean the slot before checking out a new branch** (`git reset --hard && git clean -fd`), so leftover state from a previous session cannot leak into the lane's diff. Do not add `-x`: it deletes the ignored build cache the pool exists to preserve.
+- **Do not delete the slots between sessions.** Keeping the cache warm is the whole point.
+- **Base verification still applies.** The prep checkout below is what sets the lane's base, so verify it exactly as the section above requires: `git rev-parse HEAD` in the slot must equal the intended base SHA before any work starts.
+- **Only plans that branch into independent tasks benefit.** If task N+1 consumes symbols task N defines, run them sequentially in a single slot; parallelism buys nothing there.
+
+### Reserving a slot
+
+Slots are shared across sessions, so before doing anything in one, claim it with a reservation marker - otherwise a parallel session (or future-you) picks the same slot and stomps on in-progress work. The marker is the baseline mechanism and a complete protocol on its own - survey, claim, prep, release - needing no other tooling.
+
+If the `project-lock` skill is installed, layer it in as an extra step. The two are complementary, not redundant: `.worktree-reserved` is an advisory sticky note saying "this slot is spoken for", self-documenting and surviving across sessions, so even an abandoned marker leaves a breadcrumb; `project-lock` is stronger write coordination that other agents' tooling checks before editing. A slot can carry a stale-but-harmless marker with no lock at all - but when a lock does exist, the lock, not the marker, is the authority on whether it is currently safe to write.
+
+1. **Survey.** `git worktree list` to enumerate slots. For each candidate, check whether `<slot>/.worktree-reserved` exists and, if it does, read it for who holds it (`reserved-by`), when it was claimed (`reserved-at`), and whether it is past its own `stale-after` window; also read `git -C <slot> status -sb`. A slot is free if there is no marker, or the marker is past `stale-after` with no live owner (see the reaping note below) - **and** the working tree is clean. With `project-lock` installed, also run its `check <slot>` and treat a locked slot as not free even when it carries no marker. Detached HEAD at an older commit is fine: that is the pool's resting state.
+2. **Claim.** Write `<slot>/.worktree-reserved` with content, not a bare touch, so the marker identifies who reserved the slot and leaves a breadcrumb if the session is abandoned:
+
+   ```text
+   worktree pool-slot reservation
+   reserved-by: <agent harness and session id, e.g. "opencode session 7f3a9c12">
+   reserved-at: <ISO 8601 UTC timestamp, e.g. 2026-08-04T21:40:00Z>
+   branch: <branch about to be checked out>
+   task: <plan/task reference>
+   stale-after: 24h - if this is older and the owning session is gone, it is safe to delete
+   ```
+
+   `reserved-by` is harness-agnostic: any harness name plus its session or instance id (`claude-code session 83c40206`, `opencode session 7f3a9c12`), or `user@host` for a manual, non-agent reservation. `reserved-at` is always ISO 8601 UTC in `YYYY-MM-DDTHH:MM:SSZ` form, so markers compare correctly across machines in different time zones. One short file, never staged or committed (add `.worktree-reserved` to `.git/info/exclude` if it is not already globally ignored). Claiming can happen before or independently of acquiring a lock, because writing the marker does not touch the slot's tracked working tree.
+3. **Lock (only if `project-lock` is installed).** Acquire the lock on the slot path, with a reason and a duration estimate, before anything in step 4 mutates the slot. A lock's jurisdiction is the nearest enclosing Git worktree, so each slot needs its own; acquiring on the repo root or a sibling slot does nothing for this one.
+4. **Prep.** In the slot: `git fetch && git reset --hard && git clean -fd`, then `git checkout -B <branch> <base>`. This is the first step that actually mutates the slot, so a lock from step 3 must already be held before you run it. Verify the resulting base per the section above. The build cache stays warm, and the next build reimports only what changed.
+5. **Release.** When the work is merged or abandoned: release the lock first if you hold one, then delete `.worktree-reserved` and reset the slot back to a clean detached state at the default branch, so the next session finds it warm and obviously free. When handing a branch off mid-stream instead, leave the marker in place (renewing or releasing the lock per the handoff) and update its `reserved-by` / `reserved-at` / `task` fields to describe the handoff.
+
+**Reaping a stale marker.** A marker whose `reserved-at` is older than its `stale-after` (default 24h), with no activity on its named `branch` and no live `project-lock` on that slot (or no `project-lock` installed at all), belongs to a session that is probably gone. Reap it - delete the marker and treat the slot as free - but flag the reap to the user before overwriting the slot's working tree.
 
 ## Cross-repo dispatch mechanics
 
@@ -333,6 +384,7 @@ Re-running 5 minutes later returns only `["site"]`. Cheap.
 - Spawning a subagent for a task you haven't read the surrounding code for.
 - Forwarding agent open questions to the user verbatim instead of investigating them yourself.
 - Mixing maintenance and feature tasks in one pass.
+- Spinning up a fresh worktree per agent on a project whose first build costs half an hour, instead of reserving a slot from a warm pool.
 - Using `isolation: "worktree"` for cross-repo parallelism (it doesn't work that way - different repos are already isolated).
 - Dispatching into a target repo without checking `git worktree list` and `git status` first. Other agent sessions may already be working there; the worktree-list output will show it.
 - Letting an agent commit/push without orchestrator review.
