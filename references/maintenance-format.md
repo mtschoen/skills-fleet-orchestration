@@ -1,6 +1,6 @@
 # `.maintenance.json` Format Reference
 
-Repo-local breadcrumb file recording the last run of recurring maintenance tasks. Lives at the root of each project repo, gitignored.
+Repo-local breadcrumb file recording the last run of recurring maintenance tasks. Lives at the root of each project repo, **tracked** (not gitignored): it records which findings were actioned and which were deliberately rejected, and nothing regenerates that history. The machine-wide excludes file ignores `.maintenance.json`, so a compliant repo's `.gitignore` carries an explicit `!.maintenance.json` negation to override it.
 
 ## Schema
 
@@ -103,8 +103,8 @@ project-tracker reads these files via its maintenance scanner module and exposes
 The Python helpers (importable from the maintenance scanner module):
 
 - `read_maintenance_state(project_path) -> dict`
-- `write_maintenance_state(project_path, state)` - also appends to `.gitignore`
+- `write_maintenance_state(project_path, state)` - writes the JSON, then touches `.gitignore`
 - `is_task_stale(project_path, task_name, *, state=None, head=None, now=None) -> bool`
 - `list_stale_tasks(project_path, task_names=None) -> list[str]`
 
-Runners should use `write_maintenance_state` rather than dumping JSON manually so the gitignore handling stays in one place. Both `write_maintenance_state` and the MCP tools require project-tracker to be installed - it's optional (see SKILL.md). Without it, write the JSON entry directly per the schema above and add `.maintenance.json` to `.gitignore` yourself; the staleness rules are unaffected either way, since they only depend on the file's contents.
+**Known defect in `write_maintenance_state`:** as of the currently installed project-tracker release, its `.gitignore` handling writes a bare `.maintenance.json` line - a positive ignore rule - instead of the `!.maintenance.json` negation this tracked-file contract requires. Calling it therefore leaves `.maintenance.json` gitignored and absent from `git status`, the opposite of the intended behavior. Runners should still call `write_maintenance_state` for the JSON write (it handles serialization and the `version` default correctly), but must check `.gitignore` afterward: if it contains a bare `.maintenance.json` line, replace it with `!.maintenance.json` and `git add .maintenance.json .gitignore`. Both `write_maintenance_state` and the MCP tools require project-tracker to be installed - it's optional (see SKILL.md). Without it, write the JSON entry directly per the schema above and add the `!.maintenance.json` negation to `.gitignore` yourself; the staleness rules are unaffected either way, since they only depend on the file's contents.

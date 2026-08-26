@@ -242,7 +242,7 @@ This is the most important difference between this skill and the parent. The par
 
 ## Maintenance breadcrumbs
 
-Maintenance state lives in each repo as `.maintenance.json` (gitignored). project-tracker exposes two MCP tools:
+Maintenance state lives in each repo as `.maintenance.json`, which is **tracked**, not gitignored: it records which maintenance findings were actioned and which were deliberately rejected, and nothing regenerates that. The machine-wide excludes file ignores it, so a compliant repo's `.gitignore` carries an explicit `!.maintenance.json` negation (see `project-maintenance`'s `references/cross-project-config.md`, "Safe git clean + post-clean init"). project-tracker exposes two MCP tools:
 
 - `mcp__project-tracker__get_maintenance_state(name)` - read one project's breadcrumbs
 - `mcp__project-tracker__find_stale_maintenance(task_name?)` - find projects where a task is stale
@@ -282,7 +282,7 @@ Quick format reference (full schema in `references/maintenance-format.md`):
 1. Read current state with `mcp__project-tracker__get_maintenance_state(name)` or directly from disk.
 2. Skip if `is_task_stale` returns False.
 3. Do the work.
-4. Write a new entry with `status` and either `last_run_commit` (per-commit) or `last_run` (time-based). Use `project_tracker.scanner.maintenance.write_maintenance_state` so `.gitignore` gets updated automatically (or, without project-tracker installed, write the JSON entry directly and add `.maintenance.json` to `.gitignore` yourself).
+4. Write a new entry with `status` and either `last_run_commit` (per-commit) or `last_run` (time-based). Call `project_tracker.scanner.maintenance.write_maintenance_state` to persist the JSON. **Known helper defect**: the installed `write_maintenance_state` currently appends a *positive* `.maintenance.json` line to `.gitignore` - the opposite of this contract, which requires `.maintenance.json` tracked with a `!.maintenance.json` negation (see `references/maintenance-format.md`). After calling the helper, check `.gitignore` for a bare `.maintenance.json` line; if present, remove it, add `!.maintenance.json` in its place, and `git add .maintenance.json .gitignore`. Without project-tracker installed, skip the helper entirely: write the JSON entry directly, add the `!.maintenance.json` negation to `.gitignore` yourself, and `git add .maintenance.json`.
 5. Never delete entries - overwrite in place.
 
 ## Workflows
