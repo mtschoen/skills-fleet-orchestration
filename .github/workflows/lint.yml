@@ -39,8 +39,8 @@ jobs:
       - name: cost-estimator
         working-directory: cost-estimator
         run: |
-          ruff check scripts/ ci/ tests/
-          ruff format --check scripts/ ci/ tests/
+          ruff check scripts/ ci/ tests/ dev/
+          ruff format --check scripts/ ci/ tests/ dev/
           pytest tests/ --cov=scripts --cov=ci --cov-report=term-missing
       - name: project-lock
         working-directory: project-lock

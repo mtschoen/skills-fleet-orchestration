@@ -52,15 +52,27 @@ def locate_chrome() -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("input_html", help="Path to the HTML file to render")
-    parser.add_argument("output_png", help="Path to write the PNG (absolute or relative)")
-    parser.add_argument("--width", type=int, default=880,
-                        help="Logical viewport width (default: 880)")
-    parser.add_argument("--height", type=int, default=720,
-                        help="Logical viewport height (default: 720)")
-    parser.add_argument("--scale", type=int, default=2,
-                        help="Device scale factor (default: 2 for retina)")
-    parser.add_argument("--budget-ms", type=int, default=5000,
-                        help="Virtual time budget in ms (default: 5000)")
+    parser.add_argument(
+        "output_png", help="Path to write the PNG (absolute or relative)"
+    )
+    parser.add_argument(
+        "--width", type=int, default=880, help="Logical viewport width (default: 880)"
+    )
+    parser.add_argument(
+        "--height", type=int, default=720, help="Logical viewport height (default: 720)"
+    )
+    parser.add_argument(
+        "--scale",
+        type=int,
+        default=2,
+        help="Device scale factor (default: 2 for retina)",
+    )
+    parser.add_argument(
+        "--budget-ms",
+        type=int,
+        default=5000,
+        help="Virtual time budget in ms (default: 5000)",
+    )
     arguments = parser.parse_args()
 
     input_path = Path(arguments.input_html).resolve()

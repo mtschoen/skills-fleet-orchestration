@@ -1,6 +1,6 @@
 ---
 name: project-lock
-description: Use before making changes in any project or repository, especially when a session reaches outside its starting working directory. Checks for a cooperative project lock, acquires one before writes, chooses wait versus worktree when another agent holds it, renews estimates during long work, and releases locks when leaving. Also use when the user asks which projects are locked, whether a repo is busy, or to clear an abandoned agent lock.
+description: Use before making changes in any project or repository, especially when a session reaches outside its starting working directory. Checks for a cooperative project lock, acquires one before writes, chooses wait versus worktree when another agent holds it, renews estimates during long work, and releases locks when leaving. Also use when the user asks which projects are locked, whether a repo is busy, or to clear an abandoned agent lock, and when a person is driving a checkout themselves with an editor open or a test run in flight, where no lock file represents them.
 ---
 
 # project-lock
@@ -148,6 +148,8 @@ A `PreToolUse` hook governs the writes a harness represents in tool input, and n
 An allow decision is therefore a point-in-time cooperative snapshot, not protection against a racing writer. Do not read it as stronger than that.
 
 A human working in the same checkout is the clearest case, and no lock file represents them. When a person is driving a checkout - an editor open on it, a test run in flight, uncommitted changes you did not make - treat it as held and ask before writing. Absence of a stated handoff is a hold, not permission, and authorization is per-action rather than a standing license: "go ahead, merge it" covers that merge, not the next write an hour later. A clarifying question is cheap; clobbering a live session is not.
+
+Read state, not process presence. Where the person keeps an editor, IDE, or dev server open on the checkout for the whole session, the fact that it is up says nothing about whether they are mid-task, so it is not the signal to key off; their `git status` plus what they have said this turn is. The obligation also runs the other way. Before starting a long run of your own in a checkout you share with a person - a full build, a batch test suite, anything that leaves the tree inconsistent for minutes at a time - say so and give an estimate ("suite running in my checkout, roughly 20 minutes, please do not edit there until I report back"), so they are not left inferring your state either.
 
 `acquire`, `renew`, and `release` all serialize through one global SQLite file in the per-user state directory (`mutation_guard`), regardless of which project each call targets. This is a same-user global critical section: two lock mutations for two *different* projects on the same machine still take turns through that one file. In practice each mutation holds it only briefly, so this is not a throughput concern, but it means lock mutations across all of a user's projects are never truly concurrent.
 
