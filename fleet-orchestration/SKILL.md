@@ -1,6 +1,6 @@
 ---
 name: fleet-orchestration
-description: "Use when dispatching subagents across multiple LOCAL PROJECT REPOSITORIES - feature implementation, maintenance sweeps, or fleet-wide investigation across the user's project directory. Triggers: 'spawn agents to fix X across all my projects', 'run a maintenance pass', 'work on tasks from several repos at once', reserving or releasing a slot in a persistent warm worktree pool on a project whose first build is expensive (a large node_modules, a Rust target/, a populated ccache, a game engine's asset database), use of project-tracker MCP tools (list_projects, find_dirty, find_stale_maintenance) to plan multi-repo work. Extends superpowers:dispatching-parallel-agents with cross-repo governance. project-tracker MCP tools are optional - without them, use the project-tracker CLI (project-tracker list --json), or on machines with no tracker install read the ~/.project-tracker/projects.json fallback registry. Requires the superpowers plugin (dispatching-parallel-agents)."
+description: "Use when dispatching subagents across multiple LOCAL PROJECT REPOSITORIES - feature implementation, maintenance sweeps, or fleet-wide investigation across the user's project directory. Triggers: 'spawn agents to fix X across all my projects', 'run a maintenance pass', 'work on tasks from several repos at once', reserving or releasing a slot in a persistent warm worktree pool on a project whose first build is expensive (a large node_modules, a Rust target/, a populated ccache, a game engine's asset database), use of project-tracker MCP tools (list_projects, find_dirty, find_stale_maintenance) to plan multi-repo work. Extends superpowers:dispatching-parallel-agents with cross-repo governance. project-tracker MCP tools are optional - without them, use the project-tracker CLI (project-tracker list --json). Fleet-wide enumeration requires project-tracker installed; without it, the user names the target repositories explicitly. Requires the superpowers plugin (dispatching-parallel-agents)."
 ---
 
 # Fleet Orchestration
@@ -30,6 +30,8 @@ If you're fixing 3 unrelated test failures in **one** project, use the parent sk
 ## Requirements
 
 This skill has a hard dependency on the superpowers plugin's [`superpowers:dispatching-parallel-agents`](https://github.com/mtschoen/superpowers) skill - see "Relationship" above. Install superpowers before using this skill; there is no standalone fallback.
+
+Fleet-*wide* enumeration additionally requires [project-tracker](https://github.com/mtschoen/schoen-lab) to be installed, reached through either its MCP server or its CLI. Something has to know which repositories are yours, and that is the only thing on the machine that does. Without it, the user names the target repositories and you work from that list. Everything else in this skill - dispatch discipline, triage, base-commit correctness, worktree isolation - carries no such dependency and works anywhere.
 
 These skills are designed against the superpowers fork at <https://github.com/mtschoen/superpowers>, which changes upstream's rules around parallel subagent dispatch and plan/spec file handling. Notably, official superpowers 6.2.0 forbids dispatching implementation subagents in parallel; the fork's subagent-driven-development adds Parallel Dispatch (Worktree Isolation). Skills that describe parallel SDD assume the fork.
 
@@ -173,7 +175,7 @@ Any brief that includes a run longer than one tool call (Unity batch suites, ful
 
 Start with a fleet-wide pass, then verify per repo before dispatching.
 
-**Fleet-wide**: `mcp__project-tracker__list_projects()` to enumerate the repos you can target, and `mcp__project-tracker__find_dirty()` to see which of them already have uncommitted changes before you touch anything. Without the MCP server, enumerate with `project-tracker list --json` (the tracker's registry is a SQLite database under `~/.project_tracker/`). On a machine with no project-tracker install at all, read `~/.project-tracker/projects.json` instead: the trackerless fallback registry, a JSON array of `{name, path, status, description}` entries. Note the naming: `~/.project_tracker/` (underscore) is the tracker's own database directory, while `~/.project-tracker/projects.json` (hyphen) is the separate trackerless fallback - two different locations by design. It may be absent if never created, and it is deliberately NOT synced with the tracker's database - it exists to close the gap for one-off setups, not to mirror the tracker. Either way, compute dirtiness with `git -C <repo> status --porcelain` per repo.
+**Fleet-wide**: `mcp__project-tracker__list_projects()` to enumerate the repos you can target, and `mcp__project-tracker__find_dirty()` to see which of them already have uncommitted changes before you touch anything. Without the MCP server, enumerate with `project-tracker list --json` (the tracker's registry is a SQLite database under `~/.project_tracker/`). Without project-tracker installed at all, ask the user which repositories to target and work from the list they give you, per Requirements above. Do not substitute a recursive filesystem scan: an unbounded walk is a hazard in its own right, and finding every checkout on the disk still would not tell you which ones the user counts as part of the fleet. Either way, compute dirtiness with `git -C <repo> status --porcelain` per repo.
 
 **Per target repo**, before dispatching into it: if the `project-lock` skill is installed, it is the authoritative check - run project-lock's `check <repo>` command (its SKILL.md documents the script location and exact invocation) and follow its check/acquire/advice protocol (wait, use a worktree, or proceed, per its own recommendation). It replaces guesswork with an actual advisory lock another agent would have taken.
 
@@ -298,7 +300,7 @@ Maintenance state lives in each repo as `.maintenance.json`, which is **tracked*
 - `mcp__project-tracker__get_maintenance_state(name)` - read one project's breadcrumbs
 - `mcp__project-tracker__find_stale_maintenance(task_name?)` - find projects where a task is stale
 
-Without the MCP server, read each repo's `.maintenance.json` directly (enumerating repos with `project-tracker list --json`, or `~/.project-tracker/projects.json` on machines without any tracker install) and compute staleness with git, e.g. `git rev-list <last_run_commit>..HEAD --count`.
+Without the MCP server, read each repo's `.maintenance.json` directly (enumerating repos with `project-tracker list --json`, or from the repositories the user named) and compute staleness with git, e.g. `git rev-list <last_run_commit>..HEAD --count`.
 
 Quick format reference (full schema in `references/maintenance-format.md`):
 
@@ -356,7 +358,8 @@ Re-running 5 minutes later returns only `["site"]`. Cheap.
 
 ```text
 1. Identify candidate tasks: mcp__project-tracker__list_projects() to enumerate the fleet
-   (or `project-tracker list --json` without the MCP server, or `~/.project-tracker/projects.json` without any tracker install),
+   (or `project-tracker list --json` without the MCP server; without project-tracker
+   installed, work from the repositories the user names),
    then read PLAN.md from each candidate project.
 2. Triage each (the four questions above). Drop reds, produce handoff prompts.
 3. Present green/yellow shortlist to the user. Wait for approval.
