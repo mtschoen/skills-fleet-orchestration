@@ -11,8 +11,8 @@ from tempfile import TemporaryDirectory
 import pytest
 
 
-REPOSITORY_ROOT = Path(__file__).parent.parent
-SCRIPTS_DIRECTORY = REPOSITORY_ROOT / "scripts"
+SKILL_ROOT = Path(__file__).resolve().parent.parent
+SCRIPTS_DIRECTORY = SKILL_ROOT / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIRECTORY))
 
 

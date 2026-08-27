@@ -15,12 +15,12 @@ import trend_data
 
 
 FIXTURES = Path(__file__).parent / "fixtures"
-ROOT = Path(__file__).parents[1]
+SKILL_ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_skill_documents_retrospective_time_analysis():
-    skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
-    report_template = (ROOT / "REPORT_TEMPLATE.md").read_text(encoding="utf-8")
+    skill = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
+    report_template = (SKILL_ROOT / "REPORT_TEMPLATE.md").read_text(encoding="utf-8")
 
     assert "turn_duration" in skill
     assert "--command /wrap" in skill
